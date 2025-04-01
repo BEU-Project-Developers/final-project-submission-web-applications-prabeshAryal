@@ -6,12 +6,12 @@ Welcome to **Music App**, a web application built with ASP.NET to provide a user
 
 This Music App is a Computer Science project developed by **Prabesh Aryal** as part of the 3rd year, 2nd semester coursework for the Bachelor of Science in Computer Engineering program at Baku Engineering University (Class 1202i). It was submitted to **Vugar Cebiyev**.
 
-**Developer:** Prabesh Aryal
-**University:** Baku Engineering University
-**Class:** 1202i, Computer Engineering Bsc
-**Website:** [https://prabe.sh](https://prabe.sh)
-**Email:** [hello@prabe.sh](mailto:hello@prabe.sh)
-**GitHub:** [prabeshAryal](https://github.com/prabeshAryal)
+-  **Developer:** Prabesh Aryal
+- **University:** Baku Engineering University
+- **Class:** 1202i, Computer Engineering Bsc
+- **Website:** [https://prabe.sh](https://prabe.sh)
+- **Email:** [hello@prabe.sh](mailto:hello@prabe.sh)
+- **GitHub:** [prabeshAryal](https://github.com/prabeshAryal)
 
 ## Features (Currently in UI & Controller Stage)
 
