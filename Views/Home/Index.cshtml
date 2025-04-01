@@ -1,0 +1,103 @@
+﻿<!-- Views/Home/Index.cshtml -->
+@{
+    ViewData["Title"] = "Home";
+
+    // Function to generate a random Picsum URL with a specific size and ID range
+    string GetRandomImageUrl(int width, int height)
+    {
+        Random random = new Random();
+        int randomId = random.Next(1, 1084); // Range to try and get different images
+        return $"https://picsum.photos/id/{randomId}/{width}/{height}";
+    }
+
+    // Define variables for random image URLs
+    string featuredArtistImageUrl = GetRandomImageUrl(600, 300); // Featured Artist image
+    string albumCoverImageUrl1 = GetRandomImageUrl(300, 300); // Album 1
+    string albumCoverImageUrl2 = GetRandomImageUrl(300, 300); // Album 2
+    string albumCoverImageUrl3 = GetRandomImageUrl(300, 300); // Album 3
+    string albumCoverImageUrl4 = GetRandomImageUrl(300, 300); // Album 4
+    string playlistCoverImageUrl1 = GetRandomImageUrl(400, 400); // Playlist 1
+    string playlistCoverImageUrl2 = GetRandomImageUrl(400, 400); // Playlist 2
+    string playlistCoverImageUrl3 = GetRandomImageUrl(400, 400); // Playlist 3
+}
+
+<div class="alert alert-info">
+    <h4>Home Page Purpose</h4>
+    <p>This is the main landing page of the Music App. It displays featured artists, popular albums, and recommended playlists.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Welcome to Music App</h2>
+                <p class="card-text">Your personal music experience platform that lets you discover, listen, and share your favorite music.</p>
+                <div class="d-grid gap-2 d-md-flex">
+                    <button class="btn btn-primary" onclick="location.href='/Albums'">Browse Music</button>
+                    <button class="btn btn-outline-secondary" onclick="location.href='/Profile'">Create Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-dark text-white shadow-sm mb-4">
+            <img src="@featuredArtistImageUrl" class="card-img" alt="Featured Artist">
+            <div class="card-img-overlay" style="background: rgba(0,0,0,0.5);">
+                <h5 class="card-title">Featured Artist of the Month</h5>
+                <p class="card-text">Discover new releases and highlights from our featured artists.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3 class="mt-4 mb-3">Popular Albums</h3>
+<div class="row row-cols-1 row-cols-md-4 g-4 mb-4">
+    @for (int i = 1; i <= 4; i++)
+    {
+        string albumCoverUrl = "";
+        if (i == 1) { albumCoverUrl = albumCoverImageUrl1; }
+        else if (i == 2) { albumCoverUrl = albumCoverImageUrl2; }
+        else if (i == 3) { albumCoverUrl = albumCoverImageUrl3; }
+        else if (i == 4) { albumCoverUrl = albumCoverImageUrl4; }
+
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <img src="@albumCoverUrl" class="card-img-top" alt="Album Cover">
+                <div class="card-body">
+                    <h5 class="card-title">Album Title @i</h5>
+                    <p class="card-text">Artist Name</p>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <small class="text-muted">Genre • @(2022 + i)</small>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<h3 class="mt-4 mb-3">Featured Playlists</h3>
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    @for (int i = 1; i <= 3; i++)
+    {
+        string playlistCoverUrl = "";
+        if (i == 1) { playlistCoverUrl = playlistCoverImageUrl1; }
+        else if (i == 2) { playlistCoverUrl = playlistCoverImageUrl2; }
+        else if (i == 3) { playlistCoverUrl = playlistCoverImageUrl3; }
+
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <img src="@playlistCoverUrl" class="card-img-top" alt="Playlist Cover">
+                <div class="card-body">
+                    <h5 class="card-title">Playlist Name @i</h5>
+                    <p class="card-text">A collection of songs curated for your enjoyment.</p>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <small class="text-muted">12 songs • 45 mins</small>
+                    <button class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-play-fill"></i> Play
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>

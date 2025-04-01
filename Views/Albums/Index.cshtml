@@ -1,0 +1,85 @@
+﻿@model IEnumerable<MusicApp.Models.Album>
+
+@{
+    ViewData["Title"] = "Albums";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Albums Library</h1>
+        <div>
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Search albums...">
+                <button class="btn btn-outline-primary" type="button">
+                    <i class="bi bi-search"></i> Search
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+        @foreach (var album in Model)
+        {
+            <div class="col">
+                <div class="card h-100 shadow-sm album-card">
+                    <img src="@(string.IsNullOrEmpty(album.CoverImageUrl) ? "/img/default-album.jpg" : album.CoverImageUrl)"
+                         class="card-img-top" alt="@album.Title">
+                    <div class="card-body">
+                        <h5 class="card-title text-truncate">@album.Title</h5>
+                        <p class="card-text text-muted">
+                            <span class="badge bg-secondary">@album.Genre</span>
+                            <small class="ms-2">@album.Year</small>
+                        </p>
+                    </div>
+                    <div class="card-footer bg-transparent border-top-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-action="Details" asp-route-id="@album.Id" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-music-note-list"></i> View Tracks
+                            </a>
+                            <button class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-play-circle"></i> Play
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- If no albums exist, show this message -->
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center my-5 p-5">
+            <i class="bi bi-disc fs-1 d-block mb-3"></i>
+            <h4>No albums found</h4>
+            <p class="mb-0">Start building your music collection by adding some albums.</p>
+        </div>
+    }
+
+    <!-- Pagination -->
+    <nav aria-label="Album pagination" class="my-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+            </li>
+            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item">
+                <a class="page-link" href="#">Next</a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<!-- CSS for album cards hover effect -->
+<style>
+    .album-card {
+        transition: all 0.3s;
+    }
+
+        .album-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06) !important;
+        }
+</style>

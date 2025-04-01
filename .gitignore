@@ -1,0 +1,27 @@
+# Ignore build outputs and system files
+bin/
+obj/
+*.user
+*.suo
+*.csproj.user
+*.vspscc
+.vs/
+packages/
+
+# OS Specific files
+.DS_Store
+Thumbs.db
+
+# Include the 'misc' folder and its contents
+!misc/
+
+# Include image files (common extensions) - this will include images even if they are within folders
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.webp
+*.tiff
+*.tif
+
+wwwroot/lib

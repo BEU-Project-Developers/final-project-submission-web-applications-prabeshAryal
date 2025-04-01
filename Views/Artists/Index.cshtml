@@ -1,0 +1,57 @@
+﻿<!-- Views/Artists/Index.cshtml -->
+@model List<MusicApp.Models.Artist>;
+@{
+    ViewData["Title"] = "Artists";
+}
+
+<div class="alert alert-info">
+    <h4>Artists Page Purpose</h4>
+    <p>This page displays a list of all artists available on the platform, allowing users to browse and discover new music.</p>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Artists</h1>
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-secondary active">All</button>
+        <button type="button" class="btn btn-outline-secondary">Popular</button>
+        <button type="button" class="btn btn-outline-secondary">New</button>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    @foreach (var artist in Model)  @* Iterate through the Model (List<Artist>) *@
+    {
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="position-relative">
+                    <img src="@artist.ImageUrl" class="card-img-top" alt="Artist Image"> @* Use artist.ImageUrl from the model *@
+                    <div class="position-absolute bottom-0 start-0 bg-dark bg-opacity-75 text-white p-2 w-100">
+                        <h5 class="mb-0">@artist.Name</h5> @* Use artist.Name from the model *@
+                        <small>@artist.Genre</small> @* Use artist.Genre from the model *@
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Discover the unique sounds and stories of our diverse artists.</p>
+                </div>
+                <div class="card-footer bg-transparent d-flex justify-content-between">
+                    <small class="text-muted">@artist.AlbumCount albums</small> @* Use artist.AlbumCount from the model *@
+                    <a href="/Artists/Details/@artist.Id" class="btn btn-sm btn-outline-primary">View Details</a> @* Use artist.Id for the link *@
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<nav aria-label="Artist pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item disabled">
+            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+        </li>
+        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+        <li class="page-item"><a class="page-link" href="#">2</a></li>
+        <li class="page-item"><a class="page-link" href="#">3</a></li>
+        <li class="page-item">
+            <a class="page-link" href="#">Next</a>
+        </li>
+    </ul>
+</nav>

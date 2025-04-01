@@ -1,0 +1,109 @@
+﻿<!-- Views/Artists/Details.cshtml -->
+@{
+    ViewData["Title"] = "Artist Details";
+    String cardImage = $"https://picsum.photos/id/{new Random().Next(1, 1000)}/1200/400";
+
+}
+
+<div class="alert alert-info">
+    <h4>Artist Details Page Purpose</h4>
+    <p>This page shows detailed information about a specific artist, including their biography, albums, and top songs.</p>
+</div>
+
+<div class="card bg-dark text-white mb-4">
+    <img src="@cardImage" class="card-img" alt="Artist Banner">
+    <div class="card-img-overlay" style="background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.8));">
+        <div class="container h-100 d-flex flex-column justify-content-end">
+            <h1 class="card-title">Artist Name</h1>
+            <p class="card-text">Genre: Rock • Albums: 8 • Monthly Listeners: 4.2M</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h3>Biography</h3>
+            </div>
+            <div class="card-body">
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris. Vivamus hendrerit arcu sed erat molestie vehicula.
+                    Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim.
+                </p>
+                <p>
+                    Suspendisse dictum feugiat nisl ut dapibus. Mauris iaculis porttitor posuere. Praesent id metus massa, ut blandit odio.
+                </p>
+                <div class="d-flex gap-2 mt-3">
+                    <a href="#" class="btn btn-outline-dark">
+                        <i class="bi bi-facebook"></i>
+                    </a>
+                    <a href="#" class="btn btn-outline-dark">
+                        <i class="bi bi-twitter"></i>
+                    </a>
+                    <a href="#" class="btn btn-outline-dark">
+                        <i class="bi bi-instagram"></i>
+                    </a>
+                    <a href="#" class="btn btn-outline-dark">
+                        <i class="bi bi-globe"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Top Songs</h3>
+                <button class="btn btn-primary">
+                    <i class="bi bi-play-fill"></i> Play All
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="me-3 text-muted">@i</span>
+                                    <span>Song Title @i</span>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="text-muted me-3">3:@(new Random().Next(10, 59))</span>
+                                    <button class="btn btn-sm btn-outline-secondary me-2">
+                                        <i class="bi bi-play-fill"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <h3>Albums</h3>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            @for (int i = 1; i <= 3; i++)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <img src="https://via.placeholder.com/300" class="card-img-top" alt="Album Cover">
+                        <div class="card-body">
+                            <h5 class="card-title">Album Title @i</h5>
+                            <p class="card-text"><small class="text-muted">Released: 202@(i) • 12 songs</small></p>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <button class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-play-fill"></i> Play
+                            </button>
+                            <a href="/Albums/Details/@i" class="btn btn-sm btn-link">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
