@@ -47,7 +47,7 @@ namespace MusicApp.Controllers
         CoverImageUrl = $"https://picsum.photos/id/{new Random().Next(1, 1084)}/400/400", // And one more!
         Genre = "Electronic"
     }
-    // You can easily add more sample albums following this pattern!
+    // We can easily add more sample albums following this pattern!
 };
 
             return View(albums);
