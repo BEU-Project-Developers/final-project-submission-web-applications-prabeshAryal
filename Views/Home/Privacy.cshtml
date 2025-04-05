@@ -1,56 +1,152 @@
-﻿<!-- Views/Home/Privacy.cshtml -->
-@{
+﻿@{
     ViewData["Title"] = "Privacy Policy";
+    // Theme variables (can be accessed via ViewData or CSS)
+    var ytmBgPrimary = "var(--ytm-bg-primary)";
+    var ytmBgSecondary = "var(--ytm-bg-secondary)";
+    var ytmBgTertiary = "var(--ytm-bg-tertiary)";
+    var ytmTextPrimary = "var(--ytm-text-primary)";
+    var ytmTextSecondary = "var(--ytm-text-secondary)";
+    var ytmAccentRed = "var(--ytm-accent-red)";
+    var ytmBorderColor = "var(--ytm-border-color)";
 }
 
-<div class="alert alert-info">
-    <h4>Privacy Page Purpose</h4>
-    <p>This page details the privacy policy of the Music App, explaining how user data is collected and used.</p>
+@* Add specific styles for this page (mostly reusing .details-section) *@
+<style>
+    /* Reusing details-section style from About/Artist Details */
+    .details-section {
+        background-color: var(--ytm-bg-secondary);
+        padding: 1.5rem 2rem; /* More padding */
+        border-radius: 12px; /* More rounded */
+        margin-bottom: 2rem;
+        border: 1px solid var(--ytm-border-color);
+    }
+
+        .details-section h1 {
+            color: var(--ytm-text-primary);
+            margin-bottom: 0.5rem; /* Less space below main title */
+            font-weight: 500;
+            font-size: 2rem; /* Slightly smaller main title */
+        }
+
+        .details-section .last-updated {
+            color: var(--ytm-text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 2rem; /* Space after date */
+            display: block;
+        }
+
+        .details-section h3 {
+            color: var(--ytm-text-primary);
+            margin-top: 2rem; /* Space above section headers */
+            margin-bottom: 1rem;
+            font-weight: 500;
+            font-size: 1.3rem;
+            border-bottom: 1px solid var(--ytm-border-color); /* Add separator line */
+            padding-bottom: 0.5rem;
+        }
+
+        .details-section p, .details-section li {
+            color: var(--ytm-text-secondary);
+            line-height: 1.7;
+            font-size: 1rem;
+            margin-bottom: 1rem; /* Space between paragraphs/list items */
+        }
+
+        .details-section ul {
+            list-style: disc; /* Use standard disc */
+            padding-left: 2rem; /* Indent list */
+            margin-bottom: 1.5rem; /* Space after list */
+        }
+
+        .details-section a {
+            color: var(--ytm-accent-red); /* Use accent for links */
+            text-decoration: none;
+        }
+
+            .details-section a:hover {
+                text-decoration: underline;
+            }
+
+    /* Responsive adjustments */
+    @@media (max-width: 767px) {
+        .details-section {
+            padding: 1rem 1.5rem;
+        }
+
+            .details-section h1 {
+                font-size: 1.75rem;
+            }
+
+            .details-section h3 {
+                font-size: 1.15rem;
+            }
+    }
+</style>
+
+@* Use the themed section style for the main content *@
+<div class="details-section">
+    <h1>Privacy Policy</h1>
+    <p class="last-updated">Last updated: @DateTime.Now.ToString("MMMM d, yyyy")</p> @* Use current date *@
+
+    <p>
+        Welcome to Music App. This Privacy Policy explains how we collect, use, and protect information in relation to our web application services. Your privacy is important to us. This policy applies to all users of the Music App.
+    </p>
+
+    <h3>Information We Collect</h3>
+    <p>
+        We collect information necessary to provide and improve our services. As this is currently a project focused on UI and structure, actual data collection might be minimal or simulated. In a full implementation, the types of personal information we might collect could include:
+    </p>
+    <ul>
+        <li><strong>Account Information:</strong> If user accounts are implemented, this could include your name, email address, and password (securely hashed).</li>
+        <li><strong>Usage Data:</strong> Information about how you interact with the app, such as listening history, created playlists, liked songs, and artists you follow (if these features are implemented).</li>
+        <li><strong>Technical Data:</strong> Information automatically collected when you use the app, such as IP address, browser type, operating system, and device identifiers. This helps us troubleshoot and improve performance.</li>
+        @*<li><strong>Cookies:</strong> We may use cookies and similar tracking technologies to enhance your experience, remember your preferences, and analyze usage patterns.</li>*@
+    </ul>
+
+    <h3>How We Use Your Information</h3>
+    <p>
+        The information collected would be used for purposes such as:
+    </p>
+    <ul>
+        <li>Providing, operating, and maintaining the Music App service.</li>
+        <li>Improving, personalizing, and expanding our service (e.g., providing music recommendations based on listening history).</li>
+        <li>Understanding and analyzing how you use our service to enhance user experience.</li>
+        <li>Developing new features, products, and functionality (based on aggregate usage patterns).</li>
+        <li>Communicating with you, potentially for customer service, updates, or informational purposes (if contact information is collected).</li>
+        <li>Detecting and preventing fraud or security issues.</li>
+    </ul>
+
+    <h3>Information Sharing</h3>
+    <p>
+        As this is primarily a student project, your personal information is not actively shared with external third parties for commercial purposes. In a real-world scenario, we would not share your personal information except in limited circumstances:
+    </p>
+    <ul>
+        <li><strong>With Your Consent:</strong> We would share information if we have your explicit consent to do so.</li>
+        <li><strong>For Legal Reasons:</strong> If required by law, regulation, legal process, or governmental request.</li>
+        <li><strong>Service Providers:</strong> With trusted third-party vendors working on our behalf (e.g., hosting providers), under strict confidentiality agreements. (Not applicable to current project state).</li>
+        @*<li><strong>Aggregated Data:</strong> We might share aggregated or de-identified information that cannot reasonably be used to identify you.</li>*@
+    </ul>
+    <p>
+        Currently, data might only be visible to the developer (Prabesh Aryal) and the course instructor (Vugar Cebiyev) for academic evaluation purposes.
+    </p>
+
+    <h3>Data Security</h3>
+    <p>
+        We implement reasonable security measures to protect the information we handle. However, please remember that no method of transmission over the Internet or electronic storage is 100% secure. While we strive to use commercially acceptable means to protect potential future data, we cannot guarantee its absolute security. In the current project state, sensitive data collection is minimal.
+    </p>
+
+    @*<h3>Your Choices</h3>*@
+    @*<p>Depending on future features, you might have choices regarding your information, such as accessing, updating, or deleting your account data.</p>*@
+
+    <h3>Changes to This Policy</h3>
+    <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date.</p>
+
+    <h3>Contact Us</h3>
+    <p>
+        If you have any questions about this Privacy Policy, please contact the developer:
+        <br />
+        Prabesh Aryal - <a href="mailto:hello@prabe.sh">hello@prabe.sh</a>
+    </p>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <h1>Privacy Policy</h1>
-        <p>Last updated: April 1, 2025</p>
-
-        <h3 class="mt-4">Information We Collect</h3>
-        <p>
-            We collect information to provide better services to our users. The types of personal information we collect include:
-        </p>
-        <ul>
-            <li>Account information (name, email, password)</li>
-            <li>Usage data (listening history, playlists)</li>
-            <li>Device information (IP address, browser type)</li>
-        </ul>
-
-        <h3 class="mt-4">How We Use Your Information</h3>
-        <p>
-            We use the information we collect to provide, maintain, and improve our services, including:
-        </p>
-        <ul>
-            <li>Providing personalized music recommendations</li>
-            <li>Improving user experience</li>
-            <li>Communicating with you about updates and new features</li>
-        </ul>
-
-        <h3 class="mt-4">Information Sharing</h3>
-        <p>
-            We do not share your personal information with companies, organizations, or individuals outside of Music App except in the following cases:
-        </p>
-        <ul>
-            <li>With your consent</li>
-            <li>For legal reasons</li>
-            <li>With trusted partners who work on our behalf</li>
-        </ul>
-
-        <h3 class="mt-4">Data Security</h3>
-        <p>
-            We work hard to protect our users from unauthorized access, alteration, disclosure, or destruction of information we hold.
-        </p>
-
-        <h3 class="mt-4">Contact Us</h3>
-        <p>
-            If you have any questions about this Privacy Policy, please contact us at:
-            <a href="mailto:privacy@musicapp.example">privacy@musicapp.example</a>
-        </p>
-    </div>
+@* Removed the initial alert box *@

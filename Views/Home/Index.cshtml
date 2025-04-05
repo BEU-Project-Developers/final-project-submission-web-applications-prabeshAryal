@@ -1,101 +1,433 @@
-﻿<!-- Views/Home/Index.cshtml -->
-@{
+﻿@{
     ViewData["Title"] = "Home";
 
-    // Function to generate a random Picsum URL with a specific size and ID range
+    // Theme variables
+    var ytmBgPrimary = "var(--ytm-bg-primary)";
+    var ytmBgSecondary = "var(--ytm-bg-secondary)";
+    var ytmBgTertiary = "var(--ytm-bg-tertiary)";
+    var ytmTextPrimary = "var(--ytm-text-primary)";
+    var ytmTextSecondary = "var(--ytm-text-secondary)";
+    var ytmAccentRed = "var(--ytm-accent-red)";
+    var ytmBorderColor = "var(--ytm-border-color)";
+
+    // Random Image Generation
+    Random randomGen = new Random();
     string GetRandomImageUrl(int width, int height)
     {
-        Random random = new Random();
-        int randomId = random.Next(1, 1084); // Range to try and get different images
+        int randomId = randomGen.Next(1, 500);
         return $"https://picsum.photos/id/{randomId}/{width}/{height}";
     }
 
-    // Define variables for random image URLs
-    string featuredArtistImageUrl = GetRandomImageUrl(600, 300); // Featured Artist image
-    string albumCoverImageUrl1 = GetRandomImageUrl(300, 300); // Album 1
-    string albumCoverImageUrl2 = GetRandomImageUrl(300, 300); // Album 2
-    string albumCoverImageUrl3 = GetRandomImageUrl(300, 300); // Album 3
-    string albumCoverImageUrl4 = GetRandomImageUrl(300, 300); // Album 4
-    string playlistCoverImageUrl1 = GetRandomImageUrl(400, 400); // Playlist 1
-    string playlistCoverImageUrl2 = GetRandomImageUrl(400, 400); // Playlist 2
-    string playlistCoverImageUrl3 = GetRandomImageUrl(400, 400); // Playlist 3
+    // Image URLs
+    string featuredArtistImageUrl = GetRandomImageUrl(600, 300);
+    // Request square images for circular display
+    string albumCoverImageUrl1 = GetRandomImageUrl(300, 300);
+    string albumCoverImageUrl2 = GetRandomImageUrl(300, 300);
+    string albumCoverImageUrl3 = GetRandomImageUrl(300, 300);
+    string albumCoverImageUrl4 = GetRandomImageUrl(300, 300);
+    string playlistCoverImageUrl1 = GetRandomImageUrl(300, 300);
+    string playlistCoverImageUrl2 = GetRandomImageUrl(300, 300);
+    string playlistCoverImageUrl3 = GetRandomImageUrl(300, 300);
+
+    // Placeholder URLs
+    string defaultAlbumUrl = $"https://placehold.co/300x300/{ytmBgTertiary.ToString().TrimStart('#')}/{ytmTextSecondary.ToString().TrimStart('#')}?text=Album";
+    string defaultPlaylistUrl = $"https://placehold.co/300x300/{ytmBgTertiary.ToString().TrimStart('#')}/{ytmTextSecondary.ToString().TrimStart('#')}?text=Playlist";
+    string defaultFeaturedUrl = $"https://placehold.co/600x300/{ytmBgTertiary.ToString().TrimStart('#')}/{ytmTextSecondary.ToString().TrimStart('#')}?text=Featured";
 }
 
-<div class="alert alert-info">
-    <h4>Home Page Purpose</h4>
-    <p>This is the main landing page of the Music App. It displays featured artists, popular albums, and recommended playlists.</p>
-</div>
+@* Add specific styles for this page *@
+<style>
+    /* Section Header */
+    .section-header {
+        color: var(--ytm-text-primary);
+        font-weight: 500;
+        font-size: 1.5rem;
+        margin-top: 2.5rem;
+        margin-bottom: 1.5rem;
+    }
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                <h2 class="card-title">Welcome to Music App</h2>
-                <p class="card-text">Your personal music experience platform that lets you discover, listen, and share your favorite music.</p>
-                <div class="d-grid gap-2 d-md-flex">
-                    <button class="btn btn-primary" onclick="location.href='/Albums'">Browse Music</button>
-                    <button class="btn btn-outline-secondary" onclick="location.href='/Profile'">Create Account</button>
-                </div>
+    /* Welcome Section */
+    .welcome-section {
+        background-color: var(--ytm-bg-secondary);
+        padding: 2rem;
+        border-radius: 12px;
+        border: 1px solid var(--ytm-border-color);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
+    }
+
+        .welcome-section h2 {
+            color: var(--ytm-text-primary);
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+        }
+
+        .welcome-section p {
+            color: var(--ytm-text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .welcome-section .btn-browse {
+            background-color: var(--ytm-accent-red);
+            color: var(--ytm-text-primary);
+            border: none;
+            border-radius: 20px;
+            padding: 0.5rem 1.3rem;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+
+            .welcome-section .btn-browse:hover {
+                background-color: #cc0000;
+                color: var(--ytm-text-primary);
+            }
+
+        .welcome-section .btn-account {
+            background-color: var(--ytm-bg-tertiary);
+            color: var(--ytm-text-primary);
+            border: 1px solid var(--ytm-border-color);
+            border-radius: 20px;
+            padding: 0.5rem 1.3rem;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+
+            .welcome-section .btn-account:hover {
+                background-color: var(--ytm-border-color);
+                border-color: var(--ytm-border-color);
+            }
+
+    /* Featured Artist Banner */
+    .featured-artist-banner {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        height: 100%;
+        min-height: 250px;
+        background-color: var(--ytm-bg-tertiary);
+    }
+
+        .featured-artist-banner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .featured-artist-banner .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 60%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 1.5rem;
+        }
+
+        .featured-artist-banner h5 {
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--ytm-text-primary);
+            margin-bottom: 0.25rem;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+        }
+
+        .featured-artist-banner p {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+            margin-bottom: 0;
+        }
+
+    /* --- NEW Album Card Styling (Circular Image) --- */
+    .album-grid-item-circular {
+        text-align: center; /* Center align content */
+        padding: 1rem; /* Padding around content */
+        margin-bottom: 1.5rem;
+        position: relative;
+        border-radius: 8px;
+        transition: background-color 0.2s ease-in-out;
+        /* Transparent background, hover adds color */
+    }
+
+        .album-grid-item-circular:hover {
+            background-color: var(--ytm-bg-secondary);
+        }
+
+    .album-image-wrapper { /* Circular container for image */
+        width: 150px; /* Adjust size as needed */
+        height: 150px;
+        margin: 0 auto 1rem auto; /* Center wrapper, space below */
+        position: relative;
+        overflow: hidden;
+        border-radius: 50%; /* Make it circular */
+        background-color: var(--ytm-bg-tertiary); /* BG for loading/fallback */
+    }
+
+    .album-image-circular { /* The actual image */
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Cover the circle */
+        transition: transform 0.3s ease;
+    }
+
+    .album-grid-item-circular:hover .album-image-circular {
+        transform: scale(1.05); /* Zoom effect */
+    }
+
+    .album-info-circular { /* Text below image */
+        padding: 0; /* No extra padding needed */
+    }
+
+    .album-title-circular { /* Centered text */
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--ytm-text-primary);
+        margin-bottom: 0.1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .album-details-circular { /* Centered text */
+        font-size: 0.8rem;
+        color: var(--ytm-text-secondary);
+    }
+
+    .album-link-circular { /* Link covers the whole item */
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1;
+    }
+
+    .album-play-overlay-circular { /* Play button over circular image */
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0; /* Cover wrapper */
+        background-color: rgba(0, 0, 0, 0.5); /* Dark overlay */
+        border-radius: 50%; /* Match wrapper shape */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .album-grid-item-circular:hover .album-play-overlay-circular {
+        opacity: 1;
+    }
+
+    .album-play-icon-circular {
+        color: white;
+        font-size: 2.5rem;
+    }
+
+
+    /* --- Playlist Card Styling (Refined Box Shape) --- */
+    .playlist-grid-item {
+        text-align: left;
+        margin-bottom: 1.5rem;
+        position: relative;
+        border-radius: 8px;
+        transition: background-color 0.2s ease-in-out;
+        background-color: var(--ytm-bg-secondary);
+        overflow: hidden;
+        border: 1px solid var(--ytm-border-color); /* Add border for box feel */
+    }
+
+        .playlist-grid-item:hover {
+            background-color: var(--ytm-bg-tertiary);
+            border-color: var(--ytm-bg-tertiary); /* Blend border on hover */
+        }
+
+    .playlist-image {
+        display: block;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px; /* Keep top corners rounded */
+        border-bottom: 1px solid var(--ytm-border-color); /* Separator line */
+        transition: transform 0.3s ease;
+        background-color: var(--ytm-bg-tertiary);
+    }
+
+    .playlist-grid-item:hover .playlist-image {
+        transform: scale(1.03);
+    }
+
+    .playlist-info {
+        padding: 0.75rem 1rem;
+    }
+
+    .playlist-title {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--ytm-text-primary);
+        margin-bottom: 0.1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .playlist-details {
+        font-size: 0.8rem;
+        color: var(--ytm-text-secondary);
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        min-height: 2.4em;
+    }
+
+    .playlist-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1;
+    }
+
+    .playlist-play-overlay { /* Keep this overlay as is */
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        background-color: var(--ytm-accent-red);
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .playlist-grid-item:hover .playlist-play-overlay {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .playlist-play-icon {
+        color: white;
+        font-size: 1.5rem;
+        margin-left: 2px;
+    }
+
+</style>
+
+@* Welcome & Featured Artist Row *@
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4 mb-lg-0">
+        <div class="welcome-section">
+            <h2>Welcome to Music App</h2>
+            <p>Your personal music hub. Discover, listen, and share your favorite tunes.</p>
+            <div class="d-grid gap-2 d-sm-flex">
+                <button class="btn btn-browse" onclick="location.href='@Url.Action("Index", "Albums")'">
+                    <i class="bi bi-disc-fill me-1"></i> Browse Music
+                </button>
+                <button class="btn btn-account" onclick="location.href='@Url.Action("Index", "Profile")'">
+                    <i class="bi bi-person-plus-fill me-1"></i> Create Account
+                </button>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card bg-dark text-white shadow-sm mb-4">
-            <img src="@featuredArtistImageUrl" class="card-img" alt="Featured Artist">
-            <div class="card-img-overlay" style="background: rgba(0,0,0,0.5);">
-                <h5 class="card-title">Featured Artist of the Month</h5>
-                <p class="card-text">Discover new releases and highlights from our featured artists.</p>
+    <div class="col-lg-6">
+        <div class="featured-artist-banner">
+            <img src="@featuredArtistImageUrl" alt="Featured Artist"
+                 onerror="this.onerror=null; this.src='@defaultFeaturedUrl';">
+            <div class="overlay">
+                <h5>Featured Artist</h5>
+                <p>Check out the latest tracks and curated picks.</p>
             </div>
         </div>
     </div>
 </div>
 
-<h3 class="mt-4 mb-3">Popular Albums</h3>
-<div class="row row-cols-1 row-cols-md-4 g-4 mb-4">
+@* Popular Albums Section (Circular Images) *@
+<h3 class="section-header">Popular Albums</h3>
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4 mb-4">
     @for (int i = 1; i <= 4; i++)
     {
-        string albumCoverUrl = "";
-        if (i == 1) { albumCoverUrl = albumCoverImageUrl1; }
-        else if (i == 2) { albumCoverUrl = albumCoverImageUrl2; }
-        else if (i == 3) { albumCoverUrl = albumCoverImageUrl3; }
-        else if (i == 4) { albumCoverUrl = albumCoverImageUrl4; }
+        string albumCoverUrl = i switch
+        {
+            1 => albumCoverImageUrl1,
+            2 => albumCoverImageUrl2,
+            3 => albumCoverImageUrl3,
+            4 => albumCoverImageUrl4,
+            _ => defaultAlbumUrl
+        };
 
         <div class="col">
-            <div class="card h-100 shadow-sm">
-                <img src="@albumCoverUrl" class="card-img-top" alt="Album Cover">
-                <div class="card-body">
-                    <h5 class="card-title">Album Title @i</h5>
-                    <p class="card-text">Artist Name</p>
+            @* Use new circular item structure *@
+            <div class="album-grid-item-circular">
+                <a href="/Albums/Details/@i" class="album-link-circular" aria-label="View details for Album Title @i"></a>
+                <div class="album-image-wrapper">
+                    <img src="@albumCoverUrl" class="album-image-circular" alt="Album Cover @i"
+                         onerror="this.onerror=null; this.src='@defaultAlbumUrl';">
+                    <div class="album-play-overlay-circular">
+                        <i class="bi bi-play-fill album-play-icon-circular"></i>
+                    </div>
                 </div>
-                <div class="card-footer bg-transparent">
-                    <small class="text-muted">Genre • @(2022 + i)</small>
+                <div class="album-info-circular">
+                    <div class="album-title-circular" title="Album Title @i">Album Title @i</div>
+                    <div class="album-details-circular">Artist Name</div> @* Placeholder artist *@
                 </div>
             </div>
         </div>
     }
 </div>
 
-<h3 class="mt-4 mb-3">Featured Playlists</h3>
-<div class="row row-cols-1 row-cols-md-3 g-4">
+@* Featured Playlists Section (Box/Folder Shape) *@
+<h3 class="section-header">Featured Playlists</h3>
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4">
     @for (int i = 1; i <= 3; i++)
     {
-        string playlistCoverUrl = "";
-        if (i == 1) { playlistCoverUrl = playlistCoverImageUrl1; }
-        else if (i == 2) { playlistCoverUrl = playlistCoverImageUrl2; }
-        else if (i == 3) { playlistCoverUrl = playlistCoverImageUrl3; }
+        string playlistCoverUrl = i switch
+        {
+            1 => playlistCoverImageUrl1,
+            2 => playlistCoverImageUrl2,
+            3 => playlistCoverImageUrl3,
+            _ => defaultPlaylistUrl
+        };
 
         <div class="col">
-            <div class="card h-100 shadow-sm">
-                <img src="@playlistCoverUrl" class="card-img-top" alt="Playlist Cover">
-                <div class="card-body">
-                    <h5 class="card-title">Playlist Name @i</h5>
-                    <p class="card-text">A collection of songs curated for your enjoyment.</p>
+            @* Use existing playlist item structure (styles updated) *@
+            <div class="playlist-grid-item">
+                <a href="/Playlists/Details/@i" class="playlist-link" aria-label="View details for Playlist Name @i"></a>
+                <img src="@playlistCoverUrl" class="playlist-image" alt="Playlist Cover @i"
+                     onerror="this.onerror=null; this.src='@defaultPlaylistUrl';">
+                <div class="playlist-info">
+                    <div class="playlist-title" title="Playlist Name @i">Playlist Name @i</div>
+                    <div class="playlist-details">Curated tracks for your mood.</div>
                 </div>
-                <div class="card-footer d-flex justify-content-between align-items-center">
-                    <small class="text-muted">12 songs • 45 mins</small>
-                    <button class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-play-fill"></i> Play
-                    </button>
+                <div class="playlist-play-overlay">
+                    <i class="bi bi-play-fill playlist-play-icon"></i>
                 </div>
             </div>
         </div>

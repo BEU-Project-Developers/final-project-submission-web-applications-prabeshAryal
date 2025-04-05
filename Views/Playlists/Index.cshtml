@@ -2,149 +2,459 @@
 
 @{
     ViewData["Title"] = "Playlists";
+    // Theme variables
+    var ytmBgPrimary = "var(--ytm-bg-primary)";
+    var ytmBgSecondary = "var(--ytm-bg-secondary)";
+    var ytmBgTertiary = "var(--ytm-bg-tertiary)";
+    var ytmTextPrimary = "var(--ytm-text-primary)";
+    var ytmTextSecondary = "var(--ytm-text-secondary)";
+    var ytmAccentRed = "var(--ytm-accent-red)";
+    var ytmBorderColor = "var(--ytm-border-color)";
+    // Default image placeholder URL using theme colors
+    var defaultPlaylistImageUrl = $"https://placehold.co/300x300/{ytmBgTertiary.ToString().TrimStart('#')}/{ytmTextSecondary.ToString().TrimStart('#')}?text=Playlist";
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Your Playlists</h1>
-        <a asp-action="Create" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Create New Playlist
-        </a>
-    </div>
+@* Add specific styles for this page *@
+<style>
+    .page-header {
+        display: flex;
+        flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        gap: 1rem; /* Add gap between title and button */
+    }
 
-    <div class="row">
-        <!-- Featured Playlists Section -->
-        <div class="col-12 mb-4">
-            <div class="card bg-dark text-white">
-                <div class="card-header">
-                    <h4 class="mb-0">Featured Playlists</h4>
+        .page-header h1 {
+            margin-bottom: 0;
+            color: var(--ytm-text-primary);
+        }
+
+    /* Create Playlist Button */
+    .btn-create-playlist {
+        background-color: var(--ytm-accent-red);
+        color: var(--ytm-text-primary);
+        border: none;
+        border-radius: 20px; /* Pill shape */
+        padding: 0.5rem 1.3rem; /* Slightly larger */
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem; /* Space between icon and text */
+        transition: background-color 0.2s ease;
+    }
+
+        .btn-create-playlist:hover {
+            background-color: #cc0000; /* Darker red */
+            color: var(--ytm-text-primary);
+        }
+
+    /* Section Styling */
+    .section-container {
+        background-color: var(--ytm-bg-secondary);
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        border: 1px solid var(--ytm-border-color);
+    }
+
+        .section-container h4 { /* Header within section */
+            color: var(--ytm-text-primary);
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+
+    /* Playlist Card Styling (similar to album) */
+    .playlist-grid-item {
+        text-align: left;
+        margin-bottom: 1.5rem;
+        position: relative;
+        border-radius: 8px;
+        transition: background-color 0.2s ease-in-out;
+        background-color: var(--ytm-bg-secondary); /* Use secondary for card bg */
+        overflow: hidden;
+    }
+
+        .playlist-grid-item:hover {
+            background-color: var(--ytm-bg-tertiary);
+        }
+
+    .playlist-image {
+        display: block;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+        transition: transform 0.3s ease;
+        background-color: var(--ytm-bg-tertiary);
+    }
+
+    .playlist-grid-item:hover .playlist-image {
+        transform: scale(1.03);
+    }
+
+    .playlist-info {
+        padding: 0.75rem 1rem;
+    }
+
+    .playlist-title {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--ytm-text-primary);
+        margin-bottom: 0.1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .playlist-details { /* For description or song count */
+        font-size: 0.8rem;
+        color: var(--ytm-text-secondary);
+        /* Ensure description doesn't overflow */
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* Limit to 2 lines */
+        -webkit-box-orient: vertical;
+        min-height: 2.4em; /* Approx height for 2 lines */
+    }
+
+    .playlist-link { /* Link covering the whole card */
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1;
+    }
+
+    /* Play button overlay on hover */
+    .playlist-play-overlay {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        background-color: var(--ytm-accent-red);
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .playlist-grid-item:hover .playlist-play-overlay {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .playlist-play-icon {
+        color: white;
+        font-size: 1.5rem;
+        margin-left: 2px;
+    }
+
+    /* Themed Tabs */
+    .themed-tabs .nav-tabs {
+        border-bottom: 1px solid var(--ytm-border-color);
+        margin-bottom: 1.5rem; /* Space below tabs */
+    }
+
+    .themed-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent; /* Space for active indicator */
+        color: var(--ytm-text-secondary);
+        padding: 0.5rem 1rem;
+        margin-bottom: -1px; /* Overlap border */
+        font-weight: 500;
+        transition: color 0.2s ease, border-color 0.2s ease;
+    }
+
+        .themed-tabs .nav-link:hover {
+            color: var(--ytm-text-primary);
+            border-bottom-color: var(--ytm-bg-tertiary); /* Subtle hover indicator */
+        }
+
+        .themed-tabs .nav-link.active {
+            color: var(--ytm-text-primary);
+            background-color: transparent; /* No background */
+            border-bottom-color: var(--ytm-accent-red); /* Active indicator */
+        }
+
+    /* Themed Table */
+    .themed-table {
+        color: var(--ytm-text-primary);
+        border-color: var(--ytm-border-color); /* For outer border if needed */
+        margin-bottom: 0; /* Remove default margin */
+    }
+
+        .themed-table thead th {
+            background-color: transparent; /* No header background */
+            border-bottom: 1px solid var(--ytm-border-color);
+            color: var(--ytm-text-secondary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase; /* Optional: uppercase headers */
+            padding: 0.75rem 1rem;
+        }
+
+        .themed-table tbody tr {
+            border-color: var(--ytm-border-color);
+            transition: background-color 0.15s ease-in-out;
+        }
+
+            .themed-table tbody tr:hover {
+                background-color: var(--ytm-bg-tertiary);
+                color: var(--ytm-text-primary);
+            }
+
+        .themed-table tbody td {
+            border-top: 1px solid var(--ytm-border-color);
+            padding: 0.75rem 1rem;
+            vertical-align: middle;
+        }
+
+            .themed-table tbody td .playlist-name-in-table {
+                font-weight: 500;
+                color: var(--ytm-text-primary);
+                display: block; /* Ensure it takes full width for ellipsis */
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 250px; /* Adjust max-width as needed */
+            }
+
+            .themed-table tbody td .playlist-desc-in-table {
+                font-size: 0.85rem;
+                color: var(--ytm-text-secondary);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 250px; /* Adjust max-width as needed */
+            }
+
+        .themed-table .playlist-cover-in-table {
+            width: 40px; /* Smaller image in table */
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px; /* Slightly rounded */
+            background-color: var(--ytm-bg-tertiary);
+        }
+
+        /* Table Action Buttons */
+        .themed-table .btn-group .btn {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.9rem;
+            border-color: var(--ytm-border-color);
+            color: var(--ytm-text-secondary);
+        }
+
+            .themed-table .btn-group .btn:hover {
+                background-color: var(--ytm-bg-tertiary);
+                color: var(--ytm-text-primary);
+            }
+
+        .themed-table .btn-group .btn-play { /* Specific style for play */
+            color: var(--ytm-accent-red);
+            border-color: var(--ytm-accent-red);
+        }
+
+            .themed-table .btn-group .btn-play:hover {
+                background-color: rgba(255, 0, 0, 0.1); /* Reddish hover */
+            }
+
+        .themed-table .btn-group .btn-delete:hover {
+            color: var(--ytm-accent-red); /* Red hover for delete */
+            background-color: rgba(255, 0, 0, 0.1);
+            border-color: rgba(255, 0, 0, 0.1);
+        }
+
+        /* Badges in table */
+        .themed-table .badge {
+            font-size: 0.75rem;
+            padding: 0.3em 0.6em;
+            font-weight: 500;
+        }
+
+        .themed-table .bg-success { /* Customizing success badge */
+            background-color: rgba(25, 135, 84, 0.2) !important;
+            color: #198754 !important;
+        }
+
+        .themed-table .bg-secondary { /* Customizing secondary badge */
+            background-color: var(--ytm-bg-tertiary) !important;
+            color: var(--ytm-text-secondary) !important;
+        }
+
+    /* No Playlists Message */
+    .no-playlists-alert {
+        background-color: transparent; /* No background needed if table is empty */
+        color: var(--ytm-text-secondary);
+        text-align: center;
+        padding: 3rem;
+    }
+
+        .no-playlists-alert i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .no-playlists-alert h4 {
+            color: var(--ytm-text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+</style>
+
+@* Header: Title and Create Button *@
+<div class="page-header">
+    <h1>Your Playlists</h1>
+    <a asp-action="Create" class="btn btn-create-playlist">
+        <i class="bi bi-plus-circle-fill"></i> Create Playlist
+    </a>
+</div>
+
+@* Featured Playlists Section (Only show if there are public playlists) *@
+@{
+    var featuredPlaylists = Model?.Where(p => p.IsPublic).Take(4).ToList();
+}
+@if (featuredPlaylists != null && featuredPlaylists.Any())
+{
+    <div class="section-container">
+        <h4>Featured Playlists</h4>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+            @foreach (var playlist in featuredPlaylists)
+            {
+                <div class="col">
+                    <div class="playlist-grid-item">
+                        <a asp-action="Details" asp-route-id="@playlist.Id" class="playlist-link" aria-label="View details for @playlist.Name"></a>
+                        <img src="@(string.IsNullOrEmpty(playlist.CoverImageUrl) ? defaultPlaylistImageUrl : playlist.CoverImageUrl)"
+                             class="playlist-image" alt="@playlist.Name"
+                             onerror="this.onerror=null; this.src='@defaultPlaylistImageUrl';">
+                        <div class="playlist-info">
+                            <div class="playlist-title" title="@playlist.Name">@playlist.Name</div>
+                            <div class="playlist-details">
+                                @(playlist.SongIds?.Count ?? 0) songs
+                                @* Or show description: @playlist.Description *@
+                            </div>
+                        </div>
+                        <div class="playlist-play-overlay">
+                            <i class="bi bi-play-fill playlist-play-icon"></i>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body pb-0">
-                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 pb-3">
-                        @foreach (var playlist in Model.Where(p => p.IsPublic).Take(4))
-                        {
-                            <div class="col">
-                                <div class="card h-100 bg-dark border-secondary playlist-card">
-                                    <img src="@(string.IsNullOrEmpty(playlist.CoverImageUrl) ? "/img/default-playlist.jpg" : playlist.CoverImageUrl)"
-                                         class="card-img-top" alt="@playlist.Name">
-                                    <div class="card-body text-white">
-                                        <h5 class="card-title">@playlist.Name</h5>
-                                        <p class="card-text small">@playlist.Description</p>
-                                    </div>
-                                    <div class="card-footer bg-transparent border-top-0">
-                                        <div class="d-flex justify-content-between">
-                                            <span class="text-muted">@playlist.SongIds.Count songs</span>
-                                            <button class="btn btn-sm btn-success rounded-circle">
+            }
+        </div>
+    </div>
+}
+
+
+@* All Playlists Section (Tabs & Table) *@
+<div class="section-container themed-tabs">
+    <ul class="nav nav-tabs" id="playlistTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            @* Add JS later to handle tab clicks and filter the table *@
+            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-tab-pane" type="button" role="tab" aria-controls="all-tab-pane" aria-selected="true">All Playlists</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="public-tab" data-bs-toggle="tab" data-bs-target="#public-tab-pane" type="button" role="tab" aria-controls="public-tab-pane" aria-selected="false">Public</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="private-tab" data-bs-toggle="tab" data-bs-target="#private-tab-pane" type="button" role="tab" aria-controls="private-tab-pane" aria-selected="false">Private</button>
+        </li>
+    </ul>
+    <div class="tab-content" id="playlistTabsContent">
+        @* This example puts all playlists in the 'All' tab pane. Real filtering needs JS or separate partial views. *@
+        <div class="tab-pane fade show active" id="all-tab-pane" role="tabpanel" aria-labelledby="all-tab" tabindex="0">
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table themed-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">#</th>
+                                <th style="width: 40%;">Playlist</th>
+                                <th style="width: 15%;">Tracks</th>
+                                <th style="width: 15%;">Privacy</th>
+                                <th style="width: 25%;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int counter = 1;
+                            }
+                            @foreach (var playlist in Model)
+                            {
+                                <tr>
+                                    <td>@(counter++)</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="@(string.IsNullOrEmpty(playlist.CoverImageUrl) ? defaultPlaylistImageUrl : playlist.CoverImageUrl)"
+                                                 class="playlist-cover-in-table me-3" alt="@playlist.Name"
+                                                 onerror="this.onerror=null; this.src='@defaultPlaylistImageUrl';">
+                                            <div>
+                                                <a asp-action="Details" asp-route-id="@playlist.Id" class="playlist-name-in-table text-decoration-none">@playlist.Name</a>
+                                                <small class="playlist-desc-in-table">@(playlist.Description?.Length > 40 ? playlist.Description.Substring(0, 40) + "..." : playlist.Description)</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@(playlist.SongIds?.Count ?? 0)</td>
+                                    <td>
+                                        @if (playlist.IsPublic)
+                                        {
+                                            <span class="badge bg-success">Public</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Private</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group" aria-label="Playlist Actions">
+                                            <button type="button" class="btn btn-sm btn-play" title="Play">
                                                 <i class="bi bi-play-fill"></i>
                                             </button>
+                                            <a asp-action="Edit" asp-route-id="@playlist.Id" class="btn btn-sm" title="Edit">
+                                                <i class="bi bi-pencil-fill"></i>
+                                            </a>
+                                            @* Add confirmation JS before deleting *@
+                                            <button type="button" class="btn btn-sm btn-delete" title="Delete">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- All Playlists -->
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <ul class="nav nav-tabs card-header-tabs">
-                        <li class="nav-item">
-                            <a class="nav-link active" aria-current="true" href="#">All Playlists</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">Public</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">Private</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th width="50">#</th>
-                                    <th>Playlist</th>
-                                    <th>Tracks</th>
-                                    <th>Privacy</th>
-                                    <th width="150">Actions</th>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var playlist in Model)
-                                {
-                                    <tr>
-                                        <td>@playlist.Id</td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <img src="@(string.IsNullOrEmpty(playlist.CoverImageUrl) ? "/img/default-playlist.jpg" : playlist.CoverImageUrl)"
-                                                     width="50" height="50" class="rounded me-3" alt="@playlist.Name">
-                                                <div>
-                                                    <h6 class="mb-0">@playlist.Name</h6>
-                                                    <small class="text-muted">@(playlist.Description?.Length > 50 ? playlist.Description.Substring(0, 50) + "..." : playlist.Description)</small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>@playlist.SongIds.Count</td>
-                                        <td>
-                                            @if (playlist.IsPublic)
-                                            {
-                                                <span class="badge bg-success">Public</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-secondary">Private</span>
-                                            }
-                                        </td>
-                                        <td>
-                                            <div class="btn-group">
-                                                <button class="btn btn-sm btn-success">
-                                                    <i class="bi bi-play-fill"></i>
-                                                </button>
-                                                <a asp-action="Edit" asp-route-id="@playlist.Id" class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
-                                                <button type="button" class="btn btn-sm btn-outline-danger">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- If no playlists exist, show this message -->
-                    @if (!Model.Any())
-                    {
-                        <div class="text-center my-5 py-5">
-                            <i class="bi bi-music-note-list fs-1 text-muted"></i>
-                            <h4 class="mt-3">No playlists yet</h4>
-                            <p class="text-muted">Create your first playlist to start organizing your music.</p>
-                            <a asp-action="Create" class="btn btn-primary mt-2">
-                                <i class="bi bi-plus-circle"></i> Create New Playlist
-                            </a>
-                        </div>
-                    }
+                            }
+                        </tbody>
+                    </table>
                 </div>
-            </div>
+            }
+            else
+            {
+                <div class="no-playlists-alert">
+                    <i class="bi bi-music-note-list"></i>
+                    <h4>No playlists yet</h4>
+                    <p>Create your first playlist to start organizing your music.</p>
+                    <a asp-action="Create" class="btn btn-create-playlist mt-2">
+                        <i class="bi bi-plus-circle-fill"></i> Create Playlist
+                    </a>
+                </div>
+            }
         </div>
+        @* Add empty panes for Public/Private tabs - content would be loaded via JS or separate requests *@
+        <div class="tab-pane fade" id="public-tab-pane" role="tabpanel" aria-labelledby="public-tab" tabindex="0">... Public playlists content ...</div>
+        <div class="tab-pane fade" id="private-tab-pane" role="tabpanel" aria-labelledby="private-tab" tabindex="0">... Private playlists content ...</div>
     </div>
 </div>
 
-<style>
-    .playlist-card {
-        transition: all 0.3s ease;
-    }
+@* Note: Pagination might be needed for the table if there are many playlists *@
+@* Add themed pagination controls here if required *@
 
-        .playlist-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-</style>

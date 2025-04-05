@@ -1,73 +1,116 @@
-﻿<!-- Views/Home/About.cshtml -->
-@{
+﻿@{
     ViewData["Title"] = "About";
+    // Theme variables (can be accessed via ViewData or CSS)
+    var ytmBgSecondary = "var(--ytm-bg-secondary)";
+    var ytmTextPrimary = "var(--ytm-text-primary)";
+    var ytmTextSecondary = "var(--ytm-text-secondary)";
+    var ytmAccentRed = "var(--ytm-accent-red)";
+    var ytmBorderColor = "var(--ytm-border-color)";
 }
 
-<div class="alert alert-info">
-    <h4>About Page Purpose</h4>
-    <p>This page provides information about the Music App, its features, and its mission.</p>
-</div>
+@* Add specific styles for this page *@
+<style>
+    .about-section { /* Renamed from details-section for clarity */
+        background-color: var(--ytm-bg-secondary);
+        padding: 2rem 2.5rem; /* Increased padding */
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        border: 1px solid var(--ytm-border-color);
+    }
 
-<div class="card shadow mb-4">
-    <div class="card-body">
-        <h1 class="card-title">About Music App</h1>
-        <p class="card-text">
-            Music App is a platform designed to help music lovers discover, listen to, and share their favorite music.
-            Our mission is to connect people through the power of music.
+        .about-section h1 {
+            color: var(--ytm-text-primary);
+            margin-bottom: 1.5rem; /* More space below main title */
+            font-weight: 500;
+            font-size: 2rem;
+            border-bottom: 1px solid var(--ytm-border-color); /* Separator line */
+            padding-bottom: 1rem; /* Space between title and line */
+        }
+
+        .about-section h3 {
+            color: var(--ytm-text-primary);
+            margin-top: 2.5rem; /* More space above sub-heading */
+            margin-bottom: 1rem;
+            font-weight: 500;
+            font-size: 1.3rem;
+        }
+
+        .about-section p, .about-section li {
+            color: var(--ytm-text-secondary);
+            line-height: 1.7;
+            font-size: 1rem;
+            margin-bottom: 1rem; /* Consistent spacing */
+        }
+
+        .about-section a {
+            color: var(--ytm-accent-red); /* Use accent for links */
+            text-decoration: none;
+            font-weight: 500; /* Make links slightly bolder */
+        }
+
+            .about-section a:hover {
+                text-decoration: underline;
+            }
+
+    /* Developer Info list styling */
+    .developer-info ul {
+        list-style: none;
+        padding-left: 0;
+        margin-top: 1.5rem; /* Space above list */
+    }
+
+    .developer-info li {
+        margin-bottom: 0.75rem; /* Space between list items */
+        font-size: 1rem; /* Ensure consistent text size */
+    }
+
+    .developer-info strong {
+        color: var(--ytm-text-primary); /* Highlight labels */
+        display: inline-block; /* Ensure proper spacing */
+        min-width: 100px; /* Align labels */
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 767px) {
+        .about-section {
+            padding: 1.5rem;
+        }
+
+            .about-section h1 {
+                font-size: 1.75rem;
+            }
+
+            .about-section h3 {
+                font-size: 1.15rem;
+            }
+
+        .developer-info strong {
+            min-width: 80px;
+        }
+    }
+</style>
+
+@* Simplified About Section *@
+<div class="about-section">
+    <h1>About Music App</h1>
+    <p>
+        Welcome to <strong>Music App</strong>! This application is a project exploring web development with ASP.NET, aiming to create a functional and visually appealing interface for interacting with music data, styled after modern streaming platforms.
+    </p>
+
+    @* Developer / Project Info Section *@
+    <div class="developer-info">
+        <h3>Project Information</h3>
+        <p>
+            This app was developed by <strong>Prabesh Aryal</strong> as part of the 3rd year, 2nd semester coursework (Class 1202i, Computer Engineering BSc) at Baku Engineering University, submitted to <strong>Vugar Cebiyev</strong>.
         </p>
+        <ul>
+            <li><strong>Developer:</strong> Prabesh Aryal</li>
+            <li><strong>University:</strong> Baku Engineering University</li>
+            <li><strong>Class:</strong> 1202i, Computer Engineering BSc</li>
+            <li><strong>Website:</strong> <a href="https://prabe.sh" target="_blank" rel="noopener noreferrer">https://prabe.sh</a></li>
+            <li><strong>Email:</strong> <a href="mailto:hello@prabe.sh">hello@prabe.sh</a></li>
+            <li><strong>GitHub:</strong> <a href="https://github.com/prabeshAryal" target="_blank" rel="noopener noreferrer">prabeshAryal</a></li>
+        </ul>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h3>Our Mission</h3>
-                <p>
-                    At Music App, we believe that music has the power to inspire, heal, and bring people together.
-                    Our platform is designed to make it easy for you to discover new artists, create and share playlists,
-                    and connect with other music enthusiasts.
-                </p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h3>Our Team</h3>
-                <p>
-                    We are a team of passionate music lovers and tech enthusiasts dedicated to creating the best music experience.
-                    Our diverse team brings together expertise in music, technology, and user experience to deliver a platform that
-                    music lovers will enjoy.
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card mt-4 shadow-sm">
-    <div class="card-header">
-        <h3>Key Features</h3>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-4 text-center mb-3">
-                <i class="bi bi-music-note-list fs-1 text-primary"></i>
-                <h4>Discover Music</h4>
-                <p>Find new artists and songs based on your tastes</p>
-            </div>
-            <div class="col-md-4 text-center mb-3">
-                <i class="bi bi-collection-play fs-1 text-primary"></i>
-                <h4>Create Playlists</h4>
-                <p>Build and customize your own music collections</p>
-            </div>
-            <div class="col-md-4 text-center mb-3">
-                <i class="bi bi-people fs-1 text-primary"></i>
-                <h4>Connect</h4>
-                <p>Share and explore music with friends</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-</div>
