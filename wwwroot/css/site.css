@@ -1,235 +1,298 @@
+/* Define variables for BOTH themes */
 :root {
-    /* Existing variables */
-    --sidebar-width: 260px;
-    --sidebar-collapsed-width: 70px;
-    --dark-bg: #121212;
-    --dark-secondary: #1e1e1e;
-    --accent-color: #8c67ef;
-    /* Add light theme variables */
-    --light-bg: #f8f9fa;
-    --light-secondary: #ffffff;
-    --light-text: #212529;
+    /* Default Dark Theme Variables */
+    --ytm-bg-primary: #0F0F0F;
+    --ytm-bg-secondary: #212121;
+    --ytm-bg-tertiary: #383838;
+    --ytm-text-primary: #FFFFFF;
+    --ytm-text-secondary: #AAAAAA;
+    --ytm-accent-red: #FF0000;
+    --ytm-border-color: #383838;
+    /* Common Variables */
+    --ytm-sidebar-width: 240px;
+    --ytm-sidebar-collapsed-width: 72px;
+    --ytm-topbar-height: 56px;
 }
 
-/* Light theme class to override dark theme */
-body.light-theme {
-    background-color: var(--light-bg);
-    color: var(--light-text);
+[data-bs-theme="light"] {
+    /* Override variables for Light Theme */
+    --ytm-bg-primary: #FFFFFF;
+    --ytm-bg-secondary: #F2F2F2; /* Light grey */
+    --ytm-bg-tertiary: #E5E5E5; /* Slightly darker grey */
+    --ytm-text-primary: #0F0F0F; /* Dark text */
+    --ytm-text-secondary: #606060; /* Grey text */
+    --ytm-accent-red: #FF0000; /* Keep accent red or change if desired */
+    --ytm-border-color: #CCCCCC; /* Light grey border */
+    /* Override Bootstrap variables for light theme if needed */
+    --bs-body-bg: var(--ytm-bg-primary);
+    --bs-body-color: var(--ytm-text-primary);
+    --bs-secondary-bg: var(--ytm-bg-secondary);
+    --bs-tertiary-bg: var(--ytm-bg-tertiary);
+    --bs-border-color: var(--ytm-border-color);
+    --bs-link-color: var(--ytm-text-primary);
+    --bs-link-hover-color: var(--ytm-text-primary);
 }
 
-    body.light-theme .sidebar {
-        background-color: var(--light-secondary);
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+[data-bs-theme="dark"] {
+    /* Explicitly set Bootstrap dark variables (already default but good practice) */
+    --bs-body-bg: var(--ytm-bg-primary);
+    --bs-body-color: var(--ytm-text-primary);
+    --bs-secondary-bg: var(--ytm-bg-secondary);
+    --bs-tertiary-bg: var(--ytm-bg-tertiary);
+    --bs-border-color: var(--ytm-border-color);
+    --bs-link-color: var(--ytm-text-primary);
+    --bs-link-hover-color: var(--ytm-text-primary);
+}
+
+html, body {
+    height: 100%;
+    font-family: 'Roboto', sans-serif;
+}
+
+body {
+    /* Styles now correctly use variables that change with theme */
+    background-color: var(--ytm-bg-primary);
+    color: var(--ytm-text-primary);
+    display: flex;
+    padding-top: var(--ytm-topbar-height);
+    padding-left: var(--ytm-sidebar-width);
+    transition: padding-left 0.3s ease;
+}
+
+    body.sidebar-collapsed {
+        padding-left: var(--ytm-sidebar-collapsed-width);
     }
 
-        body.light-theme .sidebar .nav-link {
-            color: rgba(0,0,0,0.7);
-        }
-
-            body.light-theme .sidebar .nav-link:hover,
-            body.light-theme .sidebar .nav-link.active {
-                color: var(--accent-color);
-                background-color: rgba(0,0,0,0.05);
-            }
-
-    body.light-theme .top-bar {
-        background-color: var(--light-secondary);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-
-    body.light-theme .footer {
-        background-color: var(--light-secondary);
-        color: var(--light-text);
-    }
-
-        body.light-theme .footer a {
-            color: rgba(0,0,0,0.7);
-        }
-
-            body.light-theme .footer a:hover {
-                color: var(--accent-color);
-            }
-
-    body.light-theme .search-box {
-        background-color: rgba(0,0,0,0.05);
-        color: var(--light-text);
-    }
-
-        body.light-theme .search-box::placeholder {
-            color: rgba(0,0,0,0.5);
-        }
-
-    body.light-theme .text-light {
-        color: rgba(0,0,0,0.7) !important;
-    }
-
-.sidebar {
-    width: var(--sidebar-width);
-    background-color: var(--dark-secondary);
+/* --- Top Bar --- */
+.top-bar {
     position: fixed;
     top: 0;
-    bottom: 0;
     left: 0;
-    z-index: 100;
-    padding: 0;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
-    transition: all 0.3s;
+    right: 0;
+    height: var(--ytm-topbar-height);
+    background-color: var(--ytm-bg-primary); /* Uses theme variable */
+    border-bottom: 1px solid var(--ytm-border-color); /* Uses theme variable */
+    z-index: 1031;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
 }
 
-    /* Collapsed sidebar */
-    .sidebar.collapsed {
-        width: var(--sidebar-collapsed-width);
+    .top-bar .navbar-brand {
+        color: var(--ytm-text-primary); /* Uses theme variable */
+        display: flex;
+        align-items: center;
+        margin-right: 16px;
     }
 
-        .sidebar.collapsed .sidebar-text {
-            display: none;
+        .top-bar .navbar-brand i {
+            color: var(--ytm-accent-red); /* Uses theme variable (accent) */
+            font-size: 1.5rem;
         }
-
-        .sidebar.collapsed .sidebar-brand span {
-            display: none;
-        }
-
-        .sidebar.collapsed .nav-link {
-            text-align: center;
-            padding: 0.8rem 0;
-        }
-
-            .sidebar.collapsed .nav-link i {
-                margin-right: 0;
-                font-size: 1.2rem;
-            }
-
-.sidebar-brand {
-    padding: 1.5rem 1rem;
-    font-size: 1.2rem;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-}
 
 .sidebar-toggle-btn {
-    padding: 0.4rem;
-    background-color: rgba(255,255,255,0.05);
+    background: none;
     border: none;
-    color: rgba(255,255,255,0.7);
-    transition: all 0.2s;
-    border-radius: 4px;
-    width: auto;
+    color: var(--ytm-text-primary); /* Uses theme variable */
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 8px;
+    margin-right: 16px;
 }
 
     .sidebar-toggle-btn:hover {
-        background-color: rgba(255,255,255,0.1);
-        color: white;
+        background-color: var(--ytm-bg-tertiary); /* Uses theme variable */
+        border-radius: 50%;
     }
 
-.sidebar .nav-link {
-    padding: 0.8rem 1rem;
-    color: rgba(255,255,255,0.7);
-    border-left: 4px solid transparent;
-    transition: all 0.2s;
-}
-
-    .sidebar .nav-link:hover {
-        color: white;
-        background-color: rgba(255,255,255,0.05);
-    }
-
-    .sidebar .nav-link.active {
-        color: white;
-        border-left-color: var(--accent-color);
-        background-color: rgba(255,255,255,0.05);
-    }
-
-    .sidebar .nav-link i {
-        margin-right: 10px;
-        width: 20px;
-        text-align: center;
-    }
-
-/* Content wrapper */
-.content-wrapper {
-    margin-left: var(--sidebar-width);
-    transition: all 0.3s;
-}
-
-    .content-wrapper.expanded {
-        margin-left: var(--sidebar-collapsed-width);
-    }
-
-.top-bar {
-    background-color: var(--dark-secondary);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+.search-container {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 .search-box {
-    background-color: rgba(255,255,255,0.1);
-    border: none;
-    color: white;
+    background-color: var(--ytm-bg-secondary); /* Uses theme variable */
+    border: 1px solid var(--ytm-border-color); /* Uses theme variable */
+    color: var(--ytm-text-primary); /* Uses theme variable */
+    border-radius: 40px 0 0 40px;
+    padding-left: 16px;
+    height: 40px;
 }
 
     .search-box::placeholder {
-        color: rgba(255,255,255,0.5);
+        color: var(--ytm-text-secondary);
     }
+    /* Uses theme variable */
+    .search-box:focus {
+        /* Keep dark background on focus for dark theme, maybe light for light theme? */
+        background-color: var(--ytm-bg-primary); /* Uses theme variable */
+        border-color: var(--ytm-text-secondary); /* Uses theme variable */
+        box-shadow: none;
+    }
+/* Optional: Different focus for light theme */
+[data-bs-theme="light"] .search-box:focus {
+    border-color: #888; /* Example light theme focus border */
+}
+
 
 .search-btn {
-    background-color: var(--accent-color);
+    background-color: var(--ytm-bg-tertiary); /* Uses theme variable */
+    border: 1px solid var(--ytm-border-color); /* Uses theme variable */
+    border-left: none;
+    color: var(--ytm-text-secondary); /* Uses theme variable */
+    border-radius: 0 40px 40px 0;
+    height: 40px;
+    width: 64px;
+}
+
+    .search-btn:hover {
+        background-color: var(--ytm-border-color); /* Uses theme variable (border as bg) */
+        color: var(--ytm-text-primary); /* Uses theme variable */
+    }
+
+.profile-btn {
+    background: none;
     border: none;
+    color: var(--ytm-text-primary); /* Uses theme variable */
+    font-size: 1.8rem;
+    padding: 6px;
+    margin-left: 16px;
 }
 
-.footer {
-    background-color: var(--dark-secondary);
-    color: #f8f9fa;
+    .profile-btn:hover {
+        color: var(--ytm-accent-red); /* Uses theme variable (accent) */
+    }
+
+
+/* --- Sidebar --- */
+.sidebar {
+    width: var(--ytm-sidebar-width);
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding-top: var(--ytm-topbar-height);
+    background-color: var(--ytm-bg-primary); /* Uses theme variable */
+    color: var(--ytm-text-primary); /* Uses theme variable */
+    z-index: 1030;
+    transition: width 0.3s ease;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
-    .footer a {
-        color: rgba(255,255,255,0.7);
-        text-decoration: none;
+    .sidebar.collapsed {
+        width: var(--ytm-sidebar-collapsed-width);
     }
 
-        .footer a:hover {
-            color: white;
-        }
-
-/* Responsive styles */
-@media (max-width: 768px) {
-    .sidebar {
-        transform: translateX(-100%);
-    }
-
-        .sidebar.show {
-            transform: translateX(0);
-        }
-
-    .content-wrapper {
-        margin-left: 0;
-    }
-
-        .content-wrapper.expanded {
-            margin-left: 0;
-        }
-
-    .mobile-toggler {
-        display: block !important;
-    }
+.sidebar-sticky-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 12px 0;
 }
 
-/* Theme switch styling */
+    /* Custom scrollbar for sidebar */
+    .sidebar-sticky-content::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .sidebar-sticky-content::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    /* Scrollbar thumb color changes with theme */
+    .sidebar-sticky-content::-webkit-scrollbar-thumb {
+        background: var(--ytm-bg-tertiary);
+        border-radius: 4px;
+    }
+
+        .sidebar-sticky-content::-webkit-scrollbar-thumb:hover {
+            background: var(--ytm-text-secondary);
+        }
+
+
+.sidebar .nav-link {
+    color: var(--ytm-text-primary); /* Uses theme variable */
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    border-radius: 8px;
+    margin: 2px 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+    .sidebar .nav-link i {
+        font-size: 1.4rem;
+        margin-right: 24px;
+        width: 24px;
+        text-align: center;
+        transition: margin-right 0.3s ease;
+        color: inherit; /* Inherit color from nav-link */
+    }
+
+    .sidebar .nav-link .sidebar-text {
+        opacity: 1;
+        transition: opacity 0.2s ease;
+    }
+
+    .sidebar .nav-link:hover {
+        background-color: var(--ytm-bg-secondary); /* Uses theme variable */
+    }
+
+    .sidebar .nav-link.active {
+        background-color: var(--ytm-bg-tertiary); /* Uses theme variable */
+        font-weight: 700;
+    }
+        /* Active icon color uses accent */
+        .sidebar .nav-link.active i {
+            color: var(--ytm-accent-red);
+        }
+
+/* Collapsed Sidebar Styles */
+.sidebar.collapsed .nav-link {
+    justify-content: center;
+    padding: 10px 12px;
+    margin: 4px 12px;
+}
+
+    .sidebar.collapsed .nav-link i {
+        margin-right: 0;
+    }
+
+    .sidebar.collapsed .nav-link .sidebar-text {
+        opacity: 0;
+        display: none;
+    }
+
+/* Theme Toggle specific styles */
 .theme-switch-wrapper {
     display: flex;
     align-items: center;
-    justify-content: center;
-    margin-bottom: 1rem;
+    padding: 10px 24px;
+    margin: 10px 12px 20px 12px;
+    cursor: pointer;
+    border-radius: 8px;
 }
+
+    .theme-switch-wrapper:hover {
+        background-color: var(--ytm-bg-secondary); /* Uses theme variable */
+    }
 
 .theme-switch {
     position: relative;
     display: inline-block;
-    width: 60px;
-    height: 30px;
+    width: 40px;
+    height: 20px;
+    margin-right: 24px;
 }
 
     .theme-switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
+        display: none;
     }
 
 .slider {
@@ -239,54 +302,195 @@ body.light-theme {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #2c2c2c;
+    background-color: var(--ytm-bg-tertiary); /* Uses theme variable */
     transition: .4s;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 5px;
+    border-radius: 20px;
 }
 
     .slider:before {
         position: absolute;
         content: "";
-        height: 22px;
-        width: 22px;
-        left: 4px;
-        bottom: 4px;
-        background-color: white;
+        height: 14px;
+        width: 14px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white; /* Knob color - could be themed too */
         transition: .4s;
-        z-index: 2;
-    }
-
-.sun-icon, .moon-icon {
-    color: white;
-    font-size: 0.8rem;
-    position: relative;
-    z-index: 1;
-}
-
-.sun-icon {
-    margin-left: auto;
-}
-
-input:checked + .slider {
-    background-color: #8c67ef;
-}
-
-    input:checked + .slider:before {
-        transform: translateX(30px);
-    }
-
-.slider.round {
-    border-radius: 34px;
-}
-
-    .slider.round:before {
         border-radius: 50%;
     }
 
-/* Ensure the theme toggle is hidden when sidebar is collapsed */
-.sidebar.collapsed .theme-switch-wrapper .sidebar-text {
+/* Toggle checked state background */
+[data-bs-theme="dark"] input:checked + .slider {
+    background-color: var(--ytm-accent-red);
+}
+
+[data-bs-theme="light"] input:not(:checked) + .slider {
+    background-color: #ccc;
+}
+/* Light theme off state */
+[data-bs-theme="light"] input:checked + .slider {
+    background-color: var(--ytm-accent-red);
+}
+/* Light theme on state */
+
+/* Toggle knob position */
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+
+.sidebar.collapsed .theme-switch-wrapper {
+    justify-content: center;
+    padding: 10px 12px;
+}
+
+    .sidebar.collapsed .theme-switch-wrapper .theme-switch {
+        margin-right: 0;
+    }
+
+    .sidebar.collapsed .theme-switch-wrapper .sidebar-text {
+        display: none;
+    }
+
+
+/* --- Main Content Area --- */
+.content-wrapper {
+    flex-grow: 1;
+    padding: 24px;
+    background-color: var(--ytm-bg-primary); /* Uses theme variable */
+    width: 100%;
+}
+
+main {
+    width: 100%;
+}
+
+/* --- Footer --- */
+footer {
     display: none;
 }
+
+/* --- Mobile Adjustments --- */
+.mobile-sidebar-toggle {
+    display: none !important;
+}
+
+@media (max-width: 992px) {
+    body {
+        padding-left: var(--ytm-sidebar-collapsed-width);
+    }
+
+    .sidebar {
+        width: var(--ytm-sidebar-collapsed-width);
+    }
+
+        .sidebar .nav-link {
+            justify-content: center;
+            padding: 10px 12px;
+            margin: 4px 12px;
+        }
+
+            .sidebar .nav-link i {
+                margin-right: 0;
+            }
+
+            .sidebar .nav-link .sidebar-text {
+                display: none;
+                opacity: 0;
+            }
+
+        .sidebar.collapsed { /* No change needed */
+        }
+
+        .sidebar.expanded-mobile {
+            width: var(--ytm-sidebar-width);
+        }
+
+            .sidebar.expanded-mobile .nav-link {
+                justify-content: flex-start;
+                padding: 10px 24px;
+                margin: 2px 12px;
+            }
+
+                .sidebar.expanded-mobile .nav-link i {
+                    margin-right: 24px;
+                }
+
+                .sidebar.expanded-mobile .nav-link .sidebar-text {
+                    display: inline;
+                    opacity: 1;
+                }
+
+
+    .sidebar-toggle-btn {
+        display: none;
+    }
+
+    .mobile-sidebar-toggle {
+        display: block !important;
+        background: none;
+        border: none;
+        color: var(--ytm-text-primary); /* Uses theme variable */
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 8px;
+        margin-right: 16px;
+    }
+
+        .mobile-sidebar-toggle:hover {
+            background-color: var(--ytm-bg-tertiary); /* Uses theme variable */
+            border-radius: 50%;
+        }
+
+    .search-container {
+        max-width: 400px;
+    }
+}
+
+@media (max-width: 767px) {
+    .search-container {
+        display: none;
+    }
+
+    .profile-btn {
+        margin-left: auto;
+    }
+
+    .mobile-sidebar-toggle {
+        margin-right: auto;
+    }
+
+    .top-bar .navbar-brand {
+        display: none;
+    }
+
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease, width 0.3s ease;
+        width: var(--ytm-sidebar-width);
+        z-index: 1035;
+        padding-top: 0;
+        height: 100vh;
+        /* Ensure sidebar background covers content */
+        background-color: var(--ytm-bg-primary); /* Uses theme variable */
+    }
+
+        .sidebar.active-mobile {
+            transform: translateX(0);
+        }
+
+    body {
+        padding-left: 0;
+    }
+
+        body.sidebar-collapsed {
+            padding-left: 0;
+        }
+}
+
+/* Divider color */
+hr {
+    border-color: var(--ytm-border-color) !important; /* Uses theme variable, !important might be needed for Bootstrap override */
+    opacity: 0.25;
+}
+

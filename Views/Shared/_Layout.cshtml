@@ -1,41 +1,82 @@
-﻿<!-- Views/Shared/_Layout.cshtml -->
+﻿@* Views/Shared/_Layout.cshtml (YouTube Music Style - Fixed) *@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
+@* Default to dark theme *@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Music App</title>
+
+    @* Bootstrap CSS - Base framework *@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    @* Bootstrap Icons *@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="~/css/site.css" />
-   
+
+    @* Google Font (Roboto is close to YT Music's font) *@
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    @* Link to your site.css - Custom styles will override Bootstrap *@
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    @* --- Custom Styles for YouTube Music Look --- *@
 </head>
-<body class="d-flex flex-column min-vh-100">
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-brand d-flex align-items-center">
-            <!-- Toggle button moved next to logo -->
-            <button id="sidebar-toggle" class="sidebar-toggle-btn me-2">
-                <i class="bi bi-list sidebar-toggle-icon"></i>
-            </button>
+<body class="sidebar-collapsed">
+    @* Start with sidebar collapsed on larger screens *@
+
+    <header class="top-bar">
+        @* Sidebar Toggle Buttons *@
+        <button id="sidebar-toggle" class="sidebar-toggle-btn d-none d-lg-block">
+            @* Hide on md and below *@
+            <i class="bi bi-list"></i>
+        </button>
+        <button id="mobile-sidebar-toggle" class="mobile-sidebar-toggle d-lg-none">
+            @* Show only on md and below *@
+            <i class="bi bi-list"></i>
+        </button>
+
+        @* Brand/Logo *@
+        <a class="navbar-brand" href="/">
+            <i class="bi bi-music-note-beamed"></i>
+            <span class="d-none d-sm-inline ms-2">Music App</span> @* Hide text on xs screens *@
+        </a>
+
+        @* Search Bar Container *@
+        <div class="search-container">
+            <div class="input-group">
+                <input type="text" class="form-control search-box" placeholder="Search" aria-label="Search">
+                <button class="btn search-btn" type="button">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
         </div>
 
-        <div class="d-flex flex-column h-100">
-            <ul class="nav nav-pills flex-column mb-auto">
+        @* Profile Button *@
+        <a href="/Profile" class="profile-btn">
+            @* Changed to simple anchor for styling *@
+            <i class="bi bi-person-circle"></i>
+        </a>
+    </header>
 
+    <aside class="sidebar" id="sidebar">
+        @* Scrollable Navigation Area *@
+        <div class="sidebar-sticky-content">
+            <ul class="nav flex-column">
                 <li class="nav-item">
                     <a class="nav-link @(ViewContext.RouteData.Values["controller"].ToString() == "Home" && ViewContext.RouteData.Values["action"].ToString() == "Index" ? "active" : "")" href="/">
-                        <i class="bi bi-house-door"></i> <span class="sidebar-text">Home</span>
+                        <i class="bi bi-house-door-fill"></i> <span class="sidebar-text">Home</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link @(ViewContext.RouteData.Values["controller"].ToString() == "Artists" ? "active" : "")" href="/Artists">
-                        <i class="bi bi-person-badge"></i> <span class="sidebar-text">Artists</span>
+                        <i class="bi bi-people-fill"></i> <span class="sidebar-text">Artists</span>
                     </a>
                 </li>
                 <li class="nav-item">
+                    @* --- Changed Icon Here --- *@
                     <a class="nav-link @(ViewContext.RouteData.Values["controller"].ToString() == "Albums" ? "active" : "")" href="/Albums">
-                        <i class="bi bi-disc"></i> <span class="sidebar-text">Albums</span>
+                        <i class="bi bi-disc-fill"></i> <span class="sidebar-text">Albums</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -43,88 +84,41 @@
                         <i class="bi bi-music-note-list"></i> <span class="sidebar-text">Playlists</span>
                     </a>
                 </li>
+
+                <li><hr class="mx-3"></li>
+
                 <li class="nav-item">
                     <a class="nav-link @(ViewContext.RouteData.Values["controller"].ToString() == "Home" && ViewContext.RouteData.Values["action"].ToString() == "About" ? "active" : "")" href="/Home/About">
-                        <i class="bi bi-info-circle"></i> <span class="sidebar-text">About</span>
+                        <i class="bi bi-info-circle-fill"></i> <span class="sidebar-text">About</span>
                     </a>
                 </li>
             </ul>
-            <!-- Add this to the bottom of your sidebar before the closing div -->
-            <div class="mt-auto p-3 text-center">
-                <!-- Social icons -->
-                <div class="d-flex gap-2 fs-4 justify-content-center mb-3">
-                    <a href="#" class="text-light"><i class="bi bi-facebook"></i></a>
-                    <a href="#" class="text-light"><i class="bi bi-twitter"></i></a>
-                    <a href="#" class="text-light"><i class="bi bi-instagram"></i></a>
-                </div>
-
-                <!-- Theme Toggle Switch -->
-                <div class="theme-switch-wrapper">
-                    <label class="theme-switch" for="theme-toggle">
-                        <input type="checkbox" id="theme-toggle" />
-                        <div class="slider round">
-                            <i class="bi bi-moon-fill moon-icon"></i>
-                            <i class="bi bi-sun-fill sun-icon"></i>
-                        </div>
-                    </label>
-                    <span class="sidebar-text ms-2">Dark Mode</span>
-                </div>
-            </div>
-
         </div>
-    </div>
 
-    <!-- Main Content -->
+        @* Non-scrolling bottom part (for theme toggle) *@
+        <div class="mt-auto pb-2">
+            <hr class="mx-3">
+            @* Theme Toggle *@
+            <div class="theme-switch-wrapper" onclick="document.getElementById('theme-toggle').click()">
+                <div class="theme-switch">
+                    <input type="checkbox" id="theme-toggle"> @* Checked state managed by JS *@
+                    <span class="slider"></span>
+                </div>
+                <span class="sidebar-text ms-2">Theme</span> @* Text updated by JS *@
+            </div>
+        </div>
+    </aside>
+
     <div class="content-wrapper" id="content-wrapper">
-        <!-- Top Bar -->
-        <div class="top-bar p-3">
-            <div class="container-fluid">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center p-3">
-                        <i class="bi bi-music-note-beamed me-2"></i>
-                        <span class="sidebar-text fs-4">Music App</span>
-                    </div>
-                    <div>
-                        <!-- Mobile toggle button - only visible on small screens -->
-                        <button id="mobile-sidebar-toggle" class="btn btn-outline-light d-none mobile-toggler">
-                            <i class="bi bi-list"></i>
-                        </button>
-                    </div>
-                    <div class="d-flex align-items-center ms-auto">
-                        <div class="input-group me-3">
-                            <input type="text" class="form-control search-box" placeholder="Search music..." aria-label="Search music">
-                            <button class="btn search-btn" type="button">
-                                <i class="bi bi-search text-white"></i>
-                            </button>
-                        </div>
-                        <a href="/Profile" class="btn btn-outline-light">
-                            <i class="bi bi-person-circle"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Page Content -->
-        <div class="container mt-4">
-            <main role="main" class="flex-shrink-0 flex-grow-1 pb-5">
-                @RenderBody()
-            </main>
-        </div>
-
-        <!-- Footer -->
-        <footer class="footer mt-auto py-4">
-            <div class="container">
-                <div class="text-center">
-                    &copy; 2025 - Music App - <a href="/Home/Privacy">Privacy</a>
-                </div>
-            </div>
-        </footer>
+        <main role="main">
+            @RenderBody()
+        </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/sidebar.js" asp-append-version="true"></script>
-    @RenderSection("Scripts", required: false)
+
+
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
