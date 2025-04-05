@@ -1,3 +1,5 @@
+/* --- site.css --- */
+
 /* Define variables for BOTH themes */
 :root {
     /* Default Dark Theme Variables */
@@ -23,7 +25,7 @@
     --ytm-text-secondary: #606060; /* Grey text */
     --ytm-accent-red: #FF0000; /* Keep accent red or change if desired */
     --ytm-border-color: #CCCCCC; /* Light grey border */
-    /* Override Bootstrap variables for light theme if needed */
+    /* Override Bootstrap variables for light theme */
     --bs-body-bg: var(--ytm-bg-primary);
     --bs-body-color: var(--ytm-text-primary);
     --bs-secondary-bg: var(--ytm-bg-secondary);
@@ -34,7 +36,7 @@
 }
 
 [data-bs-theme="dark"] {
-    /* Explicitly set Bootstrap dark variables (already default but good practice) */
+    /* Explicitly set Bootstrap dark variables */
     --bs-body-bg: var(--ytm-bg-primary);
     --bs-body-color: var(--ytm-text-primary);
     --bs-secondary-bg: var(--ytm-bg-secondary);
@@ -44,13 +46,14 @@
     --bs-link-hover-color: var(--ytm-text-primary);
 }
 
+/* --- Base Styles --- */
 html, body {
     height: 100%;
     font-family: 'Roboto', sans-serif;
+    overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 body {
-    /* Styles now correctly use variables that change with theme */
     background-color: var(--ytm-bg-primary);
     color: var(--ytm-text-primary);
     display: flex;
@@ -70,39 +73,43 @@ body {
     left: 0;
     right: 0;
     height: var(--ytm-topbar-height);
-    background-color: var(--ytm-bg-primary); /* Uses theme variable */
-    border-bottom: 1px solid var(--ytm-border-color); /* Uses theme variable */
-    z-index: 1031;
+    background-color: var(--ytm-bg-primary);
+    border-bottom: 1px solid var(--ytm-border-color);
+    z-index: 1031; /* Above sidebar */
     display: flex;
     align-items: center;
     padding: 0 16px;
 }
 
     .top-bar .navbar-brand {
-        color: var(--ytm-text-primary); /* Uses theme variable */
+        color: var(--ytm-text-primary);
         display: flex;
         align-items: center;
         margin-right: 16px;
+        text-decoration: none;
     }
 
         .top-bar .navbar-brand i {
-            color: var(--ytm-accent-red); /* Uses theme variable (accent) */
+            color: var(--ytm-accent-red);
             font-size: 1.5rem;
         }
 
-.sidebar-toggle-btn {
+.sidebar-toggle-btn,
+.mobile-sidebar-toggle {
     background: none;
     border: none;
-    color: var(--ytm-text-primary); /* Uses theme variable */
+    color: var(--ytm-text-primary);
     font-size: 1.5rem;
     cursor: pointer;
     padding: 8px;
     margin-right: 16px;
+    border-radius: 50%;
+    line-height: 1; /* Prevent extra height */
 }
 
-    .sidebar-toggle-btn:hover {
-        background-color: var(--ytm-bg-tertiary); /* Uses theme variable */
-        border-radius: 50%;
+    .sidebar-toggle-btn:hover,
+    .mobile-sidebar-toggle:hover {
+        background-color: var(--ytm-bg-tertiary);
     }
 
 .search-container {
@@ -114,9 +121,9 @@ body {
 }
 
 .search-box {
-    background-color: var(--ytm-bg-secondary); /* Uses theme variable */
-    border: 1px solid var(--ytm-border-color); /* Uses theme variable */
-    color: var(--ytm-text-primary); /* Uses theme variable */
+    background-color: var(--ytm-bg-secondary);
+    border: 1px solid var(--ytm-border-color);
+    color: var(--ytm-text-primary);
     border-radius: 40px 0 0 40px;
     padding-left: 16px;
     height: 40px;
@@ -125,47 +132,47 @@ body {
     .search-box::placeholder {
         color: var(--ytm-text-secondary);
     }
-    /* Uses theme variable */
+
     .search-box:focus {
-        /* Keep dark background on focus for dark theme, maybe light for light theme? */
-        background-color: var(--ytm-bg-primary); /* Uses theme variable */
-        border-color: var(--ytm-text-secondary); /* Uses theme variable */
+        background-color: var(--ytm-bg-primary);
+        border-color: var(--ytm-text-secondary);
         box-shadow: none;
     }
-/* Optional: Different focus for light theme */
+
 [data-bs-theme="light"] .search-box:focus {
-    border-color: #888; /* Example light theme focus border */
+    border-color: #888;
 }
 
-
 .search-btn {
-    background-color: var(--ytm-bg-tertiary); /* Uses theme variable */
-    border: 1px solid var(--ytm-border-color); /* Uses theme variable */
+    background-color: var(--ytm-bg-tertiary);
+    border: 1px solid var(--ytm-border-color);
     border-left: none;
-    color: var(--ytm-text-secondary); /* Uses theme variable */
+    color: var(--ytm-text-secondary);
     border-radius: 0 40px 40px 0;
     height: 40px;
     width: 64px;
 }
 
     .search-btn:hover {
-        background-color: var(--ytm-border-color); /* Uses theme variable (border as bg) */
-        color: var(--ytm-text-primary); /* Uses theme variable */
+        background-color: var(--ytm-border-color);
+        color: var(--ytm-text-primary);
     }
 
 .profile-btn {
     background: none;
     border: none;
-    color: var(--ytm-text-primary); /* Uses theme variable */
+    color: var(--ytm-text-primary);
     font-size: 1.8rem;
     padding: 6px;
     margin-left: 16px;
+    border-radius: 50%;
+    line-height: 1;
 }
 
     .profile-btn:hover {
-        color: var(--ytm-accent-red); /* Uses theme variable (accent) */
+        color: var(--ytm-accent-red);
+        background-color: var(--ytm-bg-tertiary);
     }
-
 
 /* --- Sidebar --- */
 .sidebar {
@@ -175,9 +182,9 @@ body {
     top: 0;
     left: 0;
     padding-top: var(--ytm-topbar-height);
-    background-color: var(--ytm-bg-primary); /* Uses theme variable */
-    color: var(--ytm-text-primary); /* Uses theme variable */
-    z-index: 1030;
+    background-color: var(--ytm-bg-primary);
+    color: var(--ytm-text-primary);
+    z-index: 1030; /* Below top bar */
     transition: width 0.3s ease;
     overflow-x: hidden;
     display: flex;
@@ -195,7 +202,7 @@ body {
     padding: 12px 0;
 }
 
-    /* Custom scrollbar for sidebar */
+    /* Custom scrollbar */
     .sidebar-sticky-content::-webkit-scrollbar {
         width: 8px;
     }
@@ -203,7 +210,7 @@ body {
     .sidebar-sticky-content::-webkit-scrollbar-track {
         background: transparent;
     }
-    /* Scrollbar thumb color changes with theme */
+
     .sidebar-sticky-content::-webkit-scrollbar-thumb {
         background: var(--ytm-bg-tertiary);
         border-radius: 4px;
@@ -213,9 +220,8 @@ body {
             background: var(--ytm-text-secondary);
         }
 
-
 .sidebar .nav-link {
-    color: var(--ytm-text-primary); /* Uses theme variable */
+    color: var(--ytm-text-primary);
     padding: 10px 24px;
     display: flex;
     align-items: center;
@@ -224,6 +230,8 @@ body {
     margin: 2px 12px;
     font-size: 0.9rem;
     font-weight: 500;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
 }
 
     .sidebar .nav-link i {
@@ -232,7 +240,7 @@ body {
         width: 24px;
         text-align: center;
         transition: margin-right 0.3s ease;
-        color: inherit; /* Inherit color from nav-link */
+        color: inherit; /* Inherit color */
     }
 
     .sidebar .nav-link .sidebar-text {
@@ -241,14 +249,14 @@ body {
     }
 
     .sidebar .nav-link:hover {
-        background-color: var(--ytm-bg-secondary); /* Uses theme variable */
+        background-color: var(--ytm-bg-secondary);
     }
 
     .sidebar .nav-link.active {
-        background-color: var(--ytm-bg-tertiary); /* Uses theme variable */
+        background-color: var(--ytm-bg-tertiary);
         font-weight: 700;
     }
-        /* Active icon color uses accent */
+
         .sidebar .nav-link.active i {
             color: var(--ytm-accent-red);
         }
@@ -269,18 +277,29 @@ body {
         display: none;
     }
 
-/* Theme Toggle specific styles */
+/* Divider */
+.sidebar-divider {
+    border-color: var(--ytm-border-color) !important;
+    opacity: 0.25;
+}
+
+/* Bottom section */
+.sidebar-bottom-section {
+    /* Styles specific to this section if needed */
+}
+
+/* --- Theme Toggle Specific Styles --- */
 .theme-switch-wrapper {
-    display: flex;
+    display: flex; /* Hidden by default in collapsed state via JS/CSS logic */
     align-items: center;
     padding: 10px 24px;
     margin: 10px 12px 20px 12px;
-    cursor: pointer;
     border-radius: 8px;
+    transition: background-color 0.2s ease;
 }
 
     .theme-switch-wrapper:hover {
-        background-color: var(--ytm-bg-secondary); /* Uses theme variable */
+        background-color: var(--ytm-bg-secondary);
     }
 
 .theme-switch {
@@ -288,7 +307,6 @@ body {
     display: inline-block;
     width: 40px;
     height: 20px;
-    margin-right: 24px;
 }
 
     .theme-switch input {
@@ -302,9 +320,8 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: var(--ytm-bg-tertiary); /* Uses theme variable */
+    background-color: var(--ytm-bg-tertiary);
     transition: .4s;
-    border-radius: 20px;
 }
 
     .slider:before {
@@ -314,12 +331,19 @@ body {
         width: 14px;
         left: 3px;
         bottom: 3px;
-        background-color: white; /* Knob color - could be themed too */
+        background-color: white;
         transition: .4s;
-        border-radius: 50%;
     }
 
-/* Toggle checked state background */
+    .slider.round {
+        border-radius: 20px;
+    }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+/* Checked states for slider */
 [data-bs-theme="dark"] input:checked + .slider {
     background-color: var(--ytm-accent-red);
 }
@@ -327,53 +351,92 @@ body {
 [data-bs-theme="light"] input:not(:checked) + .slider {
     background-color: #ccc;
 }
-/* Light theme off state */
+
 [data-bs-theme="light"] input:checked + .slider {
     background-color: var(--ytm-accent-red);
 }
-/* Light theme on state */
 
-/* Toggle knob position */
 input:checked + .slider:before {
     transform: translateX(20px);
 }
 
-
-.sidebar.collapsed .theme-switch-wrapper {
-    justify-content: center;
-    padding: 10px 12px;
+.theme-switch-label {
+    color: var(--ytm-text-primary); /* Ensure label text color matches theme */
+    font-size: 0.9rem;
+    font-weight: 500;
 }
 
-    .sidebar.collapsed .theme-switch-wrapper .theme-switch {
-        margin-right: 0;
+/* Icon Button Toggle */
+.theme-toggle-icon-btn {
+    display: none; /* Hidden by default, shown when collapsed */
+    justify-content: center;
+    align-items: center; /* Center icon vertically */
+    padding: 10px 12px;
+    margin: 10px 12px 20px 12px;
+    border: none;
+    background: none;
+    color: var(--ytm-text-primary);
+    width: calc(var(--ytm-sidebar-collapsed-width) - 24px); /* Fit width */
+    height: 44px; /* Match nav-link height roughly */
+    border-radius: 8px; /* Match nav-link */
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+    .theme-toggle-icon-btn i {
+        font-size: 1.4rem;
+        line-height: 1;
+        margin: 0; /* No margin needed */
     }
 
-    .sidebar.collapsed .theme-switch-wrapper .sidebar-text {
-        display: none;
+    .theme-toggle-icon-btn:hover {
+        background-color: var(--ytm-bg-secondary);
+        color: var(--ytm-text-primary);
     }
+
+/* Visibility Logic based on Sidebar State */
+.sidebar:not(.collapsed) .theme-toggle-icon-btn {
+    display: none; /* Hide icon button when expanded */
+}
+
+.sidebar:not(.collapsed) .theme-switch-wrapper {
+    display: flex; /* Show slider when expanded */
+}
+
+.sidebar.collapsed .theme-switch-wrapper {
+    display: none; /* Hide slider when collapsed */
+}
+
+.sidebar.collapsed .theme-toggle-icon-btn {
+    display: flex; /* Show icon button when collapsed */
+}
 
 
 /* --- Main Content Area --- */
 .content-wrapper {
     flex-grow: 1;
-    padding: 24px;
-    background-color: var(--ytm-bg-primary); /* Uses theme variable */
-    width: 100%;
+    background-color: var(--ytm-bg-primary);
+    width: 100%; /* Ensure it takes available width */
+    overflow-y: auto; /* Allow content area to scroll if needed */
+    height: calc(100vh - var(--ytm-topbar-height)); /* Fill remaining height */
 }
 
 main {
     width: 100%;
+    /* Padding is now applied directly to main in _Layout.cshtml */
 }
 
 /* --- Footer --- */
 footer {
     display: none;
 }
+/* Footer removed */
 
 /* --- Mobile Adjustments --- */
 .mobile-sidebar-toggle {
     display: none !important;
 }
+/* Hide by default */
 
 @media (max-width: 992px) {
     body {
@@ -399,9 +462,7 @@ footer {
                 opacity: 0;
             }
 
-        .sidebar.collapsed { /* No change needed */
-        }
-
+        /* Force expanded style on mobile when needed */
         .sidebar.expanded-mobile {
             width: var(--ytm-sidebar-width);
         }
@@ -421,29 +482,33 @@ footer {
                     opacity: 1;
                 }
 
-
     .sidebar-toggle-btn {
         display: none;
     }
-
+    /* Hide desktop toggle */
     .mobile-sidebar-toggle {
         display: block !important;
-        background: none;
-        border: none;
-        color: var(--ytm-text-primary); /* Uses theme variable */
-        font-size: 1.5rem;
-        cursor: pointer;
-        padding: 8px;
-        margin-right: 16px;
     }
-
-        .mobile-sidebar-toggle:hover {
-            background-color: var(--ytm-bg-tertiary); /* Uses theme variable */
-            border-radius: 50%;
-        }
-
+    /* Show mobile toggle */
     .search-container {
         max-width: 400px;
+    }
+
+    /* Collapsed theme toggle is default on mobile */
+    .theme-switch-wrapper {
+        display: none;
+    }
+
+    .theme-toggle-icon-btn {
+        display: flex;
+    }
+    /* Show slider only if sidebar is explicitly expanded on mobile */
+    .sidebar.expanded-mobile .theme-switch-wrapper {
+        display: flex;
+    }
+
+    .sidebar.expanded-mobile .theme-toggle-icon-btn {
+        display: none;
     }
 }
 
@@ -464,15 +529,15 @@ footer {
         display: none;
     }
 
+    /* Mobile sidebar overlay behavior */
     .sidebar {
         transform: translateX(-100%);
         transition: transform 0.3s ease, width 0.3s ease;
         width: var(--ytm-sidebar-width);
-        z-index: 1035;
-        padding-top: 0;
+        z-index: 1035; /* Above everything */
+        padding-top: 0; /* No top padding needed if overlaying */
         height: 100vh;
-        /* Ensure sidebar background covers content */
-        background-color: var(--ytm-bg-primary); /* Uses theme variable */
+        background-color: var(--ytm-bg-primary);
     }
 
         .sidebar.active-mobile {
@@ -486,11 +551,14 @@ footer {
         body.sidebar-collapsed {
             padding-left: 0;
         }
-}
+    /* Not relevant for overlay */
 
-/* Divider color */
-hr {
-    border-color: var(--ytm-border-color) !important; /* Uses theme variable, !important might be needed for Bootstrap override */
-    opacity: 0.25;
-}
+    /* Ensure theme toggle behaves correctly in mobile overlay */
+    .sidebar.active-mobile .theme-switch-wrapper {
+        display: flex;
+    }
 
+    .sidebar.active-mobile .theme-toggle-icon-btn {
+        display: none;
+    }
+}

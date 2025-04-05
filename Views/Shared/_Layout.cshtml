@@ -1,4 +1,4 @@
-﻿@* Views/Shared/_Layout.cshtml (YouTube Music Style - Fixed) *@
+﻿@* Views/Shared/_Layout.cshtml *@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 @* Default to dark theme *@
@@ -7,118 +7,135 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Music App</title>
 
-    @* Bootstrap CSS - Base framework *@
+    @* Bootstrap CSS *@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
     @* Bootstrap Icons *@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
-    @* Google Font (Roboto is close to YT Music's font) *@
+    @* Google Font (Roboto) *@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
-    @* Link to your site.css - Custom styles will override Bootstrap *@
+    @* Link to your site.css (Contains all styles below) *@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
-    @* --- Custom Styles for YouTube Music Look --- *@
 </head>
 <body class="sidebar-collapsed">
-    @* Start with sidebar collapsed on larger screens *@
+    @* Start with sidebar collapsed on larger screens by default *@
 
+    @* Top Bar: Fixed navigation header *@
     <header class="top-bar">
-        @* Sidebar Toggle Buttons *@
-        <button id="sidebar-toggle" class="sidebar-toggle-btn d-none d-lg-block">
-            @* Hide on md and below *@
+        @* Sidebar Toggle Buttons (Desktop and Mobile) *@
+        <button id="sidebar-toggle" class="sidebar-toggle-btn d-none d-lg-block" aria-label="Toggle sidebar">
             <i class="bi bi-list"></i>
         </button>
-        <button id="mobile-sidebar-toggle" class="mobile-sidebar-toggle d-lg-none">
-            @* Show only on md and below *@
+        <button id="mobile-sidebar-toggle" class="mobile-sidebar-toggle d-lg-none" aria-label="Toggle sidebar">
             <i class="bi bi-list"></i>
         </button>
 
         @* Brand/Logo *@
         <a class="navbar-brand" href="/">
             <i class="bi bi-music-note-beamed"></i>
-            <span class="d-none d-sm-inline ms-2">Music App</span> @* Hide text on xs screens *@
+            <span class="d-none d-sm-inline ms-2">Music App</span>
         </a>
 
         @* Search Bar Container *@
         <div class="search-container">
             <div class="input-group">
                 <input type="text" class="form-control search-box" placeholder="Search" aria-label="Search">
-                <button class="btn search-btn" type="button">
+                <button class="btn search-btn" type="button" aria-label="Search button">
                     <i class="bi bi-search"></i>
                 </button>
             </div>
         </div>
 
         @* Profile Button *@
-        <a href="/Profile" class="profile-btn">
-            @* Changed to simple anchor for styling *@
+        <a href="/Profile" class="profile-btn" aria-label="View profile">
             <i class="bi bi-person-circle"></i>
         </a>
     </header>
 
+    @* Sidebar Navigation *@
     <aside class="sidebar" id="sidebar">
         @* Scrollable Navigation Area *@
         <div class="sidebar-sticky-content">
             <ul class="nav flex-column">
+                @* Navigation Links - dynamically set active state *@
                 <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"].ToString() == "Home" && ViewContext.RouteData.Values["action"].ToString() == "Index" ? "active" : "")" href="/">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" href="/">
                         <i class="bi bi-house-door-fill"></i> <span class="sidebar-text">Home</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"].ToString() == "Artists" ? "active" : "")" href="/Artists">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Artists" ? "active" : "")" href="/Artists">
                         <i class="bi bi-people-fill"></i> <span class="sidebar-text">Artists</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    @* --- Changed Icon Here --- *@
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"].ToString() == "Albums" ? "active" : "")" href="/Albums">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Albums" ? "active" : "")" href="/Albums">
                         <i class="bi bi-disc-fill"></i> <span class="sidebar-text">Albums</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"].ToString() == "Playlists" ? "active" : "")" href="/Playlists">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Playlists" ? "active" : "")" href="/Playlists">
                         <i class="bi bi-music-note-list"></i> <span class="sidebar-text">Playlists</span>
                     </a>
                 </li>
 
-                <li><hr class="mx-3"></li>
+                @* Divider *@
+                <li><hr class="mx-3 sidebar-divider"></li>
 
                 <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"].ToString() == "Home" && ViewContext.RouteData.Values["action"].ToString() == "About" ? "active" : "")" href="/Home/About">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "About" ? "active" : "")" href="/Home/About">
                         <i class="bi bi-info-circle-fill"></i> <span class="sidebar-text">About</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Privacy" ? "active" : "")" href="/Home/Privacy">
+                        <i class="bi bi-shield-check"></i> <span class="sidebar-text">Privacy</span>
                     </a>
                 </li>
             </ul>
         </div>
 
         @* Non-scrolling bottom part (for theme toggle) *@
-        <div class="mt-auto pb-2">
-            <hr class="mx-3">
-            @* Theme Toggle *@
-            <div class="theme-switch-wrapper" onclick="document.getElementById('theme-toggle').click()">
-                <div class="theme-switch">
-                    <input type="checkbox" id="theme-toggle"> @* Checked state managed by JS *@
-                    <span class="slider"></span>
-                </div>
-                <span class="sidebar-text ms-2">Theme</span> @* Text updated by JS *@
+        <div class="mt-auto pb-2 sidebar-bottom-section">
+            <hr class="mx-3 sidebar-divider">
+
+            @* --- Theme Toggle Area --- *@
+            @* Slider Toggle (Visible when sidebar is expanded) *@
+            <div class="theme-switch-wrapper" id="theme-switch-expanded">
+                <label class="theme-switch" for="theme-toggle-checkbox" aria-label="Toggle theme slider">
+                    <input type="checkbox" id="theme-toggle-checkbox">
+                    <span class="slider round"></span>
+                </label>
+                <span class="sidebar-text ms-2 theme-switch-label" id="theme-switch-label">Theme</span>
             </div>
+
+            @* Icon Button Toggle (Visible when sidebar is collapsed) *@
+            <button type="button" class="btn nav-link theme-toggle-icon-btn" id="theme-toggle-collapsed" aria-label="Toggle theme">
+                @* Icon (e.g., bi-sun-fill or bi-moon-fill) will be set by JavaScript *@
+                <i id="theme-toggle-icon" class="bi"></i>
+            </button>
+            @* --- End Theme Toggle Area --- *@
         </div>
     </aside>
 
+    @* Main Content Wrapper *@
     <div class="content-wrapper" id="content-wrapper">
-        <main role="main">
+        <main role="main" class="p-4">
+            @* Add padding directly to main *@
             @RenderBody()
         </main>
     </div>
 
+    @* Bootstrap JS Bundle *@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    @* Site Specific JS (Contains all script logic below) *@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
-
+    @* Render section for page-specific scripts *@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
