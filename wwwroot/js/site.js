@@ -13,12 +13,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const MOBILE_BREAKPOINT = 992; // Corresponds to d-lg-none/d-lg-block
 
+
     // --- Sidebar State Logic ---
     function applySidebarState(collapse) {
         if (!sidebar || !body) return; // Ensure elements exist
 
         const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
 
+        
         if (isMobile) {
             // Mobile: Use overlay with 'active-mobile' class
             if (collapse) {
