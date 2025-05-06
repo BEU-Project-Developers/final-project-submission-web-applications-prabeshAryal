@@ -295,7 +295,7 @@
         <h1 class="artist-banner-title">@Model.Name</h1>
         <p class="artist-banner-details">
             <span>Genre: @Model.Genre</span>
-            <span>Albums: @Model.AlbumCount</span>
+            <span>Albums: @Model.Albums.Count</span>
             @* Add more details if available in model, e.g., Monthly Listeners *@
             @* <span>Monthly Listeners: 4.2M</span> *@
         </p>
@@ -311,7 +311,7 @@
             @* Replace with actual bio from Model if available *@
             <p>
                 Discover the unique sound of @Model.Name, known for their captivating @Model.Genre tracks.
-                With a growing discography of @Model.AlbumCount albums, they continue to push musical boundaries.
+                With a growing discography of @Model.Albums.Count albums, they continue to push musical boundaries.
                 (This is placeholder text - replace with actual artist biography).
             </p>
             <p>

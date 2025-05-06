@@ -14,13 +14,13 @@
     Random randomGen = new Random();
     string GetRandomImageUrl(int width, int height)
     {
-        int randomId = randomGen.Next(1, 500);
+        // Using a wider range of IDs (1-1084) for more variety
+        int randomId = randomGen.Next(1, 1085);
         return $"https://picsum.photos/id/{randomId}/{width}/{height}";
     }
 
-    // Image URLs
+    // Image URLs with different random IDs for each
     string featuredArtistImageUrl = GetRandomImageUrl(600, 300);
-    // Request square images for circular display
     string albumCoverImageUrl1 = GetRandomImageUrl(300, 300);
     string albumCoverImageUrl2 = GetRandomImageUrl(300, 300);
     string albumCoverImageUrl3 = GetRandomImageUrl(300, 300);
@@ -29,10 +29,10 @@
     string playlistCoverImageUrl2 = GetRandomImageUrl(300, 300);
     string playlistCoverImageUrl3 = GetRandomImageUrl(300, 300);
 
-    // Placeholder URLs
-    string defaultAlbumUrl = $"https://placehold.co/300x300/{ytmBgTertiary.ToString().TrimStart('#')}/{ytmTextSecondary.ToString().TrimStart('#')}?text=Album";
-    string defaultPlaylistUrl = $"https://placehold.co/300x300/{ytmBgTertiary.ToString().TrimStart('#')}/{ytmTextSecondary.ToString().TrimStart('#')}?text=Playlist";
-    string defaultFeaturedUrl = $"https://placehold.co/600x300/{ytmBgTertiary.ToString().TrimStart('#')}/{ytmTextSecondary.ToString().TrimStart('#')}?text=Featured";
+    // Placeholder URLs for fallback - using actual color values instead of CSS variables
+    string defaultAlbumUrl = "https://placehold.co/300x300/212121/AAAAAA?text=Album";
+    string defaultPlaylistUrl = "https://placehold.co/300x300/212121/AAAAAA?text=Playlist";
+    string defaultFeaturedUrl = "https://placehold.co/600x300/212121/AAAAAA?text=Featured";
 }
 
 @* Add specific styles for this page *@
@@ -343,30 +343,61 @@
 
 @* Welcome & Featured Artist Row *@
 <div class="row mb-4">
-    <div class="col-lg-6 mb-4 mb-lg-0">
-        <div class="welcome-section">
-            <h2>Welcome to Music App</h2>
-            <p>Your personal music hub. Discover, listen, and share your favorite tunes.</p>
-            <div class="d-grid gap-2 d-sm-flex">
-                <button class="btn btn-browse" onclick="location.href='@Url.Action("Index", "Albums")'">
-                    <i class="bi bi-disc-fill me-1"></i> Browse Music
-                </button>
-                <button class="btn btn-account" onclick="location.href='@Url.Action("Index", "Profile")'">
-                    <i class="bi bi-person-plus-fill me-1"></i> Create Account
-                </button>
+    @if (!User.Identity.IsAuthenticated)
+    {
+        <div class="col-lg-6 mb-4 mb-lg-0">
+            <div class="welcome-section">
+                <h2>Welcome to Music App</h2>
+                <p>Your personal music hub. Discover, listen, and share your favorite tunes.</p>
+                <div class="d-grid gap-2 d-sm-flex">
+                    <button class="btn btn-browse" onclick="location.href='@Url.Action("Index", "Albums")'">
+                        <i class="bi bi-disc-fill me-1"></i> Browse Music
+                    </button>
+                    <button class="btn btn-account" data-bs-toggle="modal" data-bs-target="#authModal">
+                        <i class="bi bi-person-plus-fill me-1"></i> Create Account
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="featured-artist-banner">
-            <img src="@featuredArtistImageUrl" alt="Featured Artist"
-                 onerror="this.onerror=null; this.src='@defaultFeaturedUrl';">
-            <div class="overlay">
-                <h5>Featured Artist</h5>
-                <p>Check out the latest tracks and curated picks.</p>
+        <div class="col-lg-6">
+            <div class="featured-artist-banner">
+                <img src="@featuredArtistImageUrl" alt="Featured Artist"
+                     onerror="this.onerror=null; this.src='@defaultFeaturedUrl';">
+                <div class="overlay">
+                    <h5>Featured Artist</h5>
+                    <p>Check out the latest tracks and curated picks.</p>
+                </div>
             </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <div class="col-12">
+            <h3 class="section-header">Featured Artists</h3>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                @{
+                    string[] featuredArtistNames = { "Weekend Vibes", "Rising Stars", "Trending Now" };
+                    for (int i = 0; i < 3; i++)
+                    {
+                        string artistImageUrl = GetRandomImageUrl(300, 300);
+                        <div class="col">
+                            <div class="card h-100 bg-dark text-white border-0">
+                                <img src="@artistImageUrl" class="card-img" alt="Featured Artist"
+                                     style="height: 180px; object-fit: cover;"
+                                     onerror="this.onerror=null; this.src='@defaultFeaturedUrl';">
+                                <div class="card-img-overlay d-flex flex-column justify-content-end" 
+                                     style="background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.1) 60%);">
+                                    <h5 class="card-title">@featuredArtistNames[i]</h5>
+                                    <p class="card-text small">Check out the latest tracks and curated picks.</p>
+                                    <a href="#" class="stretched-link"></a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
 </div>
 
 @* Popular Albums Section (Circular Images) *@

@@ -10,6 +10,17 @@
     var ytmTextSecondary = "var(--ytm-text-secondary)";
     var ytmAccentRed = "var(--ytm-accent-red)";
     var ytmBorderColor = "var(--ytm-border-color)";
+
+    // Random Image Generation
+    Random randomGen = new Random();
+    string GetRandomImageUrl(int width, int height)
+    {
+        int randomId = randomGen.Next(1, 1085);
+        return $"https://picsum.photos/id/{randomId}/{width}/{height}";
+    }
+
+    // Default image placeholder URL
+    string defaultArtistImageUrl = "https://placehold.co/300x300/212121/AAAAAA?text=Artist";
 }
 
 @* Add specific styles for this page *@
@@ -213,8 +224,10 @@
 
                     @* Image Wrapper (Circular) *@
                     <div class="artist-image-wrapper">
-                        <img src="@artist.ImageUrl" class="artist-image" alt="@artist.Name"
-                             onerror="this.onerror=null; this.src='https://placehold.co/300x300/212121/AAAAAA?text=Artist';"> @* Basic placeholder fallback *@
+                        <img src="@GetRandomImageUrl(300, 300)" 
+                             class="artist-image" 
+                             alt="@artist.Name"
+                             onerror="this.onerror=null; this.src='@defaultArtistImageUrl';">
                         @* Optional Play Button Overlay *@
                         <div class="play-overlay">
                             <i class="bi bi-play-fill play-icon"></i>
@@ -225,7 +238,6 @@
                     <div class="artist-info">
                         <div class="artist-name" title="@artist.Name">@artist.Name</div>
                         <div class="artist-genre">@artist.Genre</div>
-                        @* Removed album count and details button - now whole card links *@
                     </div>
                 </div>
             </div>

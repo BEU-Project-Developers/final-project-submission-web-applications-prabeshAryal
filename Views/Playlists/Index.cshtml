@@ -10,8 +10,17 @@
     var ytmTextSecondary = "var(--ytm-text-secondary)";
     var ytmAccentRed = "var(--ytm-accent-red)";
     var ytmBorderColor = "var(--ytm-border-color)";
-    // Default image placeholder URL using theme colors
-    var defaultPlaylistImageUrl = $"https://placehold.co/300x300/{ytmBgTertiary.ToString().TrimStart('#')}/{ytmTextSecondary.ToString().TrimStart('#')}?text=Playlist";
+
+    // Random Image Generation
+    Random randomGen = new Random();
+    string GetRandomImageUrl(int width, int height)
+    {
+        int randomId = randomGen.Next(1, 1085);
+        return $"https://picsum.photos/id/{randomId}/{width}/{height}";
+    }
+
+    // Default image placeholder URL
+    string defaultPlaylistImageUrl = "https://placehold.co/300x300/212121/AAAAAA?text=Playlist";
 }
 
 @* Add specific styles for this page *@
@@ -322,11 +331,11 @@
     </a>
 </div>
 
-@* Featured Playlists Section (Only show if there are public playlists) *@
+@* Featured Playlists Section *@
 @{
-    var featuredPlaylists = Model?.Where(p => p.IsPublic).Take(4).ToList();
+    var featuredPlaylists = Model?.Take(3).ToList() ?? new List<MusicApp.Models.Playlist>();
 }
-@if (featuredPlaylists != null && featuredPlaylists.Any())
+@if (featuredPlaylists.Any())
 {
     <div class="section-container">
         <h4>Featured Playlists</h4>
@@ -336,14 +345,14 @@
                 <div class="col">
                     <div class="playlist-grid-item">
                         <a asp-action="Details" asp-route-id="@playlist.Id" class="playlist-link" aria-label="View details for @playlist.Name"></a>
-                        <img src="@(string.IsNullOrEmpty(playlist.CoverImageUrl) ? defaultPlaylistImageUrl : playlist.CoverImageUrl)"
-                             class="playlist-image" alt="@playlist.Name"
+                        <img src="@GetRandomImageUrl(300, 300)"
+                             class="playlist-image" 
+                             alt="@playlist.Name"
                              onerror="this.onerror=null; this.src='@defaultPlaylistImageUrl';">
                         <div class="playlist-info">
                             <div class="playlist-title" title="@playlist.Name">@playlist.Name</div>
                             <div class="playlist-details">
-                                @(playlist.SongIds?.Count ?? 0) songs
-                                @* Or show description: @playlist.Description *@
+                                @(playlist.SongCount) songs
                             </div>
                         </div>
                         <div class="playlist-play-overlay">
@@ -356,102 +365,86 @@
     </div>
 }
 
-
 @* All Playlists Section (Tabs & Table) *@
-<div class="section-container themed-tabs">
-    <ul class="nav nav-tabs" id="playlistTabs" role="tablist">
+<div class="section-container">
+    <h4>All Playlists</h4>
+    <ul class="nav nav-tabs themed-tabs" id="playlistTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            @* Add JS later to handle tab clicks and filter the table *@
-            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-tab-pane" type="button" role="tab" aria-controls="all-tab-pane" aria-selected="true">All Playlists</button>
+            <button class="nav-link active" id="grid-tab" data-bs-toggle="tab" data-bs-target="#grid" type="button" role="tab" aria-controls="grid" aria-selected="true">
+                <i class="bi bi-grid-3x3-gap"></i> Grid
+            </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="public-tab" data-bs-toggle="tab" data-bs-target="#public-tab-pane" type="button" role="tab" aria-controls="public-tab-pane" aria-selected="false">Public</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="private-tab" data-bs-toggle="tab" data-bs-target="#private-tab-pane" type="button" role="tab" aria-controls="private-tab-pane" aria-selected="false">Private</button>
+            <button class="nav-link" id="list-tab" data-bs-toggle="tab" data-bs-target="#list" type="button" role="tab" aria-controls="list" aria-selected="false">
+                <i class="bi bi-list"></i> List
+            </button>
         </li>
     </ul>
+
     <div class="tab-content" id="playlistTabsContent">
-        @* This example puts all playlists in the 'All' tab pane. Real filtering needs JS or separate partial views. *@
-        <div class="tab-pane fade show active" id="all-tab-pane" role="tabpanel" aria-labelledby="all-tab" tabindex="0">
-            @if (Model != null && Model.Any())
-            {
-                <div class="table-responsive">
-                    <table class="table themed-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 5%;">#</th>
-                                <th style="width: 40%;">Playlist</th>
-                                <th style="width: 15%;">Tracks</th>
-                                <th style="width: 15%;">Privacy</th>
-                                <th style="width: 25%;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @{
-                                int counter = 1;
-                            }
-                            @foreach (var playlist in Model)
-                            {
-                                <tr>
-                                    <td>@(counter++)</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <img src="@(string.IsNullOrEmpty(playlist.CoverImageUrl) ? defaultPlaylistImageUrl : playlist.CoverImageUrl)"
-                                                 class="playlist-cover-in-table me-3" alt="@playlist.Name"
-                                                 onerror="this.onerror=null; this.src='@defaultPlaylistImageUrl';">
-                                            <div>
-                                                <a asp-action="Details" asp-route-id="@playlist.Id" class="playlist-name-in-table text-decoration-none">@playlist.Name</a>
-                                                <small class="playlist-desc-in-table">@(playlist.Description?.Length > 40 ? playlist.Description.Substring(0, 40) + "..." : playlist.Description)</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>@(playlist.SongIds?.Count ?? 0)</td>
-                                    <td>
-                                        @if (playlist.IsPublic)
-                                        {
-                                            <span class="badge bg-success">Public</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-secondary">Private</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <div class="btn-group" role="group" aria-label="Playlist Actions">
-                                            <button type="button" class="btn btn-sm btn-play" title="Play">
-                                                <i class="bi bi-play-fill"></i>
-                                            </button>
-                                            <a asp-action="Edit" asp-route-id="@playlist.Id" class="btn btn-sm" title="Edit">
-                                                <i class="bi bi-pencil-fill"></i>
-                                            </a>
-                                            @* Add confirmation JS before deleting *@
-                                            <button type="button" class="btn btn-sm btn-delete" title="Delete">
-                                                <i class="bi bi-trash-fill"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-            else
-            {
-                <div class="no-playlists-alert">
-                    <i class="bi bi-music-note-list"></i>
-                    <h4>No playlists yet</h4>
-                    <p>Create your first playlist to start organizing your music.</p>
-                    <a asp-action="Create" class="btn btn-create-playlist mt-2">
-                        <i class="bi bi-plus-circle-fill"></i> Create Playlist
-                    </a>
-                </div>
-            }
+        @* Grid View *@
+        <div class="tab-pane fade show active" id="grid" role="tabpanel" aria-labelledby="grid-tab">
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 mt-3">
+                @foreach (var playlist in Model)
+                {
+                    <div class="col">
+                        <div class="playlist-grid-item">
+                            <a asp-action="Details" asp-route-id="@playlist.Id" class="playlist-link" aria-label="View details for @playlist.Name"></a>
+                            <img src="@GetRandomImageUrl(300, 300)"
+                                 class="playlist-image" 
+                                 alt="@playlist.Name"
+                                 onerror="this.onerror=null; this.src='@defaultPlaylistImageUrl';">
+                            <div class="playlist-info">
+                                <div class="playlist-title" title="@playlist.Name">@playlist.Name</div>
+                                <div class="playlist-details">
+                                    @(playlist.SongCount) songs
+                                </div>
+                            </div>
+                            <div class="playlist-play-overlay">
+                                <i class="bi bi-play-fill playlist-play-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
         </div>
-        @* Add empty panes for Public/Private tabs - content would be loaded via JS or separate requests *@
-        <div class="tab-pane fade" id="public-tab-pane" role="tabpanel" aria-labelledby="public-tab" tabindex="0">... Public playlists content ...</div>
-        <div class="tab-pane fade" id="private-tab-pane" role="tabpanel" aria-labelledby="private-tab" tabindex="0">... Private playlists content ...</div>
+
+        @* List View *@
+        <div class="tab-pane fade" id="list" role="tabpanel" aria-labelledby="list-tab">
+            <div class="table-responsive mt-3">
+                <table class="table themed-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;"></th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Songs</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var playlist in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <img src="@GetRandomImageUrl(40, 40)"
+                                         class="playlist-cover-in-table" 
+                                         alt="@playlist.Name"
+                                         onerror="this.onerror=null; this.src='@defaultPlaylistImageUrl';">
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("Details", "Playlists", new { id = playlist.Id })" class="playlist-name-in-table">@playlist.Name</a>
+                                    <span class="playlist-desc-in-table">@playlist.Description</span>
+                                </td>
+                                <td>@playlist.Description</td>
+                                <td>@playlist.SongCount</td>
+                                <td>@playlist.CreatedAt.ToString("MMM d, yyyy")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 

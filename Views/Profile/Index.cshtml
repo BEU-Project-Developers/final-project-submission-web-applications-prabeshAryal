@@ -1,5 +1,5 @@
 ﻿<!-- Views/Profile/Index.cshtml -->
-@model MusicApp.Models.ProfileViewModel
+@model MusicApp.ViewModels.ProfileViewModel
 @{
     ViewData["Title"] = "Profile";
 }
@@ -55,9 +55,11 @@
                 <a href="#" class="list-group-item list-group-item-action">
                     <i class="bi bi-gear me-2"></i> Account Settings
                 </a>
-                <a href="#" class="list-group-item list-group-item-action">
-                    <i class="bi bi-box-arrow-right me-2"></i> Logout
-                </a>
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    <button type="submit" class="list-group-item list-group-item-action w-100 text-start border-0">
+                        <i class="bi bi-box-arrow-right me-2"></i> Logout
+                    </button>
+                </form>
             </div>
         </div>
 
@@ -169,13 +171,26 @@
                             <div class="list-group-item">
                                 <div class="d-flex">
                                     <div class="me-3">
-                                        <span class="badge @activity.BadgeColorClass rounded-circle p-2">
-                                            <i class="@activity.IconClass"></i>
+                                        <span class="badge rounded-circle p-2" style="background-color: @(activity.Type == "playlist_created" ? "var(--bs-primary)" : 
+                                                                                activity.Type == "song_liked" ? "var(--bs-danger)" : 
+                                                                                activity.Type == "artist_followed" ? "var(--bs-success)" : 
+                                                                                activity.Type == "album_added" ? "var(--bs-info)" : 
+                                                                                "var(--bs-secondary)")">
+                                            <i class="@(activity.Type == "playlist_created" ? "bi bi-music-note-list" : 
+                                                       activity.Type == "song_liked" ? "bi bi-heart-fill" : 
+                                                       activity.Type == "artist_followed" ? "bi bi-person-plus-fill" : 
+                                                       activity.Type == "album_added" ? "bi bi-disc-fill" : 
+                                                       "bi bi-activity")"></i>
                                         </span>
                                     </div>
                                     <div>
                                         <p class="mb-1">@Html.Raw(activity.Description)</p> @* Use Html.Raw to render HTML in description if needed *@
-                                        <small class="text-muted">@activity.TimeAgo</small>
+                                        <small class="text-muted">@(DateTime.Now - activity.Timestamp > TimeSpan.FromDays(365) ? $"{(int)((DateTime.Now - activity.Timestamp).TotalDays / 365)} years ago" :
+                                                              DateTime.Now - activity.Timestamp > TimeSpan.FromDays(30) ? $"{(int)((DateTime.Now - activity.Timestamp).TotalDays / 30)} months ago" :
+                                                              DateTime.Now - activity.Timestamp > TimeSpan.FromDays(1) ? $"{(int)(DateTime.Now - activity.Timestamp).TotalDays} days ago" :
+                                                              DateTime.Now - activity.Timestamp > TimeSpan.FromHours(1) ? $"{(int)(DateTime.Now - activity.Timestamp).TotalHours} hours ago" :
+                                                              DateTime.Now - activity.Timestamp > TimeSpan.FromMinutes(1) ? $"{(int)(DateTime.Now - activity.Timestamp).TotalMinutes} minutes ago" :
+                                                              "just now")</small>
                                     </div>
                                 </div>
                             </div>

@@ -10,6 +10,18 @@
 
 @* Add specific styles for this page *@
 <style>
+    .university-logo {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .university-logo img {
+        max-width: 200px;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
     .about-section { /* Renamed from details-section for clarity */
         background-color: var(--ytm-bg-secondary);
         padding: 2rem 2.5rem; /* Increased padding */
@@ -89,6 +101,11 @@
         }
     }
 </style>
+
+@* University Logo Section *@
+<div class="university-logo">
+    <img src="~/assets/beu_logo.png" alt="Baku Engineering University Logo" />
+</div>
 
 @* Simplified About Section *@
 <div class="about-section">

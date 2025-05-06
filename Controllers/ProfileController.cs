@@ -1,6 +1,7 @@
 ﻿// MusicApp.Controllers/ProfileController.cs
 using Microsoft.AspNetCore.Mvc;
 using MusicApp.Models;
+using MusicApp.ViewModels;
 using System;
 using System.Collections.Generic;
 
@@ -8,7 +9,7 @@ namespace MusicApp.Controllers
 {
     public class ProfileController : Controller
     {
-        private string GetRandomImageUrl(int width, int height, int idStartRange)
+        private static string GetRandomImageUrl(int width, int height)
         {
             Random random = new Random();
             // Corrected range: 1 to 1084 inclusive
@@ -18,84 +19,105 @@ namespace MusicApp.Controllers
 
         public IActionResult Index()
         {
-            var viewModel = new ProfileViewModel
+            // Create a sample user
+            var user = new User
             {
-                ProfileImageUrl = GetRandomImageUrl(120, 120, 8001), // idStartRange is still used for variety, but the random ID is limited to 1-1084
                 Username = "Prabesh Aryal",
-                MembershipStatus = "Super Administrator",
-                PlaylistsCount = new Random().Next(20, 60),
-                FollowersCount = new Random().Next(80, 200),
-                FollowingCount = new Random().Next(50, 150),
+                ProfileImageUrl = "~/assets/default-profile.png",
+                Playlists = new List<Playlist>(),
+                Followers = new List<UserFollower>(),
+                Following = new List<UserFollower>()
+            };
 
-                TotalListeningTime = $"{new Random().Next(100, 200)} hours",
-                TopGenre = new string[] { "Rock", "Pop", "Electronic", "Hip Hop", "Classical" }[new Random().Next(0, 5)],
-                FavoriteArtist = new string[] { "The Beatles", "Queen", "Radiohead", "Coldplay", "Nirvana" }[new Random().Next(0, 5)],
+            // Add sample data to user
+            for (int i = 0; i < 15; i++)
+            {
+                user.Playlists.Add(new Playlist());
+            }
+            for (int i = 0; i < 234; i++)
+            {
+                user.Followers.Add(new UserFollower());
+            }
+            for (int i = 0; i < 123; i++)
+            {
+                user.Following.Add(new UserFollower());
+            }
 
+            var model = new ProfileViewModel
+            {
+                User = user,
+                TotalListeningTime = "1,234 hours",
+                TopGenre = "Rock",
+                FavoriteArtist = "Artist Name",
                 RecentlyPlayedTracks = GenerateRecentlyPlayedTracks(),
                 TopArtists = GenerateTopArtists(),
                 ActivityFeedItems = GenerateActivityFeedItems()
             };
 
-            return View(viewModel);
+            return View(model);
         }
 
-        private List<RecentlyPlayedTrackViewModel> GenerateRecentlyPlayedTracks()
+        private List<ProfileViewModel.RecentlyPlayedTrack> GenerateRecentlyPlayedTracks()
         {
-            var tracks = new List<RecentlyPlayedTrackViewModel>();
-            for (int i = 1; i <= 5; i++)
+            var tracks = new List<ProfileViewModel.RecentlyPlayedTrack>();
+
+            // Add sample tracks
+            tracks.Add(new ProfileViewModel.RecentlyPlayedTrack
             {
-                tracks.Add(new RecentlyPlayedTrackViewModel
-                {
-                    SongTitle = $"Song Title {i}",
-                    ArtistName = $"Artist Name {i}",
-                    AlbumName = $"Album Name {i}",
-                    CoverImageUrl = GetRandomImageUrl(50, 50, 9000 + i * 100), // idStartRange is still used for variety, but the random ID is limited to 1-1084
-                    Duration = $"{new Random().Next(3, 5)}:{new Random().Next(10, 60).ToString("D2")}"
-                });
-            }
+                Id = 1,
+                SongTitle = "Song Title 1",
+                ArtistName = "Artist 1",
+                AlbumName = "Album 1",
+                CoverImageUrl = "~/assets/album-cover.jpg",
+                Duration = "3:45"
+            });
+
             return tracks;
         }
 
-        private List<TopArtistViewModel> GenerateTopArtists()
+        private List<ProfileViewModel.TopArtist> GenerateTopArtists()
         {
-            var topArtists = new List<TopArtistViewModel>();
-            string[] artistNames = new string[] { "Artist A", "Artist B", "Artist C", "Artist D" };
-            for (int i = 0; i < 4; i++)
+            var topArtists = new List<ProfileViewModel.TopArtist>();
+
+            // Add sample artists
+            topArtists.Add(new ProfileViewModel.TopArtist
             {
-                topArtists.Add(new TopArtistViewModel
-                {
-                    ArtistName = artistNames[i],
-                    ArtistImageUrl = GetRandomImageUrl(80, 80, 10000 + i * 100), // idStartRange is still used for variety, but the random ID is limited to 1-1084
-                    PlayCount = new Random().Next(30, 80)
-                });
-            }
+                Id = 1,
+                ArtistName = "Artist 1",
+                ArtistImageUrl = "~/assets/artist-1.jpg",
+                PlayCount = 1234
+            });
+
             return topArtists;
         }
 
-        private List<ActivityFeedItemViewModel> GenerateActivityFeedItems()
+        private List<ProfileViewModel.ActivityFeedItem> GenerateActivityFeedItems()
         {
-            var activities = new List<ActivityFeedItemViewModel>();
-            activities.Add(new ActivityFeedItemViewModel
+            var activities = new List<ProfileViewModel.ActivityFeedItem>();
+            activities.Add(new ProfileViewModel.ActivityFeedItem
             {
-                Description = "You added 5 songs to <strong>Workout Playlist</strong>",
-                TimeAgo = "30 minutes ago",
-                IconClass = "bi bi-music-note",
-                BadgeColorClass = "bg-primary"
+                Id = 1,
+                Description = "Listened to <strong>Song Title</strong>",
+                Type = "song_played",
+                Timestamp = DateTime.UtcNow.AddMinutes(-3)
             });
-            activities.Add(new ActivityFeedItemViewModel
+
+            activities.Add(new ProfileViewModel.ActivityFeedItem
             {
-                Description = "You followed <strong>MusicLover123</strong>",
-                TimeAgo = "1 hour ago",
-                IconClass = "bi bi-people",
-                BadgeColorClass = "bg-success"
+                Id = 2,
+                Description = "Added <strong>Album Name</strong> to favorites",
+                Type = "album_favorited",
+                Timestamp = DateTime.UtcNow.AddHours(-1)
             });
-            activities.Add(new ActivityFeedItemViewModel
+
+            activities.Add(new ProfileViewModel.ActivityFeedItem
             {
-                Description = "You liked <strong>Chill Beats</strong> by <strong>Relax Sounds</strong>",
-                TimeAgo = "2 hours ago",
-                IconClass = "bi bi-heart",
-                BadgeColorClass = "bg-info"
+                Id = 3,
+                Description = "Created new playlist <strong>My Playlist</strong>",
+                Type = "playlist_created",
+                Timestamp = DateTime.UtcNow.AddHours(-2)
             });
+
             return activities;
         }
     }
