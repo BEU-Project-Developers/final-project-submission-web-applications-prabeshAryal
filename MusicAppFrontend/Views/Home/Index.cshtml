@@ -1,0 +1,487 @@
+﻿@{
+    ViewData["Title"] = "Home";
+    Random randomGen = new Random();
+    string GetRandomImageUrl(int width, int height)
+    {
+        int randomId = randomGen.Next(1, 1085);
+        return $"https://picsum.photos/id/{randomId}/{width}/{height}";
+    }
+}
+
+@model HomeViewModel
+
+@* Add specific styles for this page *@
+<style>
+    /* Section Header */
+    .section-header {
+        color: var(--ytm-text-primary);
+        font-weight: 500;
+        font-size: 1.5rem;
+        margin-top: 2.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Welcome Section */
+    .welcome-section {
+        background-color: var(--ytm-bg-secondary);
+        padding: 2rem;
+        border-radius: 12px;
+        border: 1px solid var(--ytm-border-color);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
+    }
+
+    .welcome-section h2 {
+        color: var(--ytm-text-primary);
+        font-weight: 500;
+        margin-bottom: 0.75rem;
+    }
+
+    .welcome-section p {
+        color: var(--ytm-text-secondary);
+        margin-bottom: 1.5rem;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    .welcome-section .btn-browse {
+        background-color: var(--ytm-accent-red);
+        color: var(--ytm-text-primary);
+        border: none;
+        border-radius: 20px;
+        padding: 0.5rem 1.3rem;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+    }
+
+    .welcome-section .btn-browse:hover {
+        background-color: #cc0000;
+        color: var(--ytm-text-primary);
+    }
+
+    .welcome-section .btn-account {
+        background-color: var(--ytm-bg-tertiary);
+        color: var(--ytm-text-primary);
+        border: 1px solid var(--ytm-border-color);
+        border-radius: 20px;
+        padding: 0.5rem 1.3rem;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+    }
+
+    .welcome-section .btn-account:hover {
+        background-color: var(--ytm-border-color);
+        border-color: var(--ytm-border-color);
+    }
+
+    /* Featured Artist Banner */
+    .featured-artist-banner {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        height: 100%;
+        min-height: 250px;
+        background-color: var(--ytm-bg-tertiary);
+    }
+
+    .featured-artist-banner img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .featured-artist-banner .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 60%);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 1.5rem;
+    }
+
+    .featured-artist-banner h5 {
+        font-size: 1.3rem;
+        font-weight: 500;
+        color: var(--ytm-text-primary);
+        margin-bottom: 0.25rem;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+    }
+
+    .featured-artist-banner p {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.8);
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+        margin-bottom: 0;
+    }
+
+    /* Album Card Styling */
+    .album-grid-item {
+        text-align: center;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        border-radius: 8px;
+        transition: background-color 0.2s ease-in-out;
+    }
+
+    .album-grid-item:hover {
+        background-color: var(--ytm-bg-secondary);
+    }
+
+    .album-image-wrapper {
+        width: 150px;
+        height: 150px;
+        margin: 0 auto 1rem auto;
+        position: relative;
+        overflow: hidden;
+        border-radius: 50%;
+        background-color: var(--ytm-bg-tertiary);
+    }
+
+    .album-image {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .album-grid-item:hover .album-image {
+        transform: scale(1.05);
+    }
+
+    .album-info {
+        padding: 0;
+    }
+
+    .album-title {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--ytm-text-primary);
+        margin-bottom: 0.1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .album-details {
+        font-size: 0.8rem;
+        color: var(--ytm-text-secondary);
+    }
+
+    .album-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1;
+    }
+
+    .album-play-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .album-grid-item:hover .album-play-overlay {
+        opacity: 1;
+    }
+
+    .album-play-icon {
+        color: white;
+        font-size: 2.5rem;
+    }
+
+    /* Playlist Card Styling */
+    .playlist-grid-item {
+        text-align: left;
+        margin-bottom: 1.5rem;
+        position: relative;
+        border-radius: 8px;
+        transition: background-color 0.2s ease-in-out;
+    }
+
+    .playlist-grid-item:hover {
+        background-color: var(--ytm-bg-secondary);
+    }
+
+    .playlist-image-wrapper {
+        width: 100%;
+        padding-top: 100%;
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
+        background-color: var(--ytm-bg-tertiary);
+    }
+
+    .playlist-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .playlist-grid-item:hover .playlist-image {
+        transform: scale(1.05);
+    }
+
+    .playlist-info {
+        padding: 1rem 0.5rem;
+    }
+
+    .playlist-title {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--ytm-text-primary);
+        margin-bottom: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .playlist-details {
+        font-size: 0.8rem;
+        color: var(--ytm-text-secondary);
+    }
+
+    .playlist-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1;
+    }
+
+    .playlist-play-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .playlist-grid-item:hover .playlist-play-overlay {
+        opacity: 1;
+    }
+
+    .playlist-play-icon {
+        color: white;
+        font-size: 2.5rem;
+    }
+
+    /* Song List Styling */
+    .song-list {
+        background-color: var(--ytm-bg-secondary);
+        border-radius: 12px;
+        border: 1px solid var(--ytm-border-color);
+        overflow: hidden;
+    }
+
+    .song-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--ytm-border-color);
+        transition: background-color 0.2s ease;
+    }
+
+    .song-item:last-child {
+        border-bottom: none;
+    }
+
+    .song-item:hover {
+        background-color: var(--ytm-bg-tertiary);
+    }
+
+    .song-image {
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        margin-right: 1rem;
+        object-fit: cover;
+    }
+
+    .song-info {
+        flex: 1;
+    }
+
+    .song-title {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--ytm-text-primary);
+        margin-bottom: 0.1rem;
+    }
+
+    .song-artist {
+        font-size: 0.8rem;
+        color: var(--ytm-text-secondary);
+    }
+
+    .song-duration {
+        font-size: 0.8rem;
+        color: var(--ytm-text-secondary);
+        margin-left: 1rem;
+    }
+
+    /* Error Message Styling */
+    .error-message {
+        background-color: #ffebee;
+        color: #c62828;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        border: 1px solid #ef9a9a;
+    }
+</style>
+
+<div class="container-fluid">
+    @if (TempData["Error"] != null)
+    {
+        <div class="error-message">
+            <i class="bi bi-exclamation-circle-fill me-2"></i>
+            @TempData["Error"]
+        </div>
+    }
+
+    <div class="row">
+        <!-- Welcome Section -->
+        <div class="col-md-4">
+            <div class="welcome-section">
+                <h2>Welcome to MusicApp</h2>
+                <p>Discover new music, create playlists, and share your favorite tracks with friends.</p>
+                <div class="d-flex gap-2">
+                    <a href="/Songs" class="btn btn-browse">Browse Music</a>
+                    <a href="/Account/Register" class="btn btn-account">Create Account</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Featured Artist -->
+        <div class="col-md-8">
+            @if (Model.FeaturedArtist != null)
+            {
+                <div class="featured-artist-banner">
+                    <img src="@(Model.FeaturedArtist.ImageUrl ?? GetRandomImageUrl(600, 300))" 
+                         alt="@Model.FeaturedArtist.Name" 
+                         onerror="this.src='https://placehold.co/600x300/212121/AAAAAA?text=Artist';">
+                    <div class="overlay">
+                        <h5>@Model.FeaturedArtist.Name</h5>
+                        <p>@Model.FeaturedArtist.Genre • @Model.FeaturedArtist.MonthlyListeners.ToString("N0") monthly listeners</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Latest Albums -->
+    <h3 class="section-header">Latest Albums</h3>
+    <div class="row">
+        @foreach (var album in Model.LatestAlbums)
+        {
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="album-grid-item">
+                    <div class="album-image-wrapper">
+                        <img src="@(album.CoverImageUrl ?? GetRandomImageUrl(300, 300))" 
+                             alt="@album.Title" class="album-image" 
+                             onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Album';">
+                        <div class="album-play-overlay">
+                            <i class="bi bi-play-circle-fill album-play-icon"></i>
+                        </div>
+                    </div>
+                    <div class="album-info">
+                        <div class="album-title">@album.Title</div>
+                        <div class="album-details">@album.ArtistName • @album.Year</div>
+                    </div>
+                    <a href="/Albums/Details/@album.Id" class="album-link"></a>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Popular Playlists -->
+    <h3 class="section-header">Popular Playlists</h3>
+    <div class="row">
+        @foreach (var playlist in Model.PopularPlaylists)
+        {
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="playlist-grid-item">
+                    <div class="playlist-image-wrapper">
+                        <img src="@(playlist.CoverImageUrl ?? GetRandomImageUrl(300, 300))" 
+                             alt="@playlist.Name" class="playlist-image"
+                             onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Playlist';">
+                        <div class="playlist-play-overlay">
+                            <i class="bi bi-play-circle-fill playlist-play-icon"></i>
+                        </div>
+                    </div>
+                    <div class="playlist-info">
+                        <div class="playlist-title">@playlist.Name</div>
+                        <div class="playlist-details">@playlist.Username • @playlist.SongCount songs</div>
+                    </div>
+                    <a href="/Playlists/Details/@playlist.Id" class="playlist-link"></a>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Recently Added Songs -->
+    <h3 class="section-header">Recently Added</h3>
+    <div class="song-list">
+        @foreach (var song in Model.RecentSongs)
+        {
+            <div class="song-item">
+                <img src="@(song.CoverImageUrl ?? GetRandomImageUrl(300, 300))" class="song-image" 
+                     alt="@song.Title"
+                     onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Song';">
+                <div class="song-info">
+                    <div class="song-title">@song.Title</div>
+                    <div class="song-artist">@song.ArtistName</div>
+                </div>
+                <div class="song-duration">@song.Duration</div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Add any JavaScript for interactivity here
+    </script>
+}

@@ -1,27 +1,107 @@
 # Ignore build outputs and system files
-bin/
-obj/
-*.user
-*.suo
-*.csproj.user
-*.vspscc
-.vs/
+**/bin/
+**/obj/
+*.*.user
+*.*.suo
+*.*.csproj.user
+*.*.vspscc
+**/.vs/
 packages/
 
 # OS Specific files
 .DS_Store
 Thumbs.db
 
-# Include the 'misc' folder and its contents
-!misc/
+# Python specific ignores for all levels
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.env
+**/.venv/
+**/env/
+**/ENV/
+**/.Python
+**/pip-selfcheck.json
+**/.mypy_cache/
+**/.pytest_cache/
+**/.coverage
+**/migrations/__pycache__/
+**/migrations/*.pyc
 
-# Include image files (common extensions) - this will include images even if they are within folders
-*.jpg
-*.jpeg
-*.gif
-*.bmp
-*.webp
-*.tiff
-*.tif
+# Ignore test and data files
+**/*.sqlite
+**/*.db
+**/*.log
+**/*.tmp
 
-wwwroot/lib
+# Ignore node_modules if any JS tooling is used
+**/node_modules/
+
+# Ignore publish and deployment folders
+**/publish/
+
+# Ignore wwwroot/lib except LICENSE.md
+MusicAppFrontend/wwwroot/lib/
+!MusicAppFrontend/wwwroot/lib/jquery-validation/LICENSE.md
+
+# Ignore wwwroot/uploads (user uploads)
+MusicAppBackend/wwwroot/uploads/
+
+# Ignore misc/screenshots (images, not code)
+MusicAppFrontend/misc/screenshots/
+
+# Ignore backup and temp files
+**/*.bak
+**/*.tmp
+**/~$*
+
+# Ignore Jupyter Notebooks (if any)
+**/*.ipynb
+
+# Ignore test data and config
+**/login.json
+**/test-register.json
+**/user.json
+
+# Ignore IDE and system files
+**/.vscode/
+**/.idea/
+**/*.swp
+**/*.code-workspace
+
+# Ignore build artifacts
+**/*.dll
+**/*.exe
+**/*.pdb
+**/*.cache
+**/*.vsix
+
+# Ignore coverage and test results
+coverage/
+**/*.coverage
+TestResults/
+
+# Ignore secrets/configs (if any, add more as needed)
+**/secrets.json
+**/.env
+**/appsettings.Development.json
+
+# Allow main config files
+!**/appsettings.json
+
+# Allow Markdown and documentation
+!*.md
+!README.md
+
+# Allow schema and important docs
+!**/schema.md
+!**/important.md
+
+# Allow ER diagram
+!**/ER_Diagram.txt
+
+# Ignore solution user files
+**/*.sln.docstates
+**/*.sln.ide
+

@@ -1,0 +1,51 @@
+﻿@model IEnumerable<MusicApp.Models.DTOs.PlaylistDto>
+@using MusicApp.Helpers
+
+@{
+    ViewData["Title"] = "Playlists";
+    Random randomGen = new Random();
+    string GetRandomImageUrl(int width, int height)
+    {
+        int randomId = randomGen.Next(1, 1085);
+        return $"https://picsum.photos/id/{randomId}/{width}/{height}";
+    }
+}
+
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col d-flex justify-content-between align-items-center">
+            <h1 class="mb-0" style="color: var(--ytm-text-primary);">Your Playlists</h1>
+            <a asp-action="Create" class="btn" style="background: var(--ytm-accent-red); color: var(--ytm-text-primary);">
+                <i class="bi bi-plus-circle-fill"></i> Create Playlist
+            </a>
+        </div>
+    </div>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+        @foreach (var playlist in Model)
+        {
+            <div class="col">
+                <div class="card h-100 shadow" style="background: var(--ytm-bg-secondary); color: var(--ytm-text-primary);">
+                    <a asp-action="Details" asp-route-id="@playlist.Id" class="stretched-link"></a>
+                    <img src="@(string.IsNullOrEmpty(playlist.CoverImageUrl) ? GetRandomImageUrl(300, 300) : playlist.CoverImageUrl)" 
+                         class="card-img-top" alt="@playlist.Name" style="object-fit:cover; height:200px; background: var(--ytm-bg-tertiary);"
+                         onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Playlist';">
+                    <div class="card-body">
+                        <h5 class="card-title mb-1">@playlist.Name</h5>
+                        <div class="card-text text-secondary mb-2" style="font-size:0.95em;">@playlist.Description</div>
+                        <div class="d-flex flex-wrap small text-secondary">
+                            <span class="me-3"><i class="bi bi-music-note-list"></i> @playlist.SongCount songs</span>
+                            <span class="me-3"><i class="bi bi-person"></i> @playlist.Username</span>
+                            <span class="me-3"><i class="bi bi-calendar"></i> @playlist.CreatedAt.ToString("MMM d, yyyy")</span>
+                            <span class="badge @(playlist.IsPublic ? "bg-success" : "bg-secondary")">@(playlist.IsPublic ? "Public" : "Private")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info mt-4">No playlists found. Create your first playlist!</div>
+    }
+</div>
+

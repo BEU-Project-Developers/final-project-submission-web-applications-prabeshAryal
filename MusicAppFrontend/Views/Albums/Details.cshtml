@@ -1,0 +1,306 @@
+@model MusicApp.Models.DTOs.AlbumDto
+@{
+    ViewData["Title"] = $"{Model.Title} - Album";
+    
+    // Theme variables (can be accessed via ViewData or CSS)
+    var ytmBgPrimary = "var(--ytm-bg-primary)";
+    var ytmBgSecondary = "var(--ytm-bg-secondary)";
+    var ytmBgTertiary = "var(--ytm-bg-tertiary)";
+    var ytmTextPrimary = "var(--ytm-text-primary)";
+    var ytmTextSecondary = "var(--ytm-text-secondary)";
+    var ytmAccentRed = "var(--ytm-accent-red)";
+    var ytmBorderColor = "var(--ytm-border-color)";
+}
+
+<style>
+    .album-header {
+        display: flex;
+        margin-bottom: 2rem;
+        border-radius: 12px;
+        overflow: hidden;
+        background-color: var(--ytm-bg-secondary);
+    }
+
+    .album-cover {
+        flex: 0 0 300px;
+        height: 300px;
+        object-fit: cover;
+    }
+
+    .album-info {
+        flex: 1;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .album-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--ytm-text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .album-artist {
+        font-size: 1.2rem;
+        color: var(--ytm-text-secondary);
+        margin-bottom: 1rem;
+    }
+
+    .album-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .meta-item {
+        color: var(--ytm-text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .album-description {
+        color: var(--ytm-text-secondary);
+        margin-bottom: 1.5rem;
+        max-width: 80ch;
+        line-height: 1.6;
+    }
+
+    .album-actions {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-play {
+        background-color: var(--ytm-accent-red);
+        color: var(--ytm-text-primary);
+        border: none;
+        border-radius: 20px;
+        padding: 0.4rem 1.2rem;
+        font-weight: 500;
+    }
+
+    .btn-play:hover {
+        background-color: #cc0000;
+        color: var(--ytm-text-primary);
+    }
+
+    .btn-action {
+        color: var(--ytm-text-secondary);
+        border: 1px solid var(--ytm-border-color);
+        background: transparent;
+        border-radius: 20px;
+        padding: 0.4rem 1.2rem;
+    }
+
+    .btn-action:hover {
+        background-color: var(--ytm-bg-tertiary);
+        color: var(--ytm-text-primary);
+    }
+
+    /* Track list styling */
+    .tracks-section {
+        background-color: var(--ytm-bg-secondary);
+        padding: 1.5rem;
+        border-radius: 8px;
+        border: 1px solid var(--ytm-border-color);
+    }
+
+    .tracks-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--ytm-border-color);
+    }
+
+    .tracks-header h3 {
+        color: var(--ytm-text-primary);
+        margin-bottom: 0;
+        font-weight: 500;
+    }
+
+    .track-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .track-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--ytm-border-color);
+    }
+
+    .track-item:last-child {
+        border-bottom: none;
+    }
+
+    .track-number {
+        flex: 0 0 40px;
+        color: var(--ytm-text-secondary);
+        text-align: center;
+    }
+
+    .track-info {
+        flex: 1;
+    }
+
+    .track-title {
+        color: var(--ytm-text-primary);
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+
+    .track-artist {
+        color: var(--ytm-text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .track-duration {
+        flex: 0 0 60px;
+        color: var(--ytm-text-secondary);
+        text-align: right;
+    }
+
+    .track-actions {
+        flex: 0 0 100px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+
+    .track-actions .btn {
+        color: var(--ytm-text-secondary);
+        background: none;
+        border: none;
+        font-size: 1.1rem;
+        padding: 0.25rem;
+    }
+
+    .track-actions .btn:hover {
+        color: var(--ytm-text-primary);
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .album-header {
+            flex-direction: column;
+        }
+
+        .album-cover {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            flex: none;
+        }
+
+        .album-info {
+            padding: 1.5rem;
+        }
+
+        .album-title {
+            font-size: 2rem;
+        }
+    }
+</style>
+
+<div class="album-header">
+    <img src="@Model.CoverImageUrl" alt="@Model.Title cover" class="album-cover">
+    <div class="album-info">
+        <div>
+            <h1 class="album-title">@Model.Title</h1>
+            <div class="album-artist">
+                <a asp-controller="Artists" asp-action="Details" asp-route-id="@Model.ArtistId">
+                    @Model.ArtistName
+                </a>
+            </div>
+            
+            <div class="album-meta">
+                <span class="meta-item">
+                    <i class="bi bi-calendar3"></i> 
+                    @(Model.ReleaseDate?.Year.ToString() ?? "Unknown")
+                </span>
+                <span class="meta-item">
+                    <i class="bi bi-music-note-list"></i> 
+                    @Model.TrackCount songs
+                </span>
+                <span class="meta-item">
+                    <i class="bi bi-clock"></i> 
+                    @(TimeSpan.FromSeconds(Model.TotalDuration).ToString(@"h\:mm\:ss").TrimStart('0', ':'))
+                </span>
+                <span class="meta-item">
+                    <i class="bi bi-vinyl"></i> 
+                    @Model.Genre
+                </span>
+            </div>
+            
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <p class="album-description">@Model.Description</p>
+            }
+        </div>
+        
+        <div class="album-actions">
+            <button class="btn btn-play">
+                <i class="bi bi-play-fill"></i> Play All
+            </button>
+            <button class="btn btn-action">
+                <i class="bi bi-heart"></i> Like
+            </button>
+            <button class="btn btn-action">
+                <i class="bi bi-plus"></i> Add to Playlist
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="tracks-section">
+    <div class="tracks-header">
+        <h3>Songs</h3>
+    </div>
+    
+    @if (Model.Songs != null && Model.Songs.Any())
+    {
+        <ul class="track-list">
+            @for (int i = 0; i < Model.Songs.Count; i++)
+            {
+                var song = Model.Songs[i];
+                <li class="track-item">
+                    <div class="track-number">@(i+1)</div>
+                    <div class="track-info">
+                        <div class="track-title">@song.Title</div>
+                        <div class="track-artist">@song.ArtistName</div>
+                    </div>
+                    <div class="track-duration">
+                        @TimeSpan.FromSeconds(song.Duration).ToString(@"m\:ss")
+                    </div>
+                    <div class="track-actions">
+                        <button class="btn" title="Play">
+                            <i class="bi bi-play-fill"></i>
+                        </button>
+                        <button class="btn" title="Like">
+                            <i class="bi bi-heart"></i>
+                        </button>
+                        <button class="btn" title="Add to playlist">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p class="text-center" style="color: var(--ytm-text-secondary);">No songs available for this album.</p>
+    }
+</div>
+
+<div class="mt-4">
+    <a asp-action="Index" class="btn btn-action">
+        <i class="bi bi-arrow-left"></i> Back to Albums
+    </a>
+</div> 

@@ -1,0 +1,589 @@
+﻿@* Views/Shared/_Layout.cshtml *@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+@* Default to dark theme *@
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Music App</title>
+
+    @* Bootstrap CSS *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    @* Bootstrap Icons *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    @* Google Font (Roboto) *@
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    @* Link to your site.css (Contains all styles below) *@
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    @* Add custom styles for auth modal *@
+    <style>
+        /* Modal backdrop blur */
+        .modal-backdrop.show {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            background-color: rgba(0, 0, 0, 0.85);
+        }
+
+        .auth-modal .modal-dialog {
+            max-width: 400px;
+        }
+
+        .auth-modal .modal-content {
+            background: var(--bs-body-bg);
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .auth-modal .modal-header {
+            border-bottom: none;
+            padding: 1.5rem 1.5rem 0.5rem;
+        }
+
+        .auth-modal .modal-body {
+            padding: 1rem 1.5rem 1.5rem;
+        }
+
+        .auth-modal .form-control {
+            background: var(--bs-body-bg);
+            border: 1px solid var(--bs-border-color);
+            padding: 0.75rem 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .auth-modal .form-control:focus {
+            border-color: #ff0000;
+            box-shadow: 0 0 0 0.25rem rgba(255, 0, 0, 0.15);
+        }
+
+        .auth-modal .btn-primary {
+            background-color: #ff0000;
+            border-color: #ff0000;
+            padding: 0.75rem 1rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .auth-modal .btn-primary:hover {
+            background-color: #cc0000;
+            border-color: #cc0000;
+        }
+
+        .auth-modal .btn-primary:focus {
+            background-color: #cc0000;
+            border-color: #cc0000;
+            box-shadow: 0 0 0 0.25rem rgba(255, 0, 0, 0.25);
+        }
+
+        .auth-modal .auth-switch {
+            color: #ff0000;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .auth-modal .auth-switch:hover {
+            color: #cc0000;
+            text-decoration: underline;
+        }
+
+        .auth-modal .alert {
+            margin-bottom: 1rem;
+            border-color: #ff0000;
+            background-color: rgba(255, 0, 0, 0.1);
+            color: #ff0000;
+        }
+
+        /* Form labels */
+        .auth-modal .form-label {
+            color: var(--bs-body-color);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Remember me checkbox */
+        .auth-modal .form-check-input:checked {
+            background-color: #ff0000;
+            border-color: #ff0000;
+        }
+
+        .auth-modal .form-check-input:focus {
+            border-color: #ff0000;
+            box-shadow: 0 0 0 0.25rem rgba(255, 0, 0, 0.25);
+        }
+    </style>
+
+</head>
+<body class="sidebar-collapsed">
+    @* Start with sidebar collapsed on larger screens by default *@
+
+    @* Top Bar: Fixed navigation header *@
+    <header class="top-bar">
+        @* Sidebar Toggle Buttons (Desktop and Mobile) *@
+        <button id="sidebar-toggle" class="sidebar-toggle-btn d-none d-lg-block" aria-label="Toggle sidebar">
+            <i class="bi bi-list"></i>
+        </button>
+        <button id="mobile-sidebar-toggle" class="mobile-sidebar-toggle d-lg-none" aria-label="Toggle sidebar">
+            <i class="bi bi-list"></i>
+        </button>
+
+        @* Brand/Logo *@
+        <a class="navbar-brand" href="/">
+            <i class="bi bi-music-note-beamed"></i>
+            <span class="d-none d-sm-inline ms-2">Music App</span>
+        </a>
+
+        @* Search Bar Container *@
+        <div class="search-container">
+            <form method="get" action="@Url.Action("SearchResults", "Home")">
+            <div class="input-group">
+                    <input type="text" name="q" class="form-control search-box" placeholder="Search" aria-label="Search">
+                    <button class="btn search-btn" type="submit" aria-label="Search button">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+            </form>
+        </div>
+
+        @* Profile Button *@
+        <div class="nav-item">
+            @if (User.Identity.IsAuthenticated)
+            {
+                <div class="dropdown">
+                    <a href="#" class="btn btn-link nav-link dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="@(string.IsNullOrEmpty(ViewData["UserProfileImage"] as string) ? "/assets/default-profile.png" : ViewData["UserProfileImage"] as string)" 
+                             class="rounded-circle profile-image" width="32" height="32" alt="Profile"
+                             onerror="this.onerror=null; this.src='/assets/default-profile.png';">
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                        <li><a class="dropdown-item" href="@Url.Action("Dashboard", "Account")">Dashboard</a></li>
+                        <li><a class="dropdown-item" href="@Url.Action("Profile", "Account")">Edit Profile</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form class="form-inline" asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                                <button type="submit" class="dropdown-item">Logout</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            }
+            else
+            {
+                <button type="button" class="btn btn-link nav-link" data-bs-toggle="modal" data-bs-target="#authModal" data-auth-mode="register">
+                    <i class="bi bi-person-circle" style="font-size: 2rem;"></i>
+                </button>
+            }
+        </div>
+    </header>
+
+    @* Auth Modal *@
+    <div class="modal fade auth-modal" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="authModalLabel">Create Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="authAlert" class="alert alert-danger d-none" role="alert"></div>
+                    
+                    @* Register Form (Now Default) *@
+                    <form id="registerForm" class="auth-form">
+                        <input type="hidden" name="ReturnUrl" value="@ViewBag.ReturnUrl" />
+                        @* Add register alert div for error display *@
+                        <div id="registerFormAlert" class="alert alert-danger d-none" role="alert"></div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="registerFirstName" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="registerFirstName" name="FirstName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="registerLastName" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="registerLastName" name="LastName" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="registerUsername" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="registerUsername" name="Username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="registerEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="registerEmail" name="Email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="registerPassword" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="registerPassword" name="Password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="registerConfirmPassword" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="registerConfirmPassword" name="ConfirmPassword" required>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary" id="registerSubmitBtn">Create Account</button>
+                            <button class="btn btn-primary d-none" type="button" id="registerLoadingBtn" disabled>
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                Creating Account...
+                            </button>
+                        </div>
+                        <div class="text-center mt-3">
+                            <span>Already have an account? <a href="#" class="auth-switch" data-auth-mode="login">Sign In</a></span>
+                        </div>
+                    </form>
+
+                    @* Login Form (Now Secondary) *@
+                    <form id="loginForm" class="auth-form d-none">
+                        <input type="hidden" name="ReturnUrl" value="@ViewBag.ReturnUrl" />
+                        @* Add login alert div for error display *@
+                        <div id="loginFormAlert" class="alert alert-danger d-none" role="alert"></div>
+                        <div class="mb-3">
+                            <label for="loginEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="loginEmail" name="Email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="loginPassword" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="loginPassword" name="Password" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="loginRememberMe" name="RememberMe">
+                            <label class="form-check-label" for="loginRememberMe">Remember me</label>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary" id="loginSubmitBtn">Sign In</button>
+                            <button class="btn btn-primary d-none" type="button" id="loginLoadingBtn" disabled>
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                Signing In...
+                            </button>
+                        </div>
+                        <div class="text-center mt-3">
+                            <span>Don't have an account? <a href="#" class="auth-switch" data-auth-mode="register">Sign Up</a></span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Sidebar Navigation *@
+    <aside class="sidebar" id="sidebar">
+        @* Scrollable Navigation Area *@
+        <div class="sidebar-sticky-content">
+            <ul class="nav flex-column">
+                @* Navigation Links - dynamically set active state *@
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" href="/">
+                        <i class="bi bi-house-door-fill"></i> <span class="sidebar-text">Home</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Artists" ? "active" : "")" href="/Artists">
+                        <i class="bi bi-people-fill"></i> <span class="sidebar-text">Artists</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Albums" ? "active" : "")" href="/Albums">
+                        <i class="bi bi-disc-fill"></i> <span class="sidebar-text">Albums</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Playlists" ? "active" : "")" href="/Playlists">
+                        <i class="bi bi-music-note-list"></i> <span class="sidebar-text">Playlists</span>
+                    </a>
+                </li>
+
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <li><hr class="mx-3 sidebar-divider"></li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Account" && ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")" href="@Url.Action("Dashboard", "Account")">
+                            <i class="bi bi-speedometer2"></i> <span class="sidebar-text">Dashboard</span>
+                        </a>
+                    </li>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Account" && ViewContext.RouteData.Values["action"]?.ToString() == "AdminDashboard" ? "active" : "")" href="@Url.Action("AdminDashboard", "Account")">
+                                <i class="bi bi-shield-lock"></i> <span class="sidebar-text">Admin Panel</span>
+                            </a>
+                        </li>
+                    }
+                }
+
+                @* Divider *@
+                <li><hr class="mx-3 sidebar-divider"></li>
+
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "About" ? "active" : "")" href="/Home/About">
+                        <i class="bi bi-info-circle-fill"></i> <span class="sidebar-text">About</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Privacy" ? "active" : "")" href="/Home/Privacy">
+                        <i class="bi bi-shield-check"></i> <span class="sidebar-text">Privacy</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        @* Non-scrolling bottom part (for theme toggle) *@
+        <div class="mt-auto pb-2 sidebar-bottom-section">
+            <hr class="mx-3 sidebar-divider">
+
+            @* --- Theme Toggle Area --- *@
+            @* Slider Toggle (Visible when sidebar is expanded) *@
+            <div class="theme-switch-wrapper" id="theme-switch-expanded">
+                <label class="theme-switch" for="theme-toggle-checkbox" aria-label="Toggle theme slider">
+                    <input type="checkbox" id="theme-toggle-checkbox">
+                    <span class="slider round"></span>
+                </label>
+                <span class="sidebar-text ms-2 theme-switch-label" id="theme-switch-label">Theme</span>
+            </div>
+
+            @* Icon Button Toggle (Visible when sidebar is collapsed) *@
+            <button type="button" class="btn nav-link theme-toggle-icon-btn" id="theme-toggle-collapsed" aria-label="Toggle theme">
+                @* Icon (e.g., bi-sun-fill or bi-moon-fill) will be set by JavaScript *@
+                <i id="theme-toggle-icon" class="bi"></i>
+            </button>
+            @* --- End Theme Toggle Area --- *@
+        </div>
+    </aside>
+
+    @* Main Content Wrapper *@
+    <div class="content-wrapper" id="content-wrapper">
+        <main role="main" class="p-4">
+            @* Add padding directly to main *@
+            @RenderBody()
+        </main>
+    </div>
+
+    @* Bootstrap JS Bundle *@
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    @* Site Specific JS (Contains all script logic below) *@
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @* Render section for page-specific scripts *@
+    @await RenderSectionAsync("Scripts", required: false)
+
+    @* Update auth modal JavaScript *@
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const authModal = document.getElementById('authModal');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const authAlert = document.getElementById('authAlert');
+            const modalTitle = document.querySelector('#authModal .modal-title');
+
+            // Initialize with register form visible
+            switchAuthMode('register');
+
+            // Handle auth mode switching
+            document.querySelectorAll('.auth-switch').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const mode = this.dataset.authMode;
+                    switchAuthMode(mode);
+                });
+            });
+
+            // Handle modal open with specific mode
+            authModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const mode = button.dataset.authMode || 'register'; // Default to register
+                switchAuthMode(mode);
+            });
+
+            function switchAuthMode(mode) {
+                if (mode === 'login') {
+                    loginForm.classList.remove('d-none');
+                    registerForm.classList.add('d-none');
+                    modalTitle.textContent = 'Sign In';
+                } else {
+                    loginForm.classList.add('d-none');
+                    registerForm.classList.remove('d-none');
+                    modalTitle.textContent = 'Create Account';
+                }
+                authAlert.classList.add('d-none');
+                
+                // Hide form-specific alerts too
+                document.getElementById('loginFormAlert').classList.add('d-none');
+                document.getElementById('registerFormAlert').classList.add('d-none');
+            }
+            
+            // Helper function to show auth errors in the common alert area
+            function showAuthError(message) {
+                authAlert.textContent = message;
+                authAlert.classList.remove('d-none');
+            }
+
+            // Handle login form submission
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                authAlert.classList.add('d-none'); // Hide the common alert
+                
+                // Show loading button and hide submit button
+                const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+                const loginLoadingBtn = document.getElementById('loginLoadingBtn');
+                const loginFormAlert = document.getElementById('loginFormAlert');
+                
+                loginSubmitBtn.classList.add('d-none');
+                loginLoadingBtn.classList.remove('d-none');
+                loginFormAlert.classList.add('d-none');
+                
+                const formData = new FormData(this);
+                
+                try {
+                    const response = await fetch('@Url.Action("Login", "Account")', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    console.log('Login response status:', response.status);
+                    console.log('Login response headers:', [...response.headers.entries()]);
+
+                    // Get the response content as text first
+                    const responseText = await response.text();
+                    console.log('Login response text:', responseText);
+                    
+                    // Try to parse as JSON if possible
+                    let data;
+                    try {
+                        data = responseText ? JSON.parse(responseText) : { success: false, message: 'Empty response from server' };
+                        console.log('Parsed JSON data:', data);
+                    } catch (jsonError) {
+                        console.error('Error parsing response JSON:', jsonError, 'Response text:', responseText);
+                        data = { success: false, message: 'Error processing server response' };
+                    }
+
+                    // Handle the response
+                    if (response.ok && data && data.success) {
+                        window.location.reload();
+                    } else {
+                        // Show error message
+                        let errorMsg = 'Login failed. ';
+                        
+                        if (data && data.message) {
+                            errorMsg += data.message;
+                        } else if (!response.ok) {
+                            errorMsg += `Server returned ${response.status} ${response.statusText}`;
+                        } else {
+                            errorMsg += 'Please try again.';
+                        }
+                        
+                        loginFormAlert.textContent = errorMsg;
+                        loginFormAlert.classList.remove('d-none');
+                        
+                        // Reset buttons
+                        loginSubmitBtn.classList.remove('d-none');
+                        loginLoadingBtn.classList.add('d-none');
+                    }
+                } catch (error) {
+                    console.error('Login request error:', error);
+                    
+                    // Show error message
+                    loginFormAlert.textContent = 'An error occurred. Please try again.';
+                    loginFormAlert.classList.remove('d-none');
+                    
+                    // Reset buttons
+                    loginSubmitBtn.classList.remove('d-none');
+                    loginLoadingBtn.classList.add('d-none');
+                }
+            });
+
+            // Handle register form submission
+            registerForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                authAlert.classList.add('d-none'); // Hide the common alert
+                
+                // Show loading button and hide submit button
+                const registerSubmitBtn = document.getElementById('registerSubmitBtn');
+                const registerLoadingBtn = document.getElementById('registerLoadingBtn');
+                const registerFormAlert = document.getElementById('registerFormAlert');
+                
+                registerSubmitBtn.classList.add('d-none');
+                registerLoadingBtn.classList.remove('d-none');
+                registerFormAlert.classList.add('d-none');
+                
+                // Validate password match
+                const password = document.getElementById('registerPassword').value;
+                const confirmPassword = document.getElementById('registerConfirmPassword').value;
+                if (password !== confirmPassword) {
+                    registerFormAlert.textContent = 'Passwords do not match.';
+                    registerFormAlert.classList.remove('d-none');
+                    registerSubmitBtn.classList.remove('d-none');
+                    registerLoadingBtn.classList.add('d-none');
+                    return;
+                }
+                
+                const formData = new FormData(this);
+                
+                try {
+                    const response = await fetch('@Url.Action("Register", "Account")', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    console.log('Register response status:', response.status);
+                    console.log('Register response headers:', [...response.headers.entries()]);
+
+                    // Get the response content as text first
+                    const responseText = await response.text();
+                    console.log('Register response text:', responseText);
+                    
+                    // Try to parse as JSON if possible
+                    let data;
+                    try {
+                        data = responseText ? JSON.parse(responseText) : { success: false, message: 'Empty response from server' };
+                        console.log('Parsed JSON data:', data);
+                    } catch (jsonError) {
+                        console.error('Error parsing response JSON:', jsonError, 'Response text:', responseText);
+                        data = { success: false, message: 'Error processing server response' };
+                    }
+
+                    // Handle the response
+                    if (response.ok && data && data.success) {
+                        window.location.reload();
+                    } else {
+                        // Show error message
+                        let errorMsg = 'Registration failed. ';
+                        
+                        if (data && data.message) {
+                            errorMsg += data.message;
+                        } else if (!response.ok) {
+                            errorMsg += `Server returned ${response.status} ${response.statusText}`;
+                        } else {
+                            errorMsg += 'Please try again.';
+                        }
+                        
+                        registerFormAlert.textContent = errorMsg;
+                        registerFormAlert.classList.remove('d-none');
+                        
+                        // Reset buttons
+                        registerSubmitBtn.classList.remove('d-none');
+                        registerLoadingBtn.classList.add('d-none');
+                    }
+                } catch (error) {
+                    console.error('Registration request error:', error);
+                    
+                    // Show error message
+                    registerFormAlert.textContent = 'An error occurred. Please try again.';
+                    registerFormAlert.classList.remove('d-none');
+                    
+                    // Reset buttons
+                    registerSubmitBtn.classList.remove('d-none');
+                    registerLoadingBtn.classList.add('d-none');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

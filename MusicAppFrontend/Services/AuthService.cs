@@ -1,0 +1,355 @@
+using Microsoft.JSInterop;
+using MusicApp.ViewModels;
+using System.Text.Json;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+
+namespace MusicApp.Services
+{
+    public class AuthService
+    {
+        private readonly ApiService _apiService;
+        private readonly IJSRuntime _jsRuntime;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private static bool _isServerSideRendering;
+
+        public AuthService(ApiService apiService, IJSRuntime jsRuntime, IHttpContextAccessor httpContextAccessor)
+        {
+            _apiService = apiService;
+            _jsRuntime = jsRuntime;
+            _httpContextAccessor = httpContextAccessor;
+            
+            // Check if we're in a server-side rendering context
+            _isServerSideRendering = jsRuntime is IJSInProcessRuntime == false;
+        }
+
+        private async Task<bool> SetLocalStorageAsync(string key, string value)
+        {
+            if (_isServerSideRendering)
+                return false;
+                
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync("localStorage.setItem", key, value);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        private async Task<string> GetLocalStorageAsync(string key)
+        {
+            if (_isServerSideRendering)
+                return null;
+                
+            try
+            {
+                return await _jsRuntime.InvokeAsync<string>("localStorage.getItem", key);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        
+        private async Task RemoveLocalStorageAsync(string key)
+        {
+            if (_isServerSideRendering)
+                return;
+                
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", key);
+            }
+            catch
+            {
+                // Ignore errors during removal
+            }
+        }
+
+        public async Task<bool> LoginAsync(string email, string password, bool rememberMe)
+        {
+            try
+            {
+                var response = await _apiService.PostAsync<LoginResponse>(
+                    "api/Auth/login", 
+                    new { email, password, rememberMe });
+                
+                if (response != null && response.User != null)
+                {
+                    // Store tokens in local storage for API requests
+                    await SetLocalStorageAsync("jwt_token", response.Token);
+                    await SetLocalStorageAsync("refresh_token", response.RefreshToken);
+                    await SetLocalStorageAsync("user_info", JsonSerializer.Serialize(response.User));
+                    
+                    // Also set up cookie authentication for server-side validation
+                    var user = response.User;
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                        new Claim(ClaimTypes.Name, user.Username),
+                        new Claim(ClaimTypes.Email, user.Email),
+                        new Claim("jwt_token", response.Token)  // Store JWT token in claims
+                    };
+                    
+                    // Add roles as claims
+                    if (user.Roles != null)
+                    {
+                        foreach (var role in user.Roles)
+                        {
+                            claims.Add(new Claim(ClaimTypes.Role, role));
+                        }
+                    }
+                    
+                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    var authProperties = new AuthenticationProperties
+                    {
+                        IsPersistent = rememberMe,
+                        ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7), // Set cookie expiration
+                        AllowRefresh = true
+                    };
+                    
+                    // Make sure we have a valid HttpContext
+                    if (_httpContextAccessor.HttpContext != null)
+                    {
+                        // Sign in using cookie authentication
+                        await _httpContextAccessor.HttpContext.SignInAsync(
+                            CookieAuthenticationDefaults.AuthenticationScheme,
+                            new ClaimsPrincipal(claimsIdentity),
+                            authProperties);
+                            
+                        Console.WriteLine("User authenticated via cookies: " + _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated);
+                    }
+                    else
+                    {
+                        Console.WriteLine("HttpContext is null during login attempt");
+                    }
+                    
+                    return true;
+                }
+                return false;
+            }
+            catch (HttpRequestException ex) when (ex.Message.Contains("401"))
+            {
+                Console.WriteLine($"Login failed with authentication error: {ex.Message}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Login error: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> RegisterAsync(RegisterViewModel model)
+        {
+            try
+            {
+                var response = await _apiService.PostAsync<LoginResponse>("api/Auth/register", model);
+                
+                if (response != null && response.User != null)
+                {
+                    // Store tokens in local storage for API requests
+                    await SetLocalStorageAsync("jwt_token", response.Token);
+                    await SetLocalStorageAsync("refresh_token", response.RefreshToken);
+                    await SetLocalStorageAsync("user_info", JsonSerializer.Serialize(response.User));
+                    
+                    // Also set up cookie authentication for server-side validation
+                    var user = response.User;
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                        new Claim(ClaimTypes.Name, user.Username),
+                        new Claim(ClaimTypes.Email, user.Email),
+                        new Claim("jwt_token", response.Token)  // Store JWT token in claims
+                    };
+                    
+                    // Add roles as claims
+                    if (user.Roles != null)
+                    {
+                        foreach (var role in user.Roles)
+                        {
+                            claims.Add(new Claim(ClaimTypes.Role, role));
+                        }
+                    }
+                    
+                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    var authProperties = new AuthenticationProperties
+                    {
+                        IsPersistent = true, // Remember me by default for new registrations
+                        ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7) // Set cookie expiration
+                    };
+                    
+                    // Sign in using cookie authentication
+                    // Make sure we have a valid HttpContext
+                    if (_httpContextAccessor.HttpContext != null)
+                    {
+                        await _httpContextAccessor.HttpContext.SignInAsync(
+                            CookieAuthenticationDefaults.AuthenticationScheme,
+                            new ClaimsPrincipal(claimsIdentity),
+                            authProperties);
+                            
+                        Console.WriteLine("User registered and authenticated via cookies: " + 
+                            _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated);
+                    }
+                    else
+                    {
+                        Console.WriteLine("HttpContext is null during registration");
+                    }
+                    
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Registration error: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task LogoutAsync()
+        {
+            // Call logout endpoint to invalidate token
+            try
+            {
+                var refreshToken = await GetLocalStorageAsync("refresh_token");
+                if (!string.IsNullOrEmpty(refreshToken))
+                {
+                    await _apiService.PostAsync<object>("api/Auth/revoke-token", new { token = refreshToken });
+                }
+            }
+            catch { /* Ignore errors during logout */ }
+            
+            // Clear tokens in browser
+            await RemoveLocalStorageAsync("jwt_token");
+            await RemoveLocalStorageAsync("refresh_token");
+            await RemoveLocalStorageAsync("user_info");
+            
+            // Sign out from cookie authentication
+            await _httpContextAccessor.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        }
+        
+        public bool IsAuthenticated()
+        {
+            if (_httpContextAccessor.HttpContext == null)
+            {
+                Console.WriteLine("HttpContext is null when checking authentication");
+                return false;
+            }
+            
+            var isAuthenticated = _httpContextAccessor.HttpContext.User?.Identity?.IsAuthenticated ?? false;
+            Console.WriteLine("IsAuthenticated check: " + isAuthenticated);
+            
+            // Double check if we have the necessary claims
+            if (isAuthenticated)
+            {
+                var nameIdentifier = _httpContextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(nameIdentifier))
+                {
+                    Console.WriteLine("User appears authenticated but missing NameIdentifier claim");
+                    return false;
+                }
+            }
+            
+            return isAuthenticated;
+        }
+        
+        public async Task<bool> IsAuthenticatedAsync()
+        {
+            // Check cookie authentication first
+            if (IsAuthenticated())
+            {
+                return true;
+            }
+            
+            // Fallback to JWT token check
+            var token = await GetLocalStorageAsync("jwt_token");
+            return !string.IsNullOrEmpty(token);
+        }
+        
+        public async Task<AuthUserDto> GetCurrentUserAsync()
+        {
+            // Try to get from HttpContext claims
+            if (IsAuthenticated())
+            {
+                try
+                {
+                    var user = _httpContextAccessor.HttpContext.User;
+                    var id = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    var username = user.FindFirst(ClaimTypes.Name)?.Value;
+                    var email = user.FindFirst(ClaimTypes.Email)?.Value;
+                    
+                    if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(username))
+                    {
+                        // Get full user profile from API
+                        try
+                        {
+                            var userProfile = await _apiService.GetAsync<AuthUserDto>("api/Users/profile");
+                            if (userProfile != null)
+                            {
+                                return userProfile;
+                            }
+                        }
+                        catch
+                        {
+                            // If API call fails, return basic user info from claims
+                            return new AuthUserDto
+                            {
+                                Id = int.Parse(id),
+                                Username = username,
+                                Email = email,
+                                Roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList()
+                            };
+                        }
+                    }
+                }
+                catch 
+                {
+                    // Continue to try from local storage if any error occurs
+                }
+            }
+            
+            // Fallback to local storage
+            var userJson = await GetLocalStorageAsync("user_info");
+            
+            if (string.IsNullOrEmpty(userJson))
+                return null;
+                
+            try
+            {
+                return JsonSerializer.Deserialize<AuthUserDto>(userJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            catch
+            {
+                return null;
+            }
+        }
+    }
+
+    public class LoginResponse
+    {
+        public string Token { get; set; }
+        public string RefreshToken { get; set; }
+        public AuthUserDto User { get; set; }
+        public bool Success { get; set; }
+        public string Message { get; set; }
+    }
+
+    public class AuthUserDto
+    {
+        public int Id { get; set; }
+        public string Username { get; set; }
+        public string Email { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string ProfileImageUrl { get; set; }
+        public List<string> Roles { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+} 

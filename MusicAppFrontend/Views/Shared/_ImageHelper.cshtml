@@ -1,0 +1,9 @@
+@functions {
+    private static readonly Random _random = new Random();
+    
+    public static string GetRandomImageUrl(int width, int height)
+    {
+        int randomId = _random.Next(1, 1300);
+        return $"https://picsum.photos/id/{randomId}/{width}/{height}";
+    }
+} 

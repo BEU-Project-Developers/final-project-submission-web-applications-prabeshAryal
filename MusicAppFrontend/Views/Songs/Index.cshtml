@@ -1,0 +1,302 @@
+@model IEnumerable<MusicApp.Models.DTOs.SongDto>
+@using MusicApp.Helpers
+@{
+    ViewData["Title"] = "Songs";
+    // Theme variables (can be accessed via ViewData or CSS)
+    // Removed unused variables to clear warnings
+    // var ytmBgPrimary = "var(--ytm-bg-primary)";
+    // var ytmBgSecondary = "var(--ytm-bg-secondary)";
+    // var ytmBgTertiary = "var(--ytm-bg-tertiary)";
+    // var ytmTextPrimary = "var(--ytm-text-primary)";
+    // var ytmTextSecondary = "var(--ytm-text-secondary)";
+    // var ytmAccentRed = "var(--ytm-accent-red)";
+    // var ytmBorderColor = "var(--ytm-border-color)";
+    // Add GetRandomImageUrl helper to fix CS0103 error
+    Random randomGen = new Random();
+    string GetRandomImageUrl(int width, int height)
+    {
+        int randomId = randomGen.Next(1, 1085);
+        return $"https://picsum.photos/id/{randomId}/{width}/{height}";
+    }
+}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-header h1 {
+        margin-bottom: 0;
+        color: var(--ytm-text-primary);
+    }
+
+    .search-form {
+        display: flex;
+        max-width: 400px;
+    }
+
+    .search-form .form-control {
+        background-color: var(--ytm-bg-secondary);
+        border: 1px solid var(--ytm-border-color);
+        color: var(--ytm-text-primary);
+        border-radius: 20px 0 0 20px;
+        padding-left: 1rem;
+    }
+
+    .search-form .form-control:focus {
+        box-shadow: none;
+        border-color: var(--ytm-accent-red);
+    }
+
+    .search-form .btn {
+        background-color: var(--ytm-bg-tertiary);
+        border: 1px solid var(--ytm-border-color);
+        border-left: none;
+        color: var(--ytm-text-secondary);
+        border-radius: 0 20px 20px 0;
+    }
+
+    .search-form .btn:hover {
+        background-color: var(--ytm-accent-red);
+        color: white;
+    }
+
+    /* Song Table Styling */
+    .songs-table {
+        width: 100%;
+        margin-bottom: 2rem;
+        background-color: var(--ytm-bg-secondary);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .songs-table thead th {
+        background-color: var(--ytm-bg-tertiary);
+        color: var(--ytm-text-secondary);
+        padding: 0.75rem 1rem;
+        font-weight: 500;
+        border-bottom: 1px solid var(--ytm-border-color);
+    }
+
+    .songs-table tbody tr {
+        border-bottom: 1px solid var(--ytm-border-color);
+        transition: background-color 0.2s ease;
+    }
+
+    .songs-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .songs-table tbody tr:hover {
+        background-color: var(--ytm-bg-tertiary);
+    }
+
+    .songs-table td {
+        padding: 0.75rem 1rem;
+        color: var(--ytm-text-primary);
+        vertical-align: middle;
+    }
+
+    .song-number {
+        width: 40px;
+        text-align: center;
+        color: var(--ytm-text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .song-title {
+        font-weight: 500;
+    }
+
+    .song-artist {
+        color: var(--ytm-text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .song-album, .song-duration {
+        color: var(--ytm-text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .song-cover {
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        object-fit: cover;
+    }
+
+    .song-actions {
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .song-actions .btn {
+        color: var(--ytm-text-secondary);
+        background: none;
+        border: none;
+        font-size: 1.1rem;
+        padding: 0.25rem;
+        margin-left: 0.25rem;
+    }
+
+    .song-actions .btn:hover {
+        color: var(--ytm-text-primary);
+    }
+
+    /* Filter Pills */
+    .filter-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-pill {
+        background-color: var(--ytm-bg-tertiary);
+        color: var(--ytm-text-secondary);
+        border: 1px solid var(--ytm-border-color);
+        border-radius: 20px;
+        padding: 0.25rem 1rem;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .filter-pill:hover, .filter-pill.active {
+        background-color: var(--ytm-accent-red);
+        color: white;
+        border-color: var(--ytm-accent-red);
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .search-form {
+            width: 100%;
+            max-width: none;
+        }
+
+        .songs-table {
+            display: block;
+            overflow-x: auto;
+        }
+        
+        .song-album {
+            display: none; /* Hide album column on small screens */
+        }
+    }
+</style>
+
+<div class="page-header">
+    <h1>Songs</h1>
+    <div class="search-form">
+        <input type="text" class="form-control" placeholder="Search songs...">
+        <button class="btn" type="button">
+            <i class="bi bi-search"></i>
+        </button>
+    </div>
+</div>
+
+<div class="filter-pills">
+    <span class="filter-pill active">All</span>
+    <span class="filter-pill">Recently Added</span>
+    <span class="filter-pill">Most Played</span>
+    <span class="filter-pill">Rock</span>
+    <span class="filter-pill">Pop</span>
+    <span class="filter-pill">Hip-Hop</span>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    <table class="songs-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th></th>
+                <th>Title</th>
+                <th>Artist</th>
+                <th class="d-none d-md-table-cell">Album</th>
+                <th>Duration</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @{int index = 1;}
+            @foreach (var song in Model)
+            {
+                <tr>
+                    <td class="song-number">@(index++)</td>
+                    <td>
+                        <img src="@(string.IsNullOrEmpty(song.CoverImageUrl) ? GetRandomImageUrl(40, 40) : song.CoverImageUrl)" 
+                             alt="@song.Title cover" 
+                             class="song-cover"
+                             onerror="this.onerror=null; this.src='/images/default-cover.png';">
+                    </td>
+                    <td>
+                        <div class="song-title">@song.Title</div>
+                    </td>
+                    <td>
+                        <a asp-controller="Artists" asp-action="Details" asp-route-id="@song.ArtistId" class="song-artist">
+                            @song.ArtistName
+                        </a>
+                    </td>
+                    <td class="d-none d-md-table-cell">
+                        @if (song.AlbumId.HasValue)
+                        {
+                            <a asp-controller="Albums" asp-action="Details" asp-route-id="@song.AlbumId" class="song-album">
+                                @song.AlbumTitle
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="song-album">Single</span>
+                        }
+                    </td>
+                    <td class="song-duration">
+                        @TimeSpan.FromSeconds(song.Duration).ToString(@"m\:ss")
+                    </td>
+                    <td class="song-actions">
+                        <button class="btn" title="Play">
+                            <i class="bi bi-play-fill"></i>
+                        </button>
+                        <button class="btn" title="Add to playlist">
+                            <i class="bi bi-plus-circle"></i>
+                        </button>
+                        <button class="btn" title="Like">
+                            <i class="bi bi-heart"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info" role="alert" style="background-color: var(--ytm-bg-secondary); color: var(--ytm-text-secondary); border-color: var(--ytm-border-color);">
+        <i class="bi bi-info-circle me-2"></i> No songs found.
+    </div>
+}
+
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        <li class="page-item disabled">
+            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+        </li>
+        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+        <li class="page-item"><a class="page-link" href="#">2</a></li>
+        <li class="page-item"><a class="page-link" href="#">3</a></li>
+        <li class="page-item">
+            <a class="page-link" href="#">Next</a>
+        </li>
+    </ul>
+</nav>

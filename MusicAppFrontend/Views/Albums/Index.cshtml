@@ -1,0 +1,314 @@
+﻿@model IEnumerable<MusicApp.Models.DTOs.AlbumDto>
+
+@{
+    ViewData["Title"] = "Albums";
+    // Theme variables (can be accessed via ViewData or CSS)
+    var ytmBgPrimary = "var(--ytm-bg-primary)";
+    var ytmBgSecondary = "var(--ytm-bg-secondary)";
+    var ytmBgTertiary = "var(--ytm-bg-tertiary)";
+    var ytmTextPrimary = "var(--ytm-text-primary)";
+    var ytmTextSecondary = "var(--ytm-text-secondary)";
+    var ytmAccentRed = "var(--ytm-accent-red)";
+    var ytmBorderColor = "var(--ytm-border-color)";
+    // Add GetRandomImageUrl helper to fix CS0103 error
+    Random randomGen = new Random();
+    string GetRandomImageUrl(int width, int height)
+    {
+        int randomId = randomGen.Next(1, 1085);
+        return $"https://picsum.photos/id/{randomId}/{width}/{height}";
+    }
+}
+
+@* Add specific styles for this page *@
+<style>
+    .page-header {
+        display: flex;
+        flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        gap: 1rem; /* Add gap between title and search */
+    }
+
+        .page-header h1 {
+            margin-bottom: 0; /* Remove default margin */
+            color: var(--ytm-text-primary);
+        }
+
+    /* Themed Search Input Group */
+    .search-albums .form-control {
+        background-color: var(--ytm-bg-secondary);
+        border: 1px solid var(--ytm-border-color);
+        color: var(--ytm-text-primary);
+        border-radius: 20px 0 0 20px; /* Rounded left */
+        padding-left: 1rem;
+        height: 40px;
+    }
+
+        .search-albums .form-control::placeholder {
+            color: var(--ytm-text-secondary);
+        }
+
+        .search-albums .form-control:focus {
+            background-color: var(--ytm-bg-primary);
+            border-color: var(--ytm-text-secondary);
+            box-shadow: none;
+        }
+
+    .search-albums .btn {
+        background-color: var(--ytm-bg-tertiary);
+        border: 1px solid var(--ytm-border-color);
+        border-left: none;
+        color: var(--ytm-text-secondary);
+        border-radius: 0 20px 20px 0; /* Rounded right */
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+        .search-albums .btn:hover {
+            background-color: var(--ytm-border-color);
+            color: var(--ytm-text-primary);
+        }
+
+        .search-albums .btn i {
+            margin-right: 0.3rem; /* Space between icon and text */
+        }
+
+
+    /* Album Card Styling */
+    .album-grid-item {
+        text-align: left;
+        margin-bottom: 1.5rem; /* Consistent spacing */
+        position: relative;
+        border-radius: 8px;
+        transition: background-color 0.2s ease-in-out;
+        background-color: var(--ytm-bg-secondary); /* Use theme variable */
+        overflow: hidden; /* Clip image corners */
+    }
+
+        .album-grid-item:hover {
+            background-color: var(--ytm-bg-tertiary); /* Use theme variable */
+        }
+
+    .album-image {
+        display: block;
+        width: 100%;
+        aspect-ratio: 1 / 1; /* Force square aspect ratio */
+        object-fit: cover;
+        border-top-left-radius: 8px; /* Match container */
+        border-top-right-radius: 8px;
+        transition: transform 0.3s ease;
+        background-color: var(--ytm-bg-tertiary); /* Placeholder bg color */
+    }
+
+    .album-grid-item:hover .album-image {
+        transform: scale(1.03);
+    }
+
+    .album-info {
+        padding: 0.75rem 1rem; /* Padding for text */
+    }
+
+    .album-title {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--ytm-text-primary); /* Use theme variable */
+        margin-bottom: 0.1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .album-details {
+        font-size: 0.8rem;
+        color: var(--ytm-text-secondary); /* Use theme variable */
+    }
+        /* Optional: Style genre badge */
+        .album-details .badge {
+            font-size: 0.7rem;
+            padding: 0.2em 0.5em;
+            vertical-align: middle;
+            background-color: var(--ytm-bg-tertiary); /* Themed badge bg */
+            color: var(--ytm-text-secondary); /* Themed badge text */
+        }
+
+    .album-link { /* Link covering the whole card */
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1;
+    }
+
+    /* Optional: Play button overlay on hover */
+    .album-play-overlay {
+        position: absolute;
+        bottom: 10px; /* Position near bottom right */
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        background-color: var(--ytm-accent-red);
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transform: translateY(10px); /* Start slightly down */
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        z-index: 2; /* Above link */
+        pointer-events: none; /* Allow link click */
+    }
+
+    .album-grid-item:hover .album-play-overlay {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .album-play-icon {
+        color: white;
+        font-size: 1.5rem;
+        /* Adjust icon position if needed */
+        margin-left: 2px; /* Nudge play icon slightly right */
+    }
+
+    /* No Albums Found Message */
+    .no-albums-alert {
+        background-color: var(--ytm-bg-secondary);
+        color: var(--ytm-text-secondary);
+        border: 1px dashed var(--ytm-border-color); /* Dashed border */
+        border-radius: 8px;
+        text-align: center;
+        padding: 3rem;
+        margin-top: 3rem;
+        margin-bottom: 3rem;
+    }
+
+        .no-albums-alert i {
+            font-size: 3rem; /* Larger icon */
+            color: var(--ytm-text-secondary);
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .no-albums-alert h4 {
+            color: var(--ytm-text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+    /* Pagination Styling (reuse from artist pages) */
+    .pagination .page-item .page-link {
+        background-color: var(--ytm-bg-secondary);
+        border: 1px solid var(--ytm-border-color);
+        color: var(--ytm-text-secondary);
+        margin: 0 2px; /* Spacing */
+        border-radius: 4px; /* Slightly rounded */
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: var(--ytm-accent-red);
+        border-color: var(--ytm-accent-red);
+        color: var(--ytm-text-primary);
+        z-index: 3; /* Ensure active is on top */
+    }
+
+    .pagination .page-item:not(.active) .page-link:hover {
+        background-color: var(--ytm-bg-tertiary);
+        color: var(--ytm-text-primary);
+    }
+
+    .pagination .page-item.disabled .page-link {
+        background-color: var(--ytm-bg-secondary);
+        border-color: var(--ytm-border-color);
+        color: var(--ytm-text-secondary);
+        opacity: 0.5;
+    }
+
+</style>
+
+@* Removed outer container, assuming layout provides padding *@
+<div class="page-header">
+    <h1>Albums</h1>
+    <div class="search-albums">
+        <div class="input-group">
+            @* Add controller/action for search if implementing *@
+            <input type="text" class="form-control" placeholder="Search albums...">
+            <button class="btn" type="button">
+                <i class="bi bi-search"></i> Search
+            </button>
+        </div>
+    </div>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4">
+        @* Adjusted grid columns *@
+        @foreach (var album in Model)
+        {
+            <div class="col">
+                <div class="album-grid-item">
+                    @* Link covering the whole card *@
+                    <a asp-action="Details" asp-route-id="@album.Id" class="album-link" aria-label="View details for @album.Title"></a>
+
+                    @* Album image *@
+                    <img src="@(string.IsNullOrEmpty(album.CoverImageUrl) ? GetRandomImageUrl(300, 300) : album.CoverImageUrl)" 
+                         alt="@album.Title cover" 
+                         class="album-image" 
+                         onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Album';">
+
+                    @* Play button overlay on hover *@
+                    <div class="album-play-overlay">
+                        <i class="bi bi-play-fill album-play-icon"></i>
+                    </div>
+
+                    @* Album info *@
+                    <div class="album-info">
+                        <div class="album-title" title="@album.Title">@album.Title</div>
+                        <div class="album-details">
+                            @album.ArtistName &middot;
+                            @(album.ReleaseDate?.Year.ToString() ?? "Unknown") &middot;
+                            @if (!string.IsNullOrEmpty(album.Genre))
+                            {
+                                <span class="badge">@album.Genre</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @* Note: This pagination is static. Real pagination requires backend logic. *@
+    <nav aria-label="Album pagination" class="my-5 d-flex justify-content-center">
+        @* Increased margin top/bottom *@
+        <ul class="pagination">
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            <li class="page-item active" aria-current="page"><a class="page-link" href="#">1</a></li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item">
+                <a class="page-link" href="#">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+}
+else
+{
+    <div class="no-albums-alert">
+        <i class="bi bi-disc"></i>
+        <h4>No albums found</h4>
+        <p>Your music collection is looking a bit empty in the albums department.</p>
+    </div>
+}
+

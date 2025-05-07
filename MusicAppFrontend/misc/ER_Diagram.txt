@@ -1,0 +1,121 @@
+// ER Diagram for MusicApp
+// Generated using dbdiagram.io
+
+// Users Table
+Table users {
+  id int [pk, increment]
+  username varchar [not null, unique]
+  email varchar [not null, unique]
+  password_hash varchar [not null]
+  first_name varchar
+  last_name varchar
+  profile_image_url varchar
+  created_at datetime [not null]
+  updated_at datetime
+}
+
+// Roles Table
+Table roles {
+  id int [pk, increment]
+  name varchar [not null, unique]
+  description varchar
+}
+
+// UserRoles Table (M:N relationship between Users and Roles)
+Table user_roles {
+  user_id int [ref: > users.id]
+  role_id int [ref: > roles.id]
+  created_at datetime [not null]
+  
+  indexes {
+    (user_id, role_id) [pk]
+  }
+}
+
+// Artists Table
+Table artists {
+  id int [pk, increment]
+  name varchar [not null]
+  bio text
+  image_url varchar
+  genre varchar
+  monthly_listeners int [default: 0]
+  created_at datetime [not null]
+  updated_at datetime
+}
+
+// Albums Table
+Table albums {
+  id int [pk, increment]
+  title varchar [not null]
+  artist_id int [ref: > artists.id]
+  cover_image_url varchar
+  release_date date
+  genre varchar
+  description text
+  created_at datetime [not null]
+  updated_at datetime
+}
+
+// Songs Table
+Table songs {
+  id int [pk, increment]
+  title varchar [not null]
+  artist_id int [ref: > artists.id]
+  album_id int [ref: > albums.id, null]
+  audio_url varchar [not null]
+  cover_image_url varchar
+  duration int [not null] // in seconds
+  track_number int
+  genre varchar
+  release_date date
+  play_count int [default: 0]
+  created_at datetime [not null]
+  updated_at datetime
+}
+
+// Playlists Table
+Table playlists {
+  id int [pk, increment]
+  name varchar [not null]
+  user_id int [ref: > users.id]
+  description text
+  cover_image_url varchar
+  is_public boolean [default: true]
+  created_at datetime [not null]
+  updated_at datetime
+}
+
+// PlaylistSongs Table (M:N relationship between Playlists and Songs)
+Table playlist_songs {
+  playlist_id int [ref: > playlists.id]
+  song_id int [ref: > songs.id]
+  position int [not null]
+  added_at datetime [not null]
+  
+  indexes {
+    (playlist_id, song_id) [pk]
+  }
+}
+
+// UserFavorites Table (M:N relationship between Users and Songs)
+Table user_favorites {
+  user_id int [ref: > users.id]
+  song_id int [ref: > songs.id]
+  created_at datetime [not null]
+  
+  indexes {
+    (user_id, song_id) [pk]
+  }
+}
+
+// UserFollowers Table (M:N relationship between Users)
+Table user_followers {
+  follower_id int [ref: > users.id]
+  following_id int [ref: > users.id]
+  created_at datetime [not null]
+  
+  indexes {
+    (follower_id, following_id) [pk]
+  }
+} 

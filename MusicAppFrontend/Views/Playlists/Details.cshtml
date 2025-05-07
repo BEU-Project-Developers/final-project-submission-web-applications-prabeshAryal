@@ -1,0 +1,168 @@
+@model MusicApp.Models.DTOs.PlaylistDetailDto
+
+@{
+    ViewData["Title"] = Model.Name;
+    Random randomGen = new Random();
+    string GetRandomImageUrl(int width, int height)
+    {
+        int randomId = randomGen.Next(1, 1085);
+        return $"https://picsum.photos/id/{randomId}/{width}/{height}";
+    }
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            @if (ViewBag.SuccessMessage != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @ViewBag.SuccessMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @ViewBag.ErrorMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            <div class="card shadow" style="background-color: var(--ytm-bg-secondary); color: var(--ytm-text-primary);">
+                <div class="card-header d-flex justify-content-between align-items-center" style="background-color: var(--ytm-accent-red); color: var(--ytm-text-primary);">
+                    <div class="d-flex align-items-center">
+                        <img src="@(string.IsNullOrEmpty(Model.CoverImageUrl) ? GetRandomImageUrl(300, 300) : Model.CoverImageUrl)" 
+                             alt="@Model.Name" class="img-thumbnail me-3" 
+                             style="max-width: 100px; background: var(--ytm-bg-tertiary);"
+                             onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Playlist';" />
+                        <div>
+                            <h3 class="mb-1">@Model.Name</h3>
+                            <div class="mb-1 text-secondary">@Model.Description</div>
+                            <div class="small">
+                                <span class="me-2">By <b>@Model.Username</b></span>
+                                <span class="me-2">@Model.SongCount songs</span>
+                                <span class="me-2">@Model.CreatedAt.ToString("MMM d, yyyy")</span>
+                                <span class="badge @(Model.IsPublic ? "bg-success" : "bg-secondary")">
+                                    @(Model.IsPublic ? "Public" : "Private")
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary me-2">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Delete
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="mb-3">Songs in this Playlist</h5>
+                    @if (Model.Songs != null && Model.Songs.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover" style="background: var(--ytm-bg-primary); color: var(--ytm-text-primary);">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Title</th>
+                                        <th>Artist</th>
+                                        <th>Album</th>
+                                        <th>Duration</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var song in Model.Songs.OrderBy(s => s.Order))
+                                    {
+                                        <tr>
+                                            <td><img src="@(song.CoverImageUrl ?? GetRandomImageUrl(300, 300))" 
+                                                alt="cover" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"
+                                                onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Song';" /></td>
+                                            <td>@song.Title</td>
+                                            <td>@song.ArtistName</td>
+                                            <td>@song.AlbumTitle</td>
+                                            <td>@song.DurationString</td>
+                                            <td>
+                                                <a href="@Url.Action("Details", "Songs", new { id = song.SongId })" class="btn btn-sm" style="background: var(--ytm-accent-red); color: var(--ytm-text-primary);"><i class="bi bi-play-fill"></i></a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">No songs in this playlist yet.</div>
+                    }
+
+                    <hr class="my-4" />
+                    <h5>Add Songs to Playlist</h5>
+                    <form method="get" asp-action="Details" class="mb-3 d-flex">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="text" name="search" class="form-control me-2 bg-dark text-light" 
+                               placeholder="Search for songs..." value="@ViewBag.SearchQuery" />
+                        <button type="submit" class="btn" style="background: var(--ytm-accent-red); color: var(--ytm-text-primary);">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                    </form>
+
+                    @if (ViewBag.SearchError != null)
+                    {
+                        <div class="alert alert-warning">@ViewBag.SearchError</div>
+                    }
+
+                    @if (ViewBag.SearchResults != null)
+                    {
+                        var results = (List<MusicApp.Models.DTOs.SongDto>)ViewBag.SearchResults;
+                        if (results.Any())
+                        {
+                            <div class="table-responsive mb-4">
+                                <table class="table table-sm table-hover" style="background: var(--ytm-bg-primary); color: var(--ytm-text-primary);">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>Title</th>
+                                            <th>Artist</th>
+                                            <th>Album</th>
+                                            <th>Duration</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach (var song in results)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <img src="@(song.CoverImageUrl ?? "/assets/default-album.png")" 
+                                                     alt="cover" style="width:32px;height:32px;object-fit:cover;border-radius:4px;" />
+                                            </td>
+                                            <td>@song.Title</td>
+                                            <td>@song.ArtistName</td>
+                                            <td>@song.AlbumTitle</td>
+                                            <td>@TimeSpan.FromSeconds(song.Duration).ToString(@"m\:ss")</td>
+                                            <td>
+                                                <form method="post" asp-action="AddSongToPlaylist" style="display:inline">
+                                                    <input type="hidden" name="playlistId" value="@Model.Id" />
+                                                    <input type="hidden" name="songId" value="@song.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-success">
+                                                        <i class="bi bi-plus-circle"></i> Add
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">No songs found matching your search.</div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

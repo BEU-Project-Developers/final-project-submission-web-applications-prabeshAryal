@@ -1,0 +1,321 @@
+@model MusicApp.Models.DTOs.SongDto
+@{
+    ViewData["Title"] = $"{Model.Title} - Song";
+    
+    // Theme variables (can be accessed via ViewData or CSS)
+    var ytmBgPrimary = "var(--ytm-bg-primary)";
+    var ytmBgSecondary = "var(--ytm-bg-secondary)";
+    var ytmBgTertiary = "var(--ytm-bg-tertiary)";
+    var ytmTextPrimary = "var(--ytm-text-primary)";
+    var ytmTextSecondary = "var(--ytm-text-secondary)";
+
+    Random randomGen = new Random();
+    string GetRandomImageUrl(int width, int height)
+    {
+        int randomId = randomGen.Next(1, 1085);
+        return $"https://picsum.photos/id/{randomId}/{width}/{height}";
+    }
+}
+
+<style>
+    .song-container {
+        background-color: var(--ytm-bg-secondary);
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .song-header {
+        display: flex;
+        padding: 2rem;
+    }
+
+    .song-cover {
+        width: 300px;
+        height: 300px;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        margin-right: 2rem;
+    }
+
+    .song-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .song-title-section {
+        margin-bottom: 1rem;
+    }
+
+    .song-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--ytm-text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .song-artist {
+        font-size: 1.3rem;
+        color: var(--ytm-text-secondary);
+        margin-bottom: 1rem;
+    }
+
+    .song-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .meta-item {
+        color: var(--ytm-text-secondary);
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .meta-item i {
+        margin-right: 0.5rem;
+    }
+
+    .song-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: auto;
+    }
+
+    .btn-play {
+        background-color: var(--ytm-accent-red);
+        color: var(--ytm-text-primary);
+        border: none;
+        border-radius: 20px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+    }
+
+    .btn-play i {
+        margin-right: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .btn-play:hover {
+        background-color: #cc0000;
+        color: var(--ytm-text-primary);
+    }
+
+    .btn-action {
+        color: var(--ytm-text-secondary);
+        border: 1px solid var(--ytm-border-color);
+        background: transparent;
+        border-radius: 20px;
+        padding: 0.5rem 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .btn-action i {
+        margin-right: 0.5rem;
+    }
+
+    .btn-action:hover {
+        background-color: var(--ytm-bg-tertiary);
+        color: var(--ytm-text-primary);
+    }
+
+    .song-player {
+        padding: 1rem 2rem;
+        border-top: 1px solid var(--ytm-border-color);
+    }
+
+    .player-container {
+        width: 100%;
+        background-color: var(--ytm-bg-tertiary);
+        padding: 1rem;
+        border-radius: 8px;
+    }
+
+    .audio-player {
+        width: 100%;
+    }
+
+    .related-section {
+        margin-top: 2rem;
+    }
+
+    .section-title {
+        color: var(--ytm-text-primary);
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+    }
+
+    .related-tracks {
+        background-color: var(--ytm-bg-secondary);
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--ytm-border-color);
+    }
+
+    .track-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--ytm-border-color);
+        transition: background-color 0.2s ease;
+    }
+
+    .track-item:last-child {
+        border-bottom: none;
+    }
+
+    .track-item:hover {
+        background-color: var(--ytm-bg-tertiary);
+    }
+
+    .track-cover {
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        margin-right: 1rem;
+        object-fit: cover;
+    }
+
+    .track-info {
+        flex: 1;
+    }
+
+    .track-title {
+        color: var(--ytm-text-primary);
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+
+    .track-artist {
+        color: var(--ytm-text-secondary);
+        font-size: 0.85rem;
+    }
+
+    .track-duration {
+        color: var(--ytm-text-secondary);
+        margin-left: 1rem;
+        font-size: 0.9rem;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .song-header {
+            flex-direction: column;
+        }
+
+        .song-cover {
+            margin-right: 0;
+            margin-bottom: 1.5rem;
+            width: 100%;
+            max-width: 300px;
+            align-self: center;
+        }
+    }
+</style>
+
+<div class="song-container">
+    <div class="song-header">
+        <img src="@(Model.CoverImageUrl ?? GetRandomImageUrl(300, 300))" alt="@Model.Title cover" class="song-cover"
+            onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Song';">
+        
+        <div class="song-info">
+            <div class="song-title-section">
+                <div class="song-title">@Model.Title</div>
+                <div class="song-artist">
+                    <a asp-controller="Artists" asp-action="Details" asp-route-id="@Model.ArtistId">
+                        @Model.ArtistName
+                    </a>
+                </div>
+                
+                <div class="song-meta">
+                    @if (Model.AlbumId.HasValue)
+                    {
+                        <div class="meta-item">
+                            <i class="bi bi-disc"></i>
+                            <a asp-controller="Albums" asp-action="Details" asp-route-id="@Model.AlbumId">
+                                @Model.AlbumTitle
+                            </a>
+                        </div>
+                    }
+                    <div class="meta-item">
+                        <i class="bi bi-clock"></i>
+                        @TimeSpan.FromSeconds(Model.Duration).ToString(@"m\:ss")
+                    </div>
+                    <div class="meta-item">
+                        <i class="bi bi-calendar3"></i>
+                        @(Model.ReleaseDate?.ToString("yyyy") ?? "Unknown")
+                    </div>
+                    <div class="meta-item">
+                        <i class="bi bi-vinyl"></i>
+                        @Model.Genre
+                    </div>
+                    <div class="meta-item">
+                        <i class="bi bi-play-circle"></i>
+                        @Model.PlayCount plays
+                    </div>
+                </div>
+            </div>
+            
+            <div class="song-actions">
+                <button class="btn btn-play">
+                    <i class="bi bi-play-fill"></i> Play
+                </button>
+                <button class="btn btn-action">
+                    <i class="bi bi-heart"></i> Like
+                </button>
+                <button class="btn btn-action">
+                    <i class="bi bi-plus"></i> Add to Playlist
+                </button>
+                <button class="btn btn-action">
+                    <i class="bi bi-share"></i> Share
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    @if (!string.IsNullOrEmpty(Model.AudioUrl))
+    {
+        <div class="song-player">
+            <div class="player-container">
+                <audio controls class="audio-player">
+                    <source src="@Model.AudioUrl" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="related-section">
+    <h2 class="section-title">Similar Songs</h2>
+    
+    <div class="related-tracks">
+        @for (int i = 0; i < 5; i++)
+        {
+            <div class="track-item">
+                <img src="@(i % 2 == 0 ? Model.CoverImageUrl ?? GetRandomImageUrl(300, 300) : GetRandomImageUrl(300, 300))" 
+                    alt="Related track" class="track-cover"
+                    onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Song';">
+                <div class="track-info">
+                    <div class="track-title">Similar Song @(i+1)</div>
+                    <div class="track-artist">@Model.ArtistName</div>
+                </div>
+                <div class="track-duration">3:45</div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="mt-4">
+    <a asp-action="Index" class="btn btn-action">
+        <i class="bi bi-arrow-left"></i> Back to Songs
+    </a>
+</div>
