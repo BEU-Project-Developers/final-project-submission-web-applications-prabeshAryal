@@ -1,89 +1,30 @@
-# Music App - Your Personal Music Hub
+# Music Library Project
 
-Welcome to **Music App**, a web application built with ASP.NET to provide a user-friendly interface for browsing and managing your music.  This project is currently focused on building the foundational UI and controller structure to create a seamless music experience.
+This project is a modern music library web application built with ASP.NET Core MVC. It features a dark theme, dynamic images, and a responsive, user-friendly layout for browsing albums, artists, and playlists.
 
-## About
+## Visual Comparison: Before, Template, and After
 
-This Music App is a Computer Science project developed by **Prabesh Aryal** as part of the 3rd year, 2nd semester coursework for the Bachelor of Science in Computer Engineering program at Baku Engineering University (Class 1202i). It was submitted to **Vugar Cebiyev**.
+Below is a visual comparison of the Albums page before changes, the provided template, and the final result after applying the new design and code updates as per instructor feedback.
 
--  **Developer:** Prabesh Aryal
-- **University:** Baku Engineering University
-- **Class:** 1202i, Computer Engineering Bsc
-- **Website:** [https://prabe.sh](https://prabe.sh)
-- **Email:** [hello@prabe.sh](mailto:hello@prabe.sh)
-- **GitHub:** [prabeshAryal](https://github.com/prabeshAryal)
+| Before (Old Design) | Template (Reference) | After (Updated Design) |
+|---------------------|---------------------|------------------------|
+| ![Before 1](misc/screenshots/before-1.png) | ![Template 1](misc/screenshots/template-1.png) | ![After 1](misc/screenshots/merged-1.png) |
+| ![Before 2](misc/screenshots/before-2.png) | ![Template 2](misc/screenshots/template-2.png) | ![After 2](misc/screenshots/merged-2.png) |
 
-## Features (Currently in UI & Controller Stage)
+- **Before:** Shows the original Albums page before any changes.
+- **Template:** Shows the design reference provided by the instructor.
+- **After:** Shows the Albums page after applying the new layout, theme, and code improvements.
 
-*   **Home Page:**  Landing page of the Music App.
-    ![Home Page](./misc/screenshots/home.png)
-*   **Browse Albums:** Explore music albums.
-    ![Albums Page](./misc/screenshots/albums.png)
-*   **Browse Artists:** Discover music artists.
-    ![Artists Page](./misc/screenshots/artists.png)
-*   **Playlists:** Manage your personal music playlists.
-    ![Playlists Page](./misc/screenshots/playlists.png)
-*   **User Profile:** View and manage your profile.
-    ![Profile Page](./misc/screenshots/profile.png)
+## Theme Reference
+This project uses and adapts the visual style and layout from the [Music Club free CSS template](https://www.free-css.com/free-css-templates/page103/music-club).
 
-## Project Structure
+## Key Improvements
+- Modern dark theme using CSS variables and consistent styling.
+- Responsive card/grid layout for albums, matching the template.
+- Improved alignment, spacing, and visual clarity.
+- Footer now sticks to the bottom of the page.
+- All screenshots are located in the `misc/screenshots/` directory.
 
-The project is organized as a standard ASP.NET MVC application:
+---
 
-```
-MusicApp/
-├── Controllers/
-│   ├── HomeController.cs        # Handles landing page and general site info
-│   ├── ArtistsController.cs      # Manages Artist related views and logic
-│   ├── AlbumsController.cs       # Manages Album related views and logic
-│   ├── PlaylistsController.cs    # Manages Playlist related views and logic
-│   └── ProfileController.cs      # Manages User Profile related views and logic
-├── Models/
-│   ├── Artist.cs              # Data model for Artist
-│   ├── Album.cs               # Data model for Album
-│   ├── Song.cs                # Data model for Song
-│   └── Playlist.cs            # Data model for Playlist
-├── Views/
-│   ├── Home/                  # Views for the Home Controller
-│   │   ├── Index.cshtml       # Home page view
-│   │   ├── About.cshtml       # About page view
-│   │   └── Privacy.cshtml     # Privacy page view
-│   ├── Artists/               # Views for the Artists Controller
-│   │   ├── Index.cshtml       # List of Artists view
-│   │   └── Details.cshtml     # Artist Details view
-│   ├── Albums/                # Views for the Albums Controller
-│   │   ├── Index.cshtml       # List of Albums view
-│   │   └── Details.cshtml     # Album Details view
-│   ├── Playlists/             # Views for the Playlists Controller
-│   │   ├── Index.cshtml       # List of Playlists view
-│   │   └── Create.cshtml      # Create Playlist view
-│   ├── Profile/               # Views for the Profile Controller
-│   │   └── Index.cshtml       # User Profile view
-│   └── Shared/                # Shared layout and error views
-│       ├── _Layout.cshtml      # Main layout for the application
-│       └── Error.cshtml       # Error page view
-└── wwwroot/
-    ├── css/                   # CSS stylesheets
-    ├── js/                    # JavaScript files
-    └── img/                   # Images and assets
-```
-
-## Getting Started
-
-This project is currently in the UI and controller setup phase. To run the application (once further functionality is implemented):
-
-1.  Ensure you have the .NET SDK installed.
-2.  Clone the repository.
-3.  Navigate to the `MusicApp` directory in your terminal.
-4.  Run `dotnet build` to build the project.
-5.  Run `dotnet run` to start the application.
-6.  Open your browser and navigate to the URL displayed in the console (usually `http://localhost:5000`).
-
-## Future Enhancements
-
-*   Implement data persistence to store music information.
-*   Add music playback functionality.
-*   Enhance UI/UX for a more interactive experience.
-*   Integrate with music APIs for richer content.
-
-Stay tuned for future updates as this project evolves!
+For more details, see the code and comments in the `Views/Albums/Index.cshtml` file.
