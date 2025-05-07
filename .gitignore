@@ -49,7 +49,7 @@ MusicAppFrontend/wwwroot/lib/
 MusicAppBackend/wwwroot/uploads/
 
 # Ignore misc/screenshots (images, not code)
-MusicAppFrontend/misc/screenshots/
+# MusicAppFrontend/misc/screenshots/
 
 # Ignore backup and temp files
 **/*.bak
