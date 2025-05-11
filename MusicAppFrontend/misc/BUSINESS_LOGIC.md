@@ -1,5 +1,7 @@
 # Music App Business Logic
 
+added this again incase it was not visible before.
+
 ## Core Entities and Their Relationships
 
 ### User Management
