@@ -94,6 +94,7 @@ Stay tuned for future updates as this project evolves!
 The ERD provides a visual representation of the database schema and relationships between entities. You can view and edit it using [draw.io](https://app.diagrams.net/).
 
 [View ER Diagram](misc/ER_Diagram.drawio)
+[View ER Diagram (PNG)](misc/ER_Diagram.drawio.png)
 
 Key entities in the diagram:
 - User
