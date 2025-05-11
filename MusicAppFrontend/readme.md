@@ -87,3 +87,51 @@ This project is currently in the UI and controller setup phase. To run the appli
 *   Integrate with music APIs for richer content.
 
 Stay tuned for future updates as this project evolves!
+
+## Documentation
+
+### Entity Relationship Diagram (ERD)
+The ERD provides a visual representation of the database schema and relationships between entities. You can view and edit it using [draw.io](https://app.diagrams.net/).
+
+[View ER Diagram](misc/ER_Diagram.drawio)
+
+Key entities in the diagram:
+- User
+- Artist
+- Album
+- Song
+- Playlist
+- PlaylistSong (Junction Table)
+- RefreshToken
+
+### Business Logic
+The business logic document outlines the core functionality, rules, and requirements of the application.
+
+[View Business Logic](misc/BUSINESS_LOGIC.md)
+
+Key sections:
+- Core Entities and Their Relationships
+- Business Rules
+- Feature Requirements
+- Technical Constraints
+- Future Considerations
+
+## How to View These Files
+
+### ER Diagram
+1. Open [draw.io](https://app.diagrams.net/)
+2. Click "Open Existing Diagram"
+3. Navigate to `MusicAppFrontend/misc/ER_Diagram.drawio`
+4. The diagram will open in the draw.io editor
+
+### Business Logic
+1. Open the file `MusicAppFrontend/misc/BUSINESS_LOGIC.md` in any markdown viewer
+2. For best viewing experience, use:
+   - GitHub's markdown viewer
+   - VS Code with markdown preview
+   - Any markdown editor
+
+## Additional Resources
+- [Frontend Documentation](../docs/frontend/README.md)
+- [API Documentation](../docs/api/README.md)
+- [Development Setup Guide](../docs/setup/README.md)
