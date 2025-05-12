@@ -93,8 +93,8 @@ Stay tuned for future updates as this project evolves!
 ### Entity Relationship Diagram (ERD)
 The ERD provides a visual representation of the database schema and relationships between entities. You can view and edit it using [draw.io](https://app.diagrams.net/).
 
-[View ER Diagram](misc/ER_Diagram.drawio)
-[View ER Diagram (PNG)](misc/ER_Diagram.drawio.png)
+[View ER Diagram Code](misc/ER_Diagram.txt)
+[View ER Diagram (PNG)](misc/ER_Diagram.png)
 
 Key entities in the diagram:
 - User
@@ -108,7 +108,7 @@ Key entities in the diagram:
 ### Business Logic
 The business logic document outlines the core functionality, rules, and requirements of the application.
 
-[View Business Logic](misc/BUSINESS_LOGIC.md)
+[View Business Logic](misc/Business_Logic_Summary.md)
 
 Key sections:
 - Core Entities and Their Relationships
