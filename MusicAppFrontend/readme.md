@@ -91,7 +91,7 @@ Stay tuned for future updates as this project evolves!
 ## Documentation
 
 ### Entity Relationship Diagram (ERD)
-The ERD provides a visual representation of the database schema and relationships between entities. You can view and edit it using [draw.io](https://app.diagrams.net/).
+The ERD provides a visual representation of the database schema and relationships between entities. You can view and edit it using [dbdiagram.io](https://dbdiagram.io/).
 
 [View ER Diagram Code](misc/ER_Diagram.txt)
 [View ER Diagram (PNG)](misc/ER_Diagram.png)
@@ -117,20 +117,6 @@ Key sections:
 - Technical Constraints
 - Future Considerations
 
-## How to View These Files
-
-### ER Diagram
-1. Open [draw.io](https://app.diagrams.net/)
-2. Click "Open Existing Diagram"
-3. Navigate to `MusicAppFrontend/misc/ER_Diagram.drawio`
-4. The diagram will open in the draw.io editor
-
-### Business Logic
-1. Open the file `MusicAppFrontend/misc/BUSINESS_LOGIC.md` in any markdown viewer
-2. For best viewing experience, use:
-   - GitHub's markdown viewer
-   - VS Code with markdown preview
-   - Any markdown editor
 
 ## Additional Resources
 - [Frontend Documentation](../docs/frontend/README.md)
