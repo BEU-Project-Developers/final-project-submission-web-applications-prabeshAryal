@@ -104,4 +104,5 @@ TestResults/
 # Ignore solution user files
 **/*.sln.docstates
 **/*.sln.ide
-
+TEX/*.*
+**/**TEX**
