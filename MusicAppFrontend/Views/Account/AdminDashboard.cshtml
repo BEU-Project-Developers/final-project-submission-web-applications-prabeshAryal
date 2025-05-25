@@ -235,11 +235,12 @@
             const container = document.getElementById('users-content');
             if (!container) return;
             
-            try {                const response = await fetch('http://localhost:5117/api/Users');
+            try {
+                const response = await fetch('/Users/GetUsers');
                 const result = await response.json();
                 
-                if (result && Array.isArray(result)) {
-                    const users = result.slice(0, 5); // Show only first 5
+                if (result && result.success && Array.isArray(result.data)) {
+                    const users = result.data.slice(0, 5); // Show only first 5
                     let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>User</th><th>Email</th><th>Roles</th></tr></thead><tbody>';
                     
                     users.forEach(user => {
@@ -252,8 +253,8 @@
                     });
                     
                     html += '</tbody></table></div>';
-                    if (result.length > 5) {
-                        html += '<p class="text-muted text-center mt-2">Showing 5 of ' + result.length + ' users</p>';
+                    if (result.data.length > 5) {
+                        html += '<p class="text-muted text-center mt-2">Showing 5 of ' + result.data.length + ' users</p>';
                     }
                     
                     container.innerHTML = html;
@@ -263,7 +264,7 @@
             } catch (error) {
                 container.innerHTML = '<p class="text-danger text-center">Error loading users</p>';
             }
-        }        async function loadArtistsContent() {
+        }async function loadArtistsContent() {
             const container = document.getElementById('artists-content');
             if (!container) return;
             
