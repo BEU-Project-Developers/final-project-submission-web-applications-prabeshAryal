@@ -323,7 +323,11 @@ namespace MusicApp.Services
                 
             try
             {
-                return JsonSerializer.Deserialize<AuthUserDto>(userJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return JsonSerializer.Deserialize<AuthUserDto>(userJson, new JsonSerializerOptions 
+                { 
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
             }
             catch
             {

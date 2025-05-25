@@ -1,0 +1,106 @@
+@model MusicApp.ViewModels.SongCreateViewModel
+@{
+    ViewBag.Title = "Add New Song";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title mb-0">Add New Song</h2>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Title" class="form-label">Song Title</label>
+                                    <input asp-for="Title" class="form-control" placeholder="Enter song title" required />
+                                    <span asp-validation-for="Title" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Genre" class="form-label">Genre</label>
+                                    <input asp-for="Genre" class="form-control" placeholder="Enter genre" />
+                                    <span asp-validation-for="Genre" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="ArtistId" class="form-label">Artist</label>
+                                    <select asp-for="ArtistId" class="form-control">
+                                        <option value="">Select an Artist (Optional)</option>
+                                        @if (ViewBag.Artists != null)
+                                        {
+                                            @foreach (var artist in ViewBag.Artists)
+                                            {
+                                                <option value="@artist.Id">@artist.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                    <span asp-validation-for="ArtistId" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="AlbumId" class="form-label">Album</label>
+                                    <select asp-for="AlbumId" class="form-control">
+                                        <option value="">Select an Album (Optional)</option>
+                                        @if (ViewBag.Albums != null)
+                                        {
+                                            @foreach (var album in ViewBag.Albums)
+                                            {
+                                                <option value="@album.Id">@album.Title</option>
+                                            }
+                                        }
+                                    </select>
+                                    <span asp-validation-for="AlbumId" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Duration" class="form-label">Duration (mm:ss)</label>
+                                    <input asp-for="Duration" class="form-control" type="time" step="1" />
+                                    <span asp-validation-for="Duration" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label asp-for="TrackNumber" class="form-label">Track Number</label>
+                                    <input asp-for="TrackNumber" class="form-control" type="number" min="1" />
+                                    <span asp-validation-for="TrackNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label asp-for="ReleaseDate" class="form-label">Release Date</label>
+                                    <input asp-for="ReleaseDate" class="form-control" type="date" />
+                                    <span asp-validation-for="ReleaseDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="@Url.Action("AdminDashboard", "Account")" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Add Song</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (ViewBag.ErrorMessage != null) 
+{
+    <div class="alert alert-danger mt-3">@ViewBag.ErrorMessage</div>
+}
+}

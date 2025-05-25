@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using MusicApp.Models;
 using MusicApp.Models.DTOs;
 using MusicApp.Services;
+using MusicApp.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -59,6 +60,82 @@ namespace MusicApp.Controllers
                 TempData["ErrorMessage"] = "Unable to load song details. Please try again later.";
                 return RedirectToAction(nameof(Index));
             }
+        }        [HttpGet]
+        public async Task<IActionResult> Create()
+        {
+            try
+            {
+                // Load artists and albums for dropdowns
+                var artists = await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists");
+                var albums = await _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums");
+                ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
+                ViewBag.Albums = albums?.Data ?? new List<AlbumDto>();
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = "Unable to load artists and albums. Please try again later.";
+                ViewBag.Artists = new List<ArtistDto>();
+                ViewBag.Albums = new List<AlbumDto>();
+            }
+            return View();
+        }        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create([Bind("Title,ArtistId,AlbumId,Duration,TrackNumber,Genre,ReleaseDate")] SongCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                try
+                {
+                    // Reload dropdowns for validation failure
+                    var artists = await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists");
+                    var albums = await _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums");
+                    ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
+                    ViewBag.Albums = albums?.Data ?? new List<AlbumDto>();
+                }
+                catch
+                {
+                    ViewBag.Artists = new List<ArtistDto>();
+                    ViewBag.Albums = new List<AlbumDto>();
+                }
+                return View(model);
+            }
+            try
+            {
+                // Map to backend DTO
+                var songCreateDto = new {
+                    Title = model.Title,
+                    ArtistId = model.ArtistId,
+                    AlbumId = model.AlbumId,
+                    Duration = model.Duration,
+                    TrackNumber = model.TrackNumber,
+                    Genre = model.Genre,
+                    ReleaseDate = model.ReleaseDate
+                };
+                var result = await _apiService.PostAsync<object>("api/Songs", songCreateDto);
+                if (result != null)
+                {
+                    TempData["SuccessMessage"] = "Song added successfully.";
+                    return RedirectToAction("Index");
+                }
+                ViewBag.ErrorMessage = "Failed to add song.";
+            }            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = $"Error: {ex.Message}";
+            }
+            
+            // Reload dropdowns on error
+            try
+            {
+                var artists = await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists");
+                var albums = await _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums");
+                ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
+                ViewBag.Albums = albums?.Data ?? new List<AlbumDto>();
+            }
+            catch
+            {
+                ViewBag.Artists = new List<ArtistDto>();
+                ViewBag.Albums = new List<AlbumDto>();
+            }            return View(model);
         }
     }
-} 
+}

@@ -113,23 +113,85 @@
                         <li class="nav-item">
                             <a class="nav-link" id="songs-tab" data-bs-toggle="tab" href="#songs" role="tab">Songs</a>
                         </li>
-                    </ul>
-                    <div class="tab-content mt-3" id="contentTabsContent">
+                    </ul>                    <div class="tab-content mt-3" id="contentTabsContent">
                         <div class="tab-pane fade show active" id="users" role="tabpanel">
-                            <!-- Users table will go here -->
-                            <p>User management content</p>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0">User Management</h6>
+                                <a href="@Url.Action("Index", "Users")" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-arrow-right"></i> Full Management
+                                </a>
+                            </div>
+                            <div id="users-content">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading users...</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="tab-pane fade" id="artists" role="tabpanel">
-                            <!-- Artists table will go here -->
-                            <p>Artist management content</p>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0">Artist Management</h6>
+                                <div>
+                                    <a href="@Url.Action("Create", "Artists")" class="btn btn-sm btn-success me-2">
+                                        <i class="bi bi-plus"></i> Add Artist
+                                    </a>
+                                    <a href="@Url.Action("Index", "Artists")" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-arrow-right"></i> Full Management
+                                    </a>
+                                </div>
+                            </div>
+                            <div id="artists-content">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading artists...</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="tab-pane fade" id="albums" role="tabpanel">
-                            <!-- Albums table will go here -->
-                            <p>Album management content</p>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0">Album Management</h6>
+                                <div>
+                                    <a href="@Url.Action("Create", "Albums")" class="btn btn-sm btn-success me-2">
+                                        <i class="bi bi-plus"></i> Add Album
+                                    </a>
+                                    <a href="@Url.Action("Index", "Albums")" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-arrow-right"></i> Full Management
+                                    </a>
+                                </div>
+                            </div>
+                            <div id="albums-content">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading albums...</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="tab-pane fade" id="songs" role="tabpanel">
-                            <!-- Songs table will go here -->
-                            <p>Song management content</p>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0">Song Management</h6>
+                                <div>
+                                    <a href="@Url.Action("Create", "Songs")" class="btn btn-sm btn-success me-2">
+                                        <i class="bi bi-plus"></i> Add Song
+                                    </a>
+                                    <a href="@Url.Action("Index", "Songs")" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-arrow-right"></i> Full Management
+                                    </a>
+                                </div>
+                            </div>
+                            <div id="songs-content">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading songs...</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -137,3 +199,158 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load users content on page load
+            loadUsersContent();
+            
+            // Handle tab switching
+            const tabLinks = document.querySelectorAll('#contentTabs .nav-link');
+            tabLinks.forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function(e) {
+                    const targetTab = e.target.getAttribute('href').substring(1);
+                    loadTabContent(targetTab);
+                });
+            });
+        });
+
+        function loadTabContent(tabName) {
+            switch(tabName) {
+                case 'users':
+                    loadUsersContent();
+                    break;
+                case 'artists':
+                    loadArtistsContent();
+                    break;
+                case 'albums':
+                    loadAlbumsContent();
+                    break;
+                case 'songs':
+                    loadSongsContent();
+                    break;
+            }
+        }        async function loadUsersContent() {
+            const container = document.getElementById('users-content');
+            if (!container) return;
+            
+            try {                const response = await fetch('http://localhost:5117/api/Users');
+                const result = await response.json();
+                
+                if (result && Array.isArray(result)) {
+                    const users = result.slice(0, 5); // Show only first 5
+                    let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>User</th><th>Email</th><th>Roles</th></tr></thead><tbody>';
+                    
+                    users.forEach(user => {
+                        const roles = user.roles && user.roles.length > 0 ? user.roles.join(', ') : 'No Roles';
+                        html += '<tr>';
+                        html += '<td><img src="' + (user.profileImageUrl || '/assets/default-profile.png') + '" class="rounded-circle me-2" width="25" height="25">' + user.firstName + ' ' + user.lastName + '</td>';
+                        html += '<td>' + user.email + '</td>';
+                        html += '<td><small>' + roles + '</small></td>';
+                        html += '</tr>';
+                    });
+                    
+                    html += '</tbody></table></div>';
+                    if (result.length > 5) {
+                        html += '<p class="text-muted text-center mt-2">Showing 5 of ' + result.length + ' users</p>';
+                    }
+                    
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<p class="text-muted text-center">Failed to load users</p>';
+                }
+            } catch (error) {
+                container.innerHTML = '<p class="text-danger text-center">Error loading users</p>';
+            }
+        }        async function loadArtistsContent() {
+            const container = document.getElementById('artists-content');
+            if (!container) return;
+            
+            try {                const response = await fetch('http://localhost:5117/api/Artists?pageSize=5');
+                const result = await response.json();
+                
+                if (result && result.data) {
+                    const artists = result.data;
+                    let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Artist</th><th>Genre</th><th>Albums</th></tr></thead><tbody>';
+                      artists.forEach(artist => {
+                        html += '<tr>';
+                        html += '<td><img src="' + (artist.imageUrl || '/assets/default-artist.png') + '" class="rounded me-2" width="25" height="25">' + artist.name + '</td>';
+                        html += '<td>' + (artist.genre || 'N/A') + '</td>';
+                        html += '<td>' + (artist.albumsCount || 0) + '</td>';
+                        html += '</tr>';
+                    });
+                    
+                    html += '</tbody></table></div>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<p class="text-muted text-center">No artists found</p>';
+                }
+            } catch (error) {
+                container.innerHTML = '<p class="text-danger text-center">Error loading artists</p>';
+            }
+        }        async function loadAlbumsContent() {
+            const container = document.getElementById('albums-content');
+            if (!container) return;
+            
+            try {                const response = await fetch('http://localhost:5117/api/Albums?pageSize=5');
+                const result = await response.json();
+                
+                if (result && result.data) {
+                    const albums = result.data;
+                    let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Album</th><th>Artist</th><th>Year</th></tr></thead><tbody>';
+                      albums.forEach(album => {
+                        html += '<tr>';
+                        html += '<td><img src="' + (album.coverImageUrl || '/assets/default-album.png') + '" class="rounded me-2" width="25" height="25">' + album.title + '</td>';
+                        html += '<td>' + (album.artistName || 'Unknown') + '</td>';
+                        html += '<td>' + (album.year || 'N/A') + '</td>';
+                        html += '</tr>';
+                    });
+                    
+                    html += '</tbody></table></div>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<p class="text-muted text-center">No albums found</p>';
+                }
+            } catch (error) {
+                container.innerHTML = '<p class="text-danger text-center">Error loading albums</p>';
+            }
+        }        async function loadSongsContent() {
+            const container = document.getElementById('songs-content');
+            if (!container) return;
+            
+            try {                const response = await fetch('http://localhost:5117/api/Songs?pageSize=5');
+                const result = await response.json();
+                
+                if (result && result.data) {
+                    const songs = result.data;
+                    let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Song</th><th>Artist</th><th>Duration</th></tr></thead><tbody>';
+                      songs.forEach(song => {
+                        // Handle duration format - it's a timespan string like "00:03:22.8000000"
+                        let duration = 'N/A';
+                        if (song.duration) {
+                            const timeSpan = song.duration.split(':');
+                            if (timeSpan.length >= 2) {
+                                const minutes = parseInt(timeSpan[1]);
+                                const seconds = Math.floor(parseFloat(timeSpan[2] || '0'));
+                                duration = minutes + ':' + String(seconds).padStart(2, '0');
+                            }
+                        }
+                        html += '<tr>';
+                        html += '<td>' + song.title + '</td>';
+                        html += '<td>' + (song.artistName || 'Unknown') + '</td>';
+                        html += '<td>' + duration + '</td>';
+                        html += '</tr>';
+                    });
+                    
+                    html += '</tbody></table></div>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<p class="text-muted text-center">No songs found</p>';
+                }
+            } catch (error) {
+                container.innerHTML = '<p class="text-danger text-center">Error loading songs</p>';
+            }
+        }
+    </script>
+}

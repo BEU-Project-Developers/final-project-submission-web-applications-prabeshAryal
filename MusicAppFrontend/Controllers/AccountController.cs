@@ -228,7 +228,7 @@ namespace MusicApp.Controllers
                                     SongTitle = track.Title,
                                     ArtistName = track.ArtistName,
                                     AlbumName = track.AlbumTitle,
-                                    Duration = TimeSpan.FromSeconds(track.Duration).ToString(@"m\:ss"),
+                                    Duration = track.Duration.ToString(@"m\:ss"),
                                     CoverImageUrl = track.CoverImageUrl
                                 });
                             }
@@ -286,6 +286,7 @@ namespace MusicApp.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> Profile()
         {
             if (!User.Identity.IsAuthenticated)
@@ -295,7 +296,7 @@ namespace MusicApp.Controllers
 
             try
             {
-                // Try to get user profile from the API
+                // Get user profile from the API
                 var userProfile = await _apiService.GetAsync<UserDto>("api/Users/profile");
                 
                 // Create and populate ProfileViewModel
@@ -332,7 +333,7 @@ namespace MusicApp.Controllers
                 var profile = new ProfileViewModel();
                 profile.AddSampleData();
                 return View(profile);
-        }
+            }
         }
 
         [HttpGet]

@@ -141,7 +141,7 @@
                                             <td>@song.Title</td>
                                             <td>@song.ArtistName</td>
                                             <td>@song.AlbumTitle</td>
-                                            <td>@TimeSpan.FromSeconds(song.Duration).ToString(@"m\:ss")</td>
+                                            <td>@song.Duration.ToString(@"m\:ss")</td>
                                             <td>
                                                 <form method="post" asp-action="AddSongToPlaylist" style="display:inline">
                                                     <input type="hidden" name="playlistId" value="@Model.Id" />

@@ -2,6 +2,7 @@
 using MusicApp.Models;
 using MusicApp.Models.DTOs;
 using MusicApp.Services;
+using MusicApp.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -59,6 +60,46 @@ namespace MusicApp.Controllers
                 TempData["ErrorMessage"] = "Unable to load artist details. Please try again later.";
                 return RedirectToAction(nameof(Index));
             }
+        }
+
+        [HttpGet]
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create([Bind("Name,Bio,Country,Genre,FormedDate,MonthlyListeners")] ArtistCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+            try
+            {
+                // Map to backend DTO
+                var artistCreateDto = new {
+                    Name = model.Name,
+                    Bio = model.Bio,
+                    Country = model.Country,
+                    Genre = model.Genre,
+                    FormedDate = model.FormedDate,
+                    MonthlyListeners = model.MonthlyListeners,
+                    IsActive = true
+                };
+                var result = await _apiService.PostAsync<object>("api/Artists", artistCreateDto);
+                if (result != null)
+                {
+                    TempData["SuccessMessage"] = "Artist added successfully.";
+                    return RedirectToAction("Index");
+                }
+                ViewBag.ErrorMessage = "Failed to add artist.";
+            }
+            catch (Exception ex)
+            {            ViewBag.ErrorMessage = $"Error: {ex.Message}";
+            }
+            return View(model);
         }
     }
 }

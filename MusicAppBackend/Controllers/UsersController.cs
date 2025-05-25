@@ -283,6 +283,42 @@ namespace MusicAppBackend.Controllers
             _context.UserFollowers.Remove(follow);
             await _context.SaveChangesAsync();
             return Ok();
+        }        // DELETE: api/Users/5
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            var user = await _context.Users
+                .Include(u => u.UserRoles)
+                .Include(u => u.Playlists)
+                .Include(u => u.Favorites)
+                .Include(u => u.Followers)
+                .Include(u => u.Following)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Don't allow deletion of the current admin user
+            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            if (user.Id == currentUserId)
+            {
+                return BadRequest("Cannot delete your own account");
+            }
+
+            // Delete profile image if exists
+            if (!string.IsNullOrEmpty(user.ProfileImageUrl))
+            {
+                await _fileStorage.DeleteFileAsync(user.ProfileImageUrl);
+            }
+
+            // Remove user (cascade delete will handle related records)
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
         private async Task<bool> UserExists(int id)
@@ -296,4 +332,4 @@ namespace MusicAppBackend.Controllers
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
     }
-} 
+}

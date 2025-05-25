@@ -37,7 +37,7 @@ namespace MusicApp.Controllers
                 var albumsResponse = await _apiService.GetAsync<PaginatedResponse<AlbumViewModel>>("api/Albums");
                 if (albumsResponse?.Data != null)
                 {
-                    viewModel.LatestAlbums = albumsResponse.Data.OrderByDescending(a => a.Year).Take(8).ToList();
+                    viewModel.LatestAlbums = albumsResponse.Data.OrderByDescending(a => a.Year ?? 0).Take(8).ToList();
                 }
 
                 // Get popular playlists

@@ -1,0 +1,168 @@
+@model List<MusicApp.Models.DTOs.UserDto>
+@{
+    ViewData["Title"] = "User Management";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>User Management</h2>
+        <a href="@Url.Action("AdminDashboard", "Account")" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Admin Dashboard
+        </a>
+    </div>
+
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @ViewBag.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-people"></i> All Users (@Model.Count)
+            </h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col">Profile</th>
+                                <th scope="col">Name</th>
+                                <th scope="col">Username</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">Roles</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <img src="@(string.IsNullOrEmpty(user.ProfileImageUrl) ? "/assets/default-profile.png" : user.ProfileImageUrl)" 
+                                             class="rounded-circle" width="40" height="40" alt="Profile"
+                                             onerror="this.onerror=null; this.src='/assets/default-profile.png';">
+                                    </td>
+                                    <td>
+                                        <strong>@user.FirstName @user.LastName</strong>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">@@@user.Username</span>
+                                    </td>
+                                    <td>@user.Email</td>
+                                    <td>
+                                        @if (user.Roles?.Any() == true)
+                                        {
+                                            @foreach (var role in user.Roles)
+                                            {
+                                                <span class="badge @(role == "Admin" ? "bg-danger" : "bg-primary") me-1">@role</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">No Roles</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", new { id = user.Id })" 
+                                               class="btn btn-sm btn-outline-primary" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            @if (user.Roles?.Contains("Admin") != true || User.Identity.Name != user.Username)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                        title="Delete User" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#deleteModal"
+                                                        data-user-id="@user.Id"
+                                                        data-user-name="@user.FirstName @user.LastName"
+                                                        data-user-username="@user.Username">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-people display-1 text-muted"></i>
+                    <h4 class="mt-3 text-muted">No Users Found</h4>
+                    <p class="text-muted">There are no users in the system.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the user <strong><span id="deleteUserName"></span></strong> (@@<span id="deleteUserUsername"></span>)?</p>
+                <p class="text-danger"><i class="bi bi-exclamation-triangle"></i> This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete User
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Handle delete modal
+        const deleteModal = document.getElementById('deleteModal');
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const userId = button.getAttribute('data-user-id');
+            const userName = button.getAttribute('data-user-name');
+            const userUsername = button.getAttribute('data-user-username');
+            
+            document.getElementById('deleteUserName').textContent = userName;
+            document.getElementById('deleteUserUsername').textContent = userUsername;
+            
+            const deleteForm = document.getElementById('deleteForm');
+            deleteForm.action = '@Url.Action("Delete")/' + userId;
+        });
+    </script>
+}

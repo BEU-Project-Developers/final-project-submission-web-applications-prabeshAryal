@@ -210,12 +210,24 @@ namespace MusicAppBackend.Controllers
                 PlayCount = 0,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
-            };
-
-            _context.Songs.Add(song);
+            };            _context.Songs.Add(song);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetSong), new { id = song.Id }, song);
+            // Return a simple DTO to avoid circular references
+            return CreatedAtAction(nameof(GetSong), new { id = song.Id }, new
+            {
+                song.Id,
+                song.Title,
+                song.ArtistId,
+                song.AlbumId,
+                song.Duration,
+                song.TrackNumber,
+                song.Genre,
+                song.ReleaseDate,
+                song.PlayCount,
+                song.CreatedAt,
+                song.UpdatedAt
+            });
         }
 
         // PUT: api/Songs/5

@@ -167,12 +167,23 @@ namespace MusicAppBackend.Controllers
                 IsActive = artistDto.IsActive ?? true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
-            };
-
-            _context.Artists.Add(artist);
+            };            _context.Artists.Add(artist);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetArtist), new { id = artist.Id }, artist);
+            // Return a simple DTO to avoid circular references
+            return CreatedAtAction(nameof(GetArtist), new { id = artist.Id }, new
+            {
+                artist.Id,
+                artist.Name,
+                artist.Bio,
+                artist.Country,
+                artist.Genre,
+                artist.FormedDate,
+                artist.MonthlyListeners,
+                artist.IsActive,
+                artist.CreatedAt,
+                artist.UpdatedAt
+            });
         }
 
         // PUT: api/Artists/5

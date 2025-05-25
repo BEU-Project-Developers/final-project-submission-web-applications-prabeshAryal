@@ -1,0 +1,189 @@
+@model MusicApp.Models.DTOs.UserDto
+@{
+    ViewData["Title"] = "User Details";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>User Details</h2>
+        <div>
+            <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Users
+            </a>
+        </div>
+    </div>
+
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @ViewBag.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <img src="@(string.IsNullOrEmpty(Model.ProfileImageUrl) ? "/assets/default-profile.png" : Model.ProfileImageUrl)" 
+                         class="rounded-circle mb-3" width="150" height="150" alt="Profile Image"
+                         onerror="this.onerror=null; this.src='/assets/default-profile.png';">
+                    <h4>@Model.FirstName @Model.LastName</h4>
+                    <p class="text-muted">@@@Model.Username</p>
+                    <div class="mb-3">
+                        @if (Model.Roles?.Any() == true)
+                        {
+                            @foreach (var role in Model.Roles)
+                            {
+                                <span class="badge @(role == "Admin" ? "bg-danger" : "bg-primary") me-1 mb-1">@role</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">No Roles</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">User Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>User ID:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            #@Model.Id
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>First Name:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            @Model.FirstName
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>Last Name:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            @Model.LastName
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>Username:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            @@@Model.Username
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>Email:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            <a href="mailto:@Model.Email">@Model.Email</a>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>Account Created:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            @Model.CreatedAt.ToString("MMMM dd, yyyy 'at' h:mm tt")
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>User Roles:</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            @if (Model.Roles?.Any() == true)
+                            {
+                                <ul class="list-unstyled mb-0">
+                                    @foreach (var role in Model.Roles)
+                                    {
+                                        <li><span class="badge @(role == "Admin" ? "bg-danger" : "bg-primary") me-1">@role</span></li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No roles assigned</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Account Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2 d-md-flex">
+                        @if (Model.Roles?.Contains("Admin") != true || User.Identity.Name != Model.Username)
+                        {
+                            <button type="button" class="btn btn-danger" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#deleteModal">
+                                <i class="bi bi-trash"></i> Delete User
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-secondary" disabled>
+                                <i class="bi bi-shield-lock"></i> Cannot Delete Admin
+                            </button>
+                        }
+                    </div>
+                    <small class="text-muted mt-2 d-block">
+                        <i class="bi bi-info-circle"></i> User management actions are logged for security purposes.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm User Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the user <strong>@Model.FirstName @Model.LastName</strong> (@@<strong>@Model.Username</strong>)?</p>
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    <strong>Warning:</strong> This action cannot be undone. All user data, including playlists and favorites, will be permanently deleted.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form asp-action="Delete" asp-route-id="@Model.Id" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete User
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+}

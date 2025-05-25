@@ -60,6 +60,70 @@ namespace MusicApp.Controllers
                 TempData["ErrorMessage"] = "Unable to load album details. Please try again later.";
                 return RedirectToAction(nameof(Index));
             }
+        }        [HttpGet]
+        public async Task<IActionResult> Create()
+        {
+            try
+            {
+                // Load artists for dropdown
+                var artists = await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists");
+                ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = "Unable to load artists. Please try again later.";
+                ViewBag.Artists = new List<ArtistDto>();
+            }
+            return View();
+        }        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create([Bind("Title,ArtistId,ReleaseDate")] AlbumCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                try
+                {
+                    // Reload artists for dropdown
+                    var artists = await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists");
+                    ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
+                }
+                catch
+                {
+                    ViewBag.Artists = new List<ArtistDto>();
+                }
+                return View(model);
+            }
+            try
+            {
+                // Map to backend DTO
+                var albumCreateDto = new {
+                    Title = model.Title,
+                    ArtistId = model.ArtistId,
+                    ReleaseDate = model.ReleaseDate
+                };
+                var result = await _apiService.PostAsync<object>("api/Albums", albumCreateDto);
+                if (result != null)
+                {
+                    TempData["SuccessMessage"] = "Album added successfully.";
+                    return RedirectToAction("Index");
+                }
+                ViewBag.ErrorMessage = "Failed to add album.";
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = $"Error: {ex.Message}";
+            }
+            
+            // Reload artists for dropdown on error
+            try
+            {
+                var artists = await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists");
+                ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
+            }
+            catch
+            {
+                ViewBag.Artists = new List<ArtistDto>();
+            }            return View(model);
         }
     }
 }

@@ -44,9 +44,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="list-group mt-4 shadow-sm">
+            </div>            <div class="list-group mt-4 shadow-sm">
                 <a href="#" class="list-group-item list-group-item-action active">
                     <i class="bi bi-speedometer2 me-2"></i> Dashboard
                 </a>
@@ -55,15 +53,6 @@
                 </a>
                 <a href="@Url.Action("Index", "Playlists")" class="list-group-item list-group-item-action">
                     <i class="bi bi-music-note-list me-2"></i> My Playlists
-                </a>
-                <a href="#" class="list-group-item list-group-item-action">
-                    <i class="bi bi-heart me-2"></i> Favorite Tracks
-                </a>
-                <a href="#" class="list-group-item list-group-item-action">
-                    <i class="bi bi-people me-2"></i> Following
-                </a>
-                <a href="#" class="list-group-item list-group-item-action">
-                    <i class="bi bi-gear me-2"></i> Account Settings
                 </a>
                 <form asp-controller="Account" asp-action="Logout" method="post">
                     <button type="submit" class="list-group-item list-group-item-action w-100 text-start border-0">

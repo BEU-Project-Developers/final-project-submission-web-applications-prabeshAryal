@@ -38,20 +38,12 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="list-group mt-4 shadow-sm">
+            </div>            <div class="list-group mt-4 shadow-sm">
                 <a href="@Url.Action("Dashboard", "Account")" class="list-group-item list-group-item-action">
                     <i class="bi bi-speedometer2 me-2"></i> Dashboard
                 </a>
                 <a href="@Url.Action("Profile", "Account")" class="list-group-item list-group-item-action active">
                     <i class="bi bi-person me-2"></i> Profile Settings
-                </a>
-                <a href="#" class="list-group-item list-group-item-action">
-                    <i class="bi bi-shield-lock me-2"></i> Security
-                </a>
-                <a href="#" class="list-group-item list-group-item-action">
-                    <i class="bi bi-bell me-2"></i> Notifications
                 </a>
                 <form asp-controller="Account" asp-action="Logout" method="post">
                     <button type="submit" class="list-group-item list-group-item-action w-100 text-start border-0">

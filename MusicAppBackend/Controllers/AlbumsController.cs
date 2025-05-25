@@ -178,12 +178,24 @@ namespace MusicAppBackend.Controllers
                 Duration = albumDto.Duration,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
-            };
-
-            _context.Albums.Add(album);
+            };            _context.Albums.Add(album);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetAlbum), new { id = album.Id }, album);
+            // Return a simple DTO to avoid circular references
+            return CreatedAtAction(nameof(GetAlbum), new { id = album.Id }, new
+            {
+                album.Id,
+                album.Title,
+                album.ArtistId,
+                album.Year,
+                album.Description,
+                album.Genre,
+                album.ReleaseDate,
+                album.TotalTracks,
+                album.Duration,
+                album.CreatedAt,
+                album.UpdatedAt
+            });
         }
 
         // PUT: api/Albums/5

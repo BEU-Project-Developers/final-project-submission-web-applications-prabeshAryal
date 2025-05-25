@@ -276,7 +276,7 @@
                         <div class="track-artist">@song.ArtistName</div>
                     </div>
                     <div class="track-duration">
-                        @TimeSpan.FromSeconds(song.Duration).ToString(@"m\:ss")
+                        @song.Duration.ToString(@"m\:ss")
                     </div>
                     <div class="track-actions">
                         <button class="btn" title="Play">

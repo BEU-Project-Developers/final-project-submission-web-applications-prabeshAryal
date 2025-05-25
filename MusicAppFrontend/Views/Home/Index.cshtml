@@ -389,7 +389,10 @@
                 <p>Discover new music, create playlists, and share your favorite tracks with friends.</p>
                 <div class="d-flex gap-2">
                     <a href="/Songs" class="btn btn-browse">Browse Music</a>
-                    <a href="/Account/Register" class="btn btn-account">Create Account</a>
+                    @if (!User.Identity.IsAuthenticated)
+                    {
+                        <a href="/Account/Register" class="btn btn-account">Create Account</a>
+                    }
                 </div>
             </div>
         </div>
@@ -428,7 +431,7 @@
                     </div>
                     <div class="album-info">
                         <div class="album-title">@album.Title</div>
-                        <div class="album-details">@album.ArtistName • @album.Year</div>
+                        <div class="album-details">@album.ArtistName • @(album.Year?.ToString() ?? "Unknown")</div>
                     </div>
                     <a href="/Albums/Details/@album.Id" class="album-link"></a>
                 </div>

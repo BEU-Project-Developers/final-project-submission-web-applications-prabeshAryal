@@ -102,11 +102,14 @@ namespace MusicApp.Services
                 await HandleUnauthorized();
                 return default;
             }
-            
-            response.EnsureSuccessStatusCode();
+              response.EnsureSuccessStatusCode();
             
             var content = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<T>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            return JsonSerializer.Deserialize<T>(content, new JsonSerializerOptions 
+            { 
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
         }
 
         public async Task<T> PostAsync<T>(string endpoint, object data)
@@ -125,12 +128,15 @@ namespace MusicApp.Services
             Console.WriteLine($"Response content: {responseContent}");
             
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {
-                // Try to deserialize error message
+            {                // Try to deserialize error message
                 try
                 {
                     var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(responseContent, 
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        new JsonSerializerOptions 
+                        { 
+                            PropertyNameCaseInsensitive = true,
+                            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                        });
                     
                     if (errorResponse != null && !string.IsNullOrEmpty(errorResponse.Message))
                     {
@@ -144,12 +150,15 @@ namespace MusicApp.Services
             }
             
             if (!response.IsSuccessStatusCode)
-            {
-                // Try to deserialize error message
+            {                // Try to deserialize error message
                 try
                 {
                     var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(responseContent, 
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        new JsonSerializerOptions 
+                        { 
+                            PropertyNameCaseInsensitive = true,
+                            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                        });
                     
                     if (errorResponse != null && !string.IsNullOrEmpty(errorResponse.Message))
                     {
@@ -190,11 +199,14 @@ namespace MusicApp.Services
                 await HandleUnauthorized();
                 return default;
             }
-            
-            response.EnsureSuccessStatusCode();
+              response.EnsureSuccessStatusCode();
             
             var responseContent = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<T>(responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            return JsonSerializer.Deserialize<T>(responseContent, new JsonSerializerOptions 
+            { 
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
         }
         
         public async Task DeleteAsync(string endpoint)
@@ -246,10 +258,13 @@ namespace MusicApp.Services
             }
             
             response.EnsureSuccessStatusCode();
-            
-            var responseContent = await response.Content.ReadAsStringAsync();
+              var responseContent = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<FileUploadResultDto>(responseContent, 
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                new JsonSerializerOptions 
+                { 
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
                 
             return result?.FilePath;
         }
@@ -282,10 +297,13 @@ namespace MusicApp.Services
                         
                         if (response.IsSuccessStatusCode)
                         {
-                            var responseContent = await response.Content.ReadAsStringAsync();
-                            var tokenResponse = JsonSerializer.Deserialize<TokenResponseDto>(
+                            var responseContent = await response.Content.ReadAsStringAsync();                            var tokenResponse = JsonSerializer.Deserialize<TokenResponseDto>(
                                 responseContent, 
-                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                                new JsonSerializerOptions 
+                                { 
+                                    PropertyNameCaseInsensitive = true,
+                                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                                });
                             
                             if (tokenResponse != null)
                             {
