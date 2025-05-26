@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using MusicAppBackend.Services;
 using System.IO;
+using System.Linq;
 
 namespace MusicAppBackend.Controllers
 {
@@ -45,12 +46,23 @@ namespace MusicAppBackend.Controllers
                 if (!_contentTypeProvider.TryGetContentType(filename, out var contentType))
                 {
                     contentType = "application/octet-stream";
-                }
-
-                // Read file
+                }                // Read file
                 var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
 
-                return File(fileBytes, contentType, filename);
+                // For images, audio, and video files, set Content-Disposition to inline for browser viewing
+                var streamableTypes = new[] { "image/", "audio/", "video/" };
+                var isStreamable = streamableTypes.Any(t => contentType.StartsWith(t));
+
+                if (isStreamable)
+                {
+                    // Return file with inline disposition for browser viewing
+                    return File(fileBytes, contentType);
+                }
+                else
+                {
+                    // Return file with attachment disposition for download
+                    return File(fileBytes, contentType, filename);
+                }
             }
             catch (Exception ex)
             {
@@ -83,12 +95,23 @@ namespace MusicAppBackend.Controllers
                 if (!_contentTypeProvider.TryGetContentType(filename, out var contentType))
                 {
                     contentType = "application/octet-stream";
-                }
-
-                // Read file
+                }                // Read file
                 var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
 
-                return File(fileBytes, contentType, filename);
+                // For images, audio, and video files, set Content-Disposition to inline for browser viewing
+                var streamableTypes = new[] { "image/", "audio/", "video/" };
+                var isStreamable = streamableTypes.Any(t => contentType.StartsWith(t));
+
+                if (isStreamable)
+                {
+                    // Return file with inline disposition for browser viewing
+                    return File(fileBytes, contentType);
+                }
+                else
+                {
+                    // Return file with attachment disposition for download
+                    return File(fileBytes, contentType, filename);
+                }
             }
             catch (Exception ex)
             {
