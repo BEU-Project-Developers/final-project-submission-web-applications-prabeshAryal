@@ -12,7 +12,7 @@ namespace MusicAppBackend.Models
         [StringLength(100)]
         public string Title { get; set; } = string.Empty;
         
-        public int ArtistId { get; set; }
+        public int? ArtistId { get; set; }
         
         public string? CoverImageUrl { get; set; }
         
@@ -39,4 +39,4 @@ namespace MusicAppBackend.Models
         
         public virtual ICollection<Song> Songs { get; set; } = new List<Song>();
     }
-} 
+}

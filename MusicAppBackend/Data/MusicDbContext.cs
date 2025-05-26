@@ -68,15 +68,17 @@ namespace MusicAppBackend.Data
             modelBuilder.Entity<UserFavorite>()
                 .HasOne(uf => uf.Song)
                 .WithMany(s => s.UserFavorites)
-                .HasForeignKey(uf => uf.SongId);
+                .HasForeignKey(uf => uf.SongId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Configure Artist-Albums (one-to-many)
+            // Configure Artist-Albums (one-to-many, set null)
             modelBuilder.Entity<Album>()
                 .HasOne(a => a.Artist)
                 .WithMany(a => a.Albums)
-                .HasForeignKey(a => a.ArtistId);
+                .HasForeignKey(a => a.ArtistId)
+                .OnDelete(DeleteBehavior.SetNull);
 
-            // Configure Album-Songs (one-to-many)
+            // Configure Album-Songs (one-to-many, set null)
             modelBuilder.Entity<Song>()
                 .HasOne(s => s.Album)
                 .WithMany(a => a.Songs)
@@ -101,7 +103,8 @@ namespace MusicAppBackend.Data
             modelBuilder.Entity<PlaylistSong>()
                 .HasOne(ps => ps.Song)
                 .WithMany(s => s.PlaylistSongs)
-                .HasForeignKey(ps => ps.SongId);
+                .HasForeignKey(ps => ps.SongId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Configure many-to-many relationship between Playlists and Songs
             modelBuilder.Entity<Playlist>()
@@ -128,6 +131,13 @@ namespace MusicAppBackend.Data
                 .HasOne(rt => rt.User)
                 .WithMany()
                 .HasForeignKey(rt => rt.UserId);
+
+            // Configure Song-Artist (many-to-one, cascade delete)
+            modelBuilder.Entity<Song>()
+                .HasOne(s => s.Artist)
+                .WithMany()
+                .HasForeignKey(s => s.ArtistId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

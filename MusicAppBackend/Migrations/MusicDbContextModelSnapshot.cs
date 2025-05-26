@@ -30,7 +30,7 @@ namespace MusicAppBackend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("ArtistId")
+                    b.Property<int?>("ArtistId")
                         .HasColumnType("int");
 
                     b.Property<string>("CoverImageUrl")
@@ -398,8 +398,7 @@ namespace MusicAppBackend.Migrations
                     b.HasOne("MusicAppBackend.Models.Artist", "Artist")
                         .WithMany("Albums")
                         .HasForeignKey("ArtistId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Artist");
                 });
@@ -426,7 +425,7 @@ namespace MusicAppBackend.Migrations
                     b.HasOne("MusicAppBackend.Models.Song", "Song")
                         .WithMany("PlaylistSongs")
                         .HasForeignKey("SongId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Playlist");
@@ -454,7 +453,8 @@ namespace MusicAppBackend.Migrations
 
                     b.HasOne("MusicAppBackend.Models.Artist", "Artist")
                         .WithMany()
-                        .HasForeignKey("ArtistId");
+                        .HasForeignKey("ArtistId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Album");
 
@@ -466,7 +466,7 @@ namespace MusicAppBackend.Migrations
                     b.HasOne("MusicAppBackend.Models.Song", "Song")
                         .WithMany("UserFavorites")
                         .HasForeignKey("SongId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MusicAppBackend.Models.User", "User")
