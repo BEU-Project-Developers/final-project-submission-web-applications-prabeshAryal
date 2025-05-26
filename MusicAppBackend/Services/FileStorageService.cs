@@ -5,10 +5,10 @@ using System.IO;
 using System.Threading.Tasks;
 
 namespace MusicAppBackend.Services
-{
-    public interface IFileStorageService
+{    public interface IFileStorageService
     {
         Task<string> SaveFileAsync(IFormFile file, string folder);
+        Task<string> SaveFileAsync(IFormFile file, string folder, string subfolder);
         Task<bool> DeleteFileAsync(string filePath);
         string GetFileUrl(string filePath);
     }
@@ -29,8 +29,7 @@ namespace MusicAppBackend.Services
                 Directory.CreateDirectory(_baseStoragePath);
             }
         }
-        
-        public async Task<string> SaveFileAsync(IFormFile file, string folder)
+          public async Task<string> SaveFileAsync(IFormFile file, string folder)
         {
             if (file == null || file.Length == 0)
             {
@@ -47,6 +46,34 @@ namespace MusicAppBackend.Services
             // Generate unique filename
             var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
             var filePath = Path.Combine(folder, fileName);
+            var fullPath = Path.Combine(_baseStoragePath, filePath);
+            
+            // Save file
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+            
+            return filePath;
+        }
+
+        public async Task<string> SaveFileAsync(IFormFile file, string folder, string subfolder)
+        {
+            if (file == null || file.Length == 0)
+            {
+                throw new ArgumentException("File is empty or null");
+            }
+            
+            // Create nested folder structure if it doesn't exist
+            var folderPath = Path.Combine(_baseStoragePath, folder, subfolder);
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+            
+            // Use original filename for organized structure
+            var fileName = Path.GetFileName(file.FileName);
+            var filePath = Path.Combine(folder, subfolder, fileName);
             var fullPath = Path.Combine(_baseStoragePath, filePath);
             
             // Save file

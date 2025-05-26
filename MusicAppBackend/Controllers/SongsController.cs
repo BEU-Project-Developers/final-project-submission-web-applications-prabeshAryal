@@ -264,9 +264,12 @@ namespace MusicAppBackend.Controllers
 
             song.Title = songDto.Title ?? song.Title;
             song.Duration = songDto.Duration ?? song.Duration;
+            song.AudioUrl = songDto.AudioUrl ?? song.AudioUrl;
+            song.CoverImageUrl = songDto.CoverImageUrl ?? song.CoverImageUrl;
             song.TrackNumber = songDto.TrackNumber ?? song.TrackNumber;
             song.Genre = songDto.Genre ?? song.Genre;
             song.ReleaseDate = songDto.ReleaseDate ?? song.ReleaseDate;
+            song.PlayCount = songDto.PlayCount ?? song.PlayCount;
             song.UpdatedAt = DateTime.UtcNow;
 
             try
@@ -567,8 +570,11 @@ namespace MusicAppBackend.Controllers
         public int? ArtistId { get; set; }
         public int? AlbumId { get; set; }
         public TimeSpan? Duration { get; set; }
+        public string? AudioUrl { get; set; }
+        public string? CoverImageUrl { get; set; }
         public int? TrackNumber { get; set; }
         public string? Genre { get; set; }
         public DateTime? ReleaseDate { get; set; }
+        public int? PlayCount { get; set; }
     }
-} 
+}

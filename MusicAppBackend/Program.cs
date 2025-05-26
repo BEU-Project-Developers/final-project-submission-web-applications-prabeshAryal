@@ -1,5 +1,6 @@
 // Program.cs
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -49,6 +50,9 @@ builder.Services.AddAuthorization();
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+
+// Register content type provider for file handling
+builder.Services.AddSingleton<IContentTypeProvider, FileExtensionContentTypeProvider>();
 
 // Configure CORS
 builder.Services.AddCors(options =>

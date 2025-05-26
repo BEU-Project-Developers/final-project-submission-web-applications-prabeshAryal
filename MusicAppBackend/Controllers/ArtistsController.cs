@@ -155,8 +155,7 @@ namespace MusicAppBackend.Controllers
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Artist>> CreateArtist([FromBody] ArtistCreateDTO artistDto)
-        {
-            var artist = new Artist
+        {            var artist = new Artist
             {
                 Name = artistDto.Name,
                 Bio = artistDto.Bio,
@@ -167,7 +166,9 @@ namespace MusicAppBackend.Controllers
                 IsActive = artistDto.IsActive ?? true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
-            };            _context.Artists.Add(artist);
+            };
+            
+            _context.Artists.Add(artist);
             await _context.SaveChangesAsync();
 
             // Return a simple DTO to avoid circular references
@@ -203,6 +204,7 @@ namespace MusicAppBackend.Controllers
             artist.Genre = artistDto.Genre ?? artist.Genre;
             artist.FormedDate = artistDto.FormedDate ?? artist.FormedDate;
             artist.MonthlyListeners = artistDto.MonthlyListeners ?? artist.MonthlyListeners;
+            artist.ImageUrl = artistDto.ImageUrl ?? artist.ImageUrl;
             artist.IsActive = artistDto.IsActive ?? artist.IsActive;
             artist.UpdatedAt = DateTime.UtcNow;
 
@@ -337,6 +339,7 @@ namespace MusicAppBackend.Controllers
         public string? Genre { get; set; }
         public DateTime? FormedDate { get; set; }
         public int? MonthlyListeners { get; set; }
+        public string? ImageUrl { get; set; }
         public bool? IsActive { get; set; }
     }
 }

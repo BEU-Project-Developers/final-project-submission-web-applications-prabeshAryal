@@ -39,4 +39,16 @@ namespace MusicAppBackend.Models
         
         public virtual ICollection<Song> Songs { get; set; } = new List<Song>();
     }
+
+    public class AlbumUpdateDTO
+    {
+        public string? Title { get; set; }
+        public int? ArtistId { get; set; }
+        public int? Year { get; set; }
+        public string? Description { get; set; }
+        public string? Genre { get; set; }
+        public DateTime? ReleaseDate { get; set; }
+        public int? TotalTracks { get; set; }
+        public TimeSpan? Duration { get; set; }
+    }
 }

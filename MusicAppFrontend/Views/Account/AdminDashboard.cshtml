@@ -109,11 +109,13 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" id="albums-tab" data-bs-toggle="tab" href="#albums" role="tab">Albums</a>
-                        </li>
-                        <li class="nav-item">
+                        </li>                        <li class="nav-item">
                             <a class="nav-link" id="songs-tab" data-bs-toggle="tab" href="#songs" role="tab">Songs</a>
                         </li>
-                    </ul>                    <div class="tab-content mt-3" id="contentTabsContent">
+                        <li class="nav-item">
+                            <a class="nav-link" id="files-tab" data-bs-toggle="tab" href="#files" role="tab">File Manager</a>
+                        </li>
+                    </ul><div class="tab-content mt-3" id="contentTabsContent">
                         <div class="tab-pane fade show active" id="users" role="tabpanel">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h6 class="mb-0">User Management</h6>
@@ -183,13 +185,147 @@
                                         <i class="bi bi-arrow-right"></i> Full Management
                                     </a>
                                 </div>
-                            </div>
-                            <div id="songs-content">
+                            </div>                            <div id="songs-content">
                                 <div class="text-center py-4">
                                     <div class="spinner-border" role="status">
                                         <span class="visually-hidden">Loading...</span>
                                     </div>
                                     <p class="mt-2">Loading songs...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="files" role="tabpanel">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0">File Management</h6>
+                                <small class="text-muted">Upload and manage files for songs, albums, artists, and users</small>
+                            </div>
+                            <div id="files-content">
+                                <!-- File Upload System -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-header">
+                                                <h6 class="mb-0"><i class="bi bi-upload"></i> Upload Files</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <form id="fileUploadForm" enctype="multipart/form-data">
+                                                    <div class="mb-3">
+                                                        <label for="fileType" class="form-label">File Type</label>
+                                                        <select class="form-select" id="fileType" name="fileType" required>
+                                                            <option value="">Select file type...</option>
+                                                            <option value="songs">Song (MP3 + Cover Image)</option>
+                                                            <option value="albums">Album Cover</option>
+                                                            <option value="artists">Artist Image</option>
+                                                            <option value="users">User Avatar</option>
+                                                            <option value="playlists">Playlist Cover</option>
+                                                        </select>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3" id="songFileContainer" style="display: none;">
+                                                        <label for="songFile" class="form-label">Song File (MP3)</label>
+                                                        <input type="file" class="form-control" id="songFile" name="songFile" accept=".mp3,.wav,.flac">
+                                                        <div class="form-text">Supported formats: MP3, WAV, FLAC</div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3" id="imageFileContainer">
+                                                        <label for="imageFile" class="form-label">Image File</label>
+                                                        <input type="file" class="form-control" id="imageFile" name="imageFile" accept=".jpg,.jpeg,.png,.gif,.webp">
+                                                        <div class="form-text">Supported formats: JPG, PNG, GIF, WebP</div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label for="fileName" class="form-label">File Name (without extension)</label>
+                                                        <input type="text" class="form-control" id="fileName" name="fileName" placeholder="e.g., bohemian-rhapsody" required>
+                                                        <div class="form-text">Use lowercase with hyphens for spaces</div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label for="entityName" class="form-label">Entity Name (Optional)</label>
+                                                        <input type="text" class="form-control" id="entityName" name="entityName" placeholder="e.g., Queen, The Beatles">
+                                                        <div class="form-text">Creates organized folder structure</div>
+                                                    </div>
+                                                    
+                                                    <button type="submit" class="btn btn-primary" id="uploadButton">
+                                                        <i class="bi bi-upload"></i> Upload Files
+                                                    </button>
+                                                </form>
+                                                
+                                                <div id="uploadProgress" class="mt-3" style="display: none;">
+                                                    <div class="progress">
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                    </div>
+                                                    <small class="text-muted">Uploading...</small>
+                                                </div>
+                                                
+                                                <div id="uploadResult" class="mt-3"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-header">
+                                                <h6 class="mb-0"><i class="bi bi-folder2-open"></i> File Browser</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-3">
+                                                    <label for="browseType" class="form-label">Browse Directory</label>
+                                                    <select class="form-select" id="browseType" name="browseType">
+                                                        <option value="songs">Songs</option>
+                                                        <option value="albums">Albums</option>
+                                                        <option value="artists">Artists</option>
+                                                        <option value="users">Users</option>
+                                                        <option value="playlists">Playlists</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                <div id="fileBrowser" style="max-height: 400px; overflow-y: auto;">
+                                                    <div class="text-center py-4">
+                                                        <div class="spinner-border" role="status">
+                                                            <span class="visually-hidden">Loading...</span>
+                                                        </div>
+                                                        <p class="mt-2">Loading files...</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- File Management Actions -->
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0"><i class="bi bi-gear"></i> File Management Actions</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <div class="d-grid">
+                                                            <button class="btn btn-outline-info" onclick="refreshFileBrowser()">
+                                                                <i class="bi bi-arrow-clockwise"></i> Refresh Browser
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="d-grid">
+                                                            <button class="btn btn-outline-warning" onclick="cleanupFiles()">
+                                                                <i class="bi bi-trash3"></i> Cleanup Unused Files
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="d-grid">
+                                                            <button class="btn btn-outline-success" onclick="generateThumbnails()">
+                                                                <i class="bi bi-image"></i> Generate Thumbnails
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -205,8 +341,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Load users content on page load
             loadUsersContent();
-            
-            // Handle tab switching
+              // Handle tab switching
             const tabLinks = document.querySelectorAll('#contentTabs .nav-link');
             tabLinks.forEach(tab => {
                 tab.addEventListener('shown.bs.tab', function(e) {
@@ -214,6 +349,9 @@
                     loadTabContent(targetTab);
                 });
             });
+            
+            // Initialize file upload system
+            initializeFileUploadSystem();
         });
 
         function loadTabContent(tabName) {
@@ -226,12 +364,14 @@
                     break;
                 case 'albums':
                     loadAlbumsContent();
-                    break;
-                case 'songs':
+                    break;                case 'songs':
                     loadSongsContent();
                     break;
+                case 'files':
+                    loadFilesContent();
+                    break;
             }
-        }        async function loadUsersContent() {
+        }async function loadUsersContent() {
             const container = document.getElementById('users-content');
             if (!container) return;
             
@@ -361,8 +501,380 @@
                 } else {
                     container.innerHTML = '<p class="text-muted text-center">No songs found</p>';
                 }
+            } catch (error) {                container.innerHTML = '<p class="text-danger text-center">Error loading songs</p>';
+            }
+        }
+        
+        // File Upload System Functions
+        function initializeFileUploadSystem() {
+            const fileTypeSelect = document.getElementById('fileType');
+            const songFileContainer = document.getElementById('songFileContainer');
+            const imageFileContainer = document.getElementById('imageFileContainer');
+            const browseTypeSelect = document.getElementById('browseType');
+            const fileUploadForm = document.getElementById('fileUploadForm');
+            
+            // Handle file type selection
+            if (fileTypeSelect) {
+                fileTypeSelect.addEventListener('change', function() {
+                    const selectedType = this.value;
+                    if (selectedType === 'songs') {
+                        songFileContainer.style.display = 'block';
+                        imageFileContainer.querySelector('label').textContent = 'Cover Image';
+                    } else {
+                        songFileContainer.style.display = 'none';
+                        imageFileContainer.querySelector('label').textContent = 'Image File';
+                    }
+                });
+            }
+            
+            // Handle browse type selection
+            if (browseTypeSelect) {
+                browseTypeSelect.addEventListener('change', function() {
+                    loadFileBrowser(this.value);
+                });
+            }
+            
+            // Handle form submission
+            if (fileUploadForm) {
+                fileUploadForm.addEventListener('submit', handleFileUpload);
+            }
+        }
+        
+        function loadFilesContent() {
+            // Load initial file browser
+            loadFileBrowser('songs');
+        }
+          async function loadFileBrowser(type) {
+            const browser = document.getElementById('fileBrowser');
+            if (!browser) return;
+            
+            browser.innerHTML = '<div class="text-center py-4"><div class="spinner-border" role="status"></div><p class="mt-2">Loading files...</p></div>';
+            
+            try {
+                const response = await fetch(`http://localhost:5117/api/Files/browse/${type}`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    let html = '<div class="list-group">';
+                    
+                    if (result.data.length === 0) {
+                        html += '<div class="list-group-item text-center text-muted">No files found</div>';
+                    } else {                        result.data.forEach(file => {
+                            const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
+                            const isAudio = /\.(mp3|wav|flac)$/i.test(file.name);
+                            
+                            // Use the full path for API operations, but display a nice name
+                            const filePath = file.path || file.name; // Use path if available, fallback to name
+                            const displayName = file.name;
+                            const folderInfo = filePath.includes('/') ? ` (${filePath.substring(0, filePath.lastIndexOf('/'))})` : '';
+                            
+                            html += `<div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi ${isImage ? 'bi-image' : isAudio ? 'bi-music-note' : 'bi-file'} me-2"></i>
+                                    <div>
+                                        <div class="fw-medium">${displayName}${folderInfo}</div>
+                                        <small class="text-muted">${file.size || 'Unknown size'} • ${file.lastModified || 'Unknown date'}</small>
+                                    </div>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick="previewFile('${type}', '${filePath}')" title="Preview">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-info" onclick="getApiUrl('${type}', '${filePath}')" title="Get API URL">
+                                        <i class="bi bi-link-45deg"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="deleteFile('${type}', '${filePath}')" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>`;
+                        });
+                    }
+                    
+                    html += '</div>';
+                    browser.innerHTML = html;
+                } else {
+                    browser.innerHTML = '<div class="alert alert-warning">Failed to load file browser</div>';
+                }
             } catch (error) {
-                container.innerHTML = '<p class="text-danger text-center">Error loading songs</p>';
+                browser.innerHTML = '<div class="alert alert-danger">Error loading files</div>';
+            }
+        }
+        
+        async function handleFileUpload(event) {
+            event.preventDefault();
+            
+            const formData = new FormData();
+            const fileType = document.getElementById('fileType').value;
+            const fileName = document.getElementById('fileName').value;
+            const entityName = document.getElementById('entityName').value;
+            const imageFile = document.getElementById('imageFile').files[0];
+            const songFile = document.getElementById('songFile').files[0];
+            
+            const uploadButton = document.getElementById('uploadButton');
+            const uploadProgress = document.getElementById('uploadProgress');
+            const uploadResult = document.getElementById('uploadResult');
+            const progressBar = uploadProgress.querySelector('.progress-bar');
+            
+            // Validation
+            if (!fileType || !fileName) {
+                showUploadResult('Please fill in all required fields', 'danger');
+                return;
+            }
+            
+            if (fileType === 'songs' && !songFile && !imageFile) {
+                showUploadResult('Please select at least one file for songs', 'danger');
+                return;
+            }
+            
+            if (fileType !== 'songs' && !imageFile) {
+                showUploadResult('Please select an image file', 'danger');
+                return;
+            }
+            
+            // Prepare form data
+            formData.append('fileType', fileType);
+            formData.append('fileName', fileName);
+            if (entityName) formData.append('entityName', entityName);
+            if (imageFile) formData.append('imageFile', imageFile);
+            if (songFile) formData.append('songFile', songFile);
+            
+            // Show progress
+            uploadButton.disabled = true;
+            uploadProgress.style.display = 'block';
+            uploadResult.innerHTML = '';
+            progressBar.style.width = '0%';
+            
+            try {
+                const response = await fetch('/AdminFileUpload/Upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showUploadResult('Files uploaded successfully!', 'success');
+                    document.getElementById('fileUploadForm').reset();
+                    loadFileBrowser(fileType); // Refresh browser
+                } else {
+                    showUploadResult(result.message || 'Upload failed', 'danger');
+                }
+            } catch (error) {
+                showUploadResult('Upload error: ' + error.message, 'danger');
+            } finally {
+                uploadButton.disabled = false;
+                uploadProgress.style.display = 'none';
+            }
+        }
+        
+        function showUploadResult(message, type) {
+            const uploadResult = document.getElementById('uploadResult');
+            uploadResult.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+        }        async function previewFile(type, filePath) {
+            // Construct the correct API URL based on whether the file is in a subfolder
+            let fileUrl;
+            if (filePath.includes('/')) {
+                // File is in a subfolder, use the subfolder endpoint
+                const parts = filePath.split('/');
+                const subfolder = parts.slice(0, -1).join('/');
+                const fileName = parts[parts.length - 1];
+                fileUrl = `http://localhost:5117/api/Files/${type}/${subfolder}/${fileName}`;
+            } else {
+                // File is directly in the type folder
+                fileUrl = `http://localhost:5117/api/Files/${type}/${filePath}`;
+            }
+            
+            const fileName = filePath.split('/').pop(); // Get just the filename for display
+            const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
+            const isAudio = /\.(mp3|wav|flac)$/i.test(fileName);
+            
+            let modalContent = '';
+            
+            if (isImage) {
+                modalContent = `<img src="${fileUrl}" class="img-fluid" alt="${fileName}">`;
+            } else if (isAudio) {
+                modalContent = `<audio controls class="w-100">
+                    <source src="${fileUrl}" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>`;
+            } else {
+                modalContent = `<p>File: ${fileName}</p><p>URL: <a href="${fileUrl}" target="_blank">${fileUrl}</a></p>`;
+            }
+            
+            // Create modal
+            const modal = `
+                <div class="modal fade" id="filePreviewModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">${fileName}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                ${modalContent}
+                            </div>
+                            <div class="modal-footer">
+                                <a href="${fileUrl}" class="btn btn-primary" target="_blank">Open in New Tab</a>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            
+            // Remove existing modal and add new one
+            const existingModal = document.getElementById('filePreviewModal');
+            if (existingModal) existingModal.remove();
+            
+            document.body.insertAdjacentHTML('beforeend', modal);
+            new bootstrap.Modal(document.getElementById('filePreviewModal')).show();
+        }        async function deleteFile(type, filePath) {
+            const displayName = filePath.split('/').pop(); // Get just the filename for display
+            if (!confirm(`Are you sure you want to delete ${displayName}?`)) return;
+            
+            try {
+                const response = await fetch(`/AdminFileUpload/Delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ fileType: type, fileName: filePath })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    loadFileBrowser(type); // Refresh browser
+                } else {
+                    alert('Failed to delete file: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Delete error: ' + error.message);
+            }
+        }        function getApiUrl(type, filePath) {
+            // Construct the correct API URL based on whether the file is in a subfolder
+            let apiUrl;
+            if (filePath.includes('/')) {
+                // File is in a subfolder, use the subfolder endpoint
+                const parts = filePath.split('/');
+                const subfolder = parts.slice(0, -1).join('/');
+                const fileName = parts[parts.length - 1];
+                apiUrl = `http://localhost:5117/api/Files/${type}/${subfolder}/${fileName}`;
+            } else {
+                // File is directly in the type folder
+                apiUrl = `http://localhost:5117/api/Files/${type}/${filePath}`;
+            }
+            
+            const displayName = filePath.split('/').pop(); // Get just the filename for display
+            
+            // Create modal to show the API URL
+            const modal = `
+                <div class="modal fade" id="apiUrlModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">API URL for ${displayName}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Direct API URL:</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" value="${apiUrl}" readonly id="apiUrlInput">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('apiUrlInput')">
+                                            <i class="bi bi-clipboard"></i> Copy
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <small class="text-muted">
+                                        <strong>Usage:</strong><br>
+                                        • Direct file access: Use this URL in your applications<br>
+                                        • HTML img tag: &lt;img src="${apiUrl}"&gt;<br>
+                                        • HTML audio tag: &lt;audio src="${apiUrl}"&gt;<br>
+                                        • Fetch API: fetch('${apiUrl}')
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="${apiUrl}" class="btn btn-primary" target="_blank">
+                                    <i class="bi bi-box-arrow-up-right"></i> Open URL
+                                </a>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            
+            // Remove existing modal and add new one
+            const existingModal = document.getElementById('apiUrlModal');
+            if (existingModal) existingModal.remove();
+            
+            document.body.insertAdjacentHTML('beforeend', modal);
+            new bootstrap.Modal(document.getElementById('apiUrlModal')).show();
+        }
+
+        function copyToClipboard(inputId) {
+            const input = document.getElementById(inputId);
+            input.select();
+            input.setSelectionRange(0, 99999); // For mobile devices
+            
+            try {
+                document.execCommand('copy');
+                // Show success feedback
+                const button = input.nextElementSibling;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="bi bi-check"></i> Copied!';
+                button.classList.remove('btn-outline-secondary');
+                button.classList.add('btn-success');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-outline-secondary');
+                }, 2000);
+            } catch (err) {
+                // Fallback for modern browsers
+                navigator.clipboard.writeText(input.value).then(() => {
+                    console.log('URL copied to clipboard');
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+            }
+        }
+        
+        function refreshFileBrowser() {
+            const browseType = document.getElementById('browseType').value;
+            loadFileBrowser(browseType);
+        }
+        
+        async function cleanupFiles() {
+            if (!confirm('Are you sure you want to cleanup unused files? This action cannot be undone.')) return;
+            
+            try {
+                const response = await fetch('/AdminFileUpload/Cleanup', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                alert(result.message || 'Cleanup completed');
+                refreshFileBrowser();
+            } catch (error) {
+                alert('Cleanup error: ' + error.message);
+            }
+        }
+        
+        async function generateThumbnails() {
+            try {
+                const response = await fetch('/AdminFileUpload/GenerateThumbnails', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                alert(result.message || 'Thumbnail generation completed');
+                refreshFileBrowser();
+            } catch (error) {
+                alert('Thumbnail generation error: ' + error.message);
             }
         }
     </script>

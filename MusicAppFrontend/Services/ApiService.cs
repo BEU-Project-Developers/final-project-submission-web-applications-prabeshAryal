@@ -266,8 +266,115 @@ namespace MusicApp.Services
                     PropertyNameCaseInsensitive = true,
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 });
-                
-            return result?.FilePath;
+                  return result?.FilePath;
+        }
+
+        // New methods for admin file management
+        public async Task<string?> UploadFileToStorageAsync(string fileType, IFormFile file, string fileName, string entityName = null)
+        {
+            var client = await GetHttpClientAsync();
+            using var content = new MultipartFormDataContent();
+            
+            using var fileStream = file.OpenReadStream();
+            using var streamContent = new StreamContent(fileStream);
+            streamContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+            
+            // Determine the filename with extension
+            var fileExtension = Path.GetExtension(file.FileName);
+            var fullFileName = fileName + fileExtension;
+            
+            content.Add(streamContent, "file", fullFileName);
+            content.Add(new StringContent(fileType), "fileType");
+            content.Add(new StringContent(fileName), "fileName");
+            if (!string.IsNullOrEmpty(entityName))
+                content.Add(new StringContent(entityName), "entityName");
+            
+            var response = await client.PostAsync("api/FileStorage/upload", content);
+            
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                await HandleUnauthorized();
+                return null;
+            }
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<FileUploadResultDto>(responseContent, 
+                    new JsonSerializerOptions 
+                    { 
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    });
+                    
+                return result?.FilePath;
+            }
+            
+            throw new HttpRequestException($"Upload failed with status code {response.StatusCode}");
+        }
+
+        public async Task<string?> DeleteFileFromStorageAsync(string fileType, string fileName)
+        {
+            var client = await GetHttpClientAsync();
+            var data = new { fileType, fileName };
+            var json = JsonSerializer.Serialize(data);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            
+            var response = await client.PostAsync("api/FileStorage/delete", content);
+            
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                await HandleUnauthorized();
+                return null;
+            }
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                return responseContent;
+            }
+            
+            throw new HttpRequestException($"Delete failed with status code {response.StatusCode}");
+        }
+
+        public async Task<string?> CleanupUnusedFilesAsync()
+        {
+            var client = await GetHttpClientAsync();
+            var response = await client.PostAsync("api/FileStorage/cleanup", null);
+            
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                await HandleUnauthorized();
+                return null;
+            }
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                return responseContent;
+            }
+            
+            throw new HttpRequestException($"Cleanup failed with status code {response.StatusCode}");
+        }
+
+        public async Task<string?> GenerateThumbnailsAsync()
+        {
+            var client = await GetHttpClientAsync();
+            var response = await client.PostAsync("api/FileStorage/generate-thumbnails", null);
+            
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                await HandleUnauthorized();
+                return null;
+            }
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                return responseContent;
+            }
+            
+            throw new HttpRequestException($"Thumbnail generation failed with status code {response.StatusCode}");
         }
 
         private async Task HandleUnauthorized()

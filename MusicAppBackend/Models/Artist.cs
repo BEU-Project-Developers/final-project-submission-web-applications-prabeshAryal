@@ -36,4 +36,15 @@ namespace MusicAppBackend.Models
         // Navigation properties
         public virtual ICollection<Album> Albums { get; set; } = new List<Album>();
     }
-} 
+
+    public class ArtistUpdateDTO
+    {
+        public string? Name { get; set; }
+        public string? Bio { get; set; }
+        public string? Country { get; set; }
+        public string? Genre { get; set; }
+        public DateTime? FormedDate { get; set; }
+        public int? MonthlyListeners { get; set; }
+        public bool? IsActive { get; set; }
+    }
+}
