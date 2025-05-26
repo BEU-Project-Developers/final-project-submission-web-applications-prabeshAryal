@@ -137,5 +137,73 @@ namespace MusicApp.Controllers
                 ViewBag.Albums = new List<AlbumDto>();
             }            return View(model);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var song = await _apiService.GetAsync<SongDto>($"api/Songs/{id}");
+            if (song == null)
+            {
+                return NotFound();
+            }
+            return View(song);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, SongDto model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+            try
+            {
+                var updateDto = new {
+                    Title = model.Title,
+                    ArtistId = model.ArtistId,
+                    AlbumId = model.AlbumId,
+                    Duration = model.Duration,
+                    TrackNumber = model.TrackNumber,
+                    Genre = model.Genre,
+                    ReleaseDate = model.ReleaseDate
+                };
+                await _apiService.PutAsync<object>($"api/Songs/{id}", updateDto);
+                TempData["SuccessMessage"] = "Song updated successfully.";
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = $"Error updating song: {ex.Message}";
+                return View(model);
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var song = await _apiService.GetAsync<SongDto>($"api/Songs/{id}");
+            if (song == null)
+            {
+                return NotFound();
+            }
+            return View(song);
+        }
+
+        [HttpPost, ActionName("DeleteConfirmed")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            try
+            {
+                await _apiService.DeleteAsync($"api/Songs/{id}");
+                TempData["SuccessMessage"] = "Song deleted successfully.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error deleting song: {ex.Message}";
+            }
+            return RedirectToAction("Index");
+        }
     }
 }

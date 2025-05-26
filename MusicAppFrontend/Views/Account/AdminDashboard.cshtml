@@ -273,12 +273,16 @@
                 
                 if (result && result.data) {
                     const artists = result.data;
-                    let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Artist</th><th>Genre</th><th>Albums</th></tr></thead><tbody>';
+                    let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Artist</th><th>Genre</th><th>Albums</th><th>Actions</th></tr></thead><tbody>';
                       artists.forEach(artist => {
                         html += '<tr>';
                         html += '<td><img src="' + (artist.imageUrl || '/assets/default-artist.png') + '" class="rounded me-2" width="25" height="25">' + artist.name + '</td>';
                         html += '<td>' + (artist.genre || 'N/A') + '</td>';
                         html += '<td>' + (artist.albumsCount || 0) + '</td>';
+                        html += '<td>' +
+                            '<a href="/Artists/Edit/' + artist.id + '" class="btn btn-sm btn-outline-primary me-1">Edit</a>' +
+                            '<a href="/Artists/Delete/' + artist.id + '" class="btn btn-sm btn-outline-danger">Delete</a>' +
+                            '</td>';
                         html += '</tr>';
                     });
                     
@@ -299,12 +303,16 @@
                 
                 if (result && result.data) {
                     const albums = result.data;
-                    let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Album</th><th>Artist</th><th>Year</th></tr></thead><tbody>';
+                    let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Album</th><th>Artist</th><th>Year</th><th>Actions</th></tr></thead><tbody>';
                       albums.forEach(album => {
                         html += '<tr>';
                         html += '<td><img src="' + (album.coverImageUrl || '/assets/default-album.png') + '" class="rounded me-2" width="25" height="25">' + album.title + '</td>';
                         html += '<td>' + (album.artistName || 'Unknown') + '</td>';
                         html += '<td>' + (album.year || 'N/A') + '</td>';
+                        html += '<td>' +
+                            '<a href="/Albums/Edit/' + album.id + '" class="btn btn-sm btn-outline-primary me-1">Edit</a>' +
+                            '<a href="/Albums/Delete/' + album.id + '" class="btn btn-sm btn-outline-danger">Delete</a>' +
+                            '</td>';
                         html += '</tr>';
                     });
                     
@@ -325,7 +333,7 @@
                 
                 if (result && result.data) {
                     const songs = result.data;
-                    let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Song</th><th>Artist</th><th>Duration</th></tr></thead><tbody>';
+                    let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Song</th><th>Artist</th><th>Duration</th><th>Actions</th></tr></thead><tbody>';
                       songs.forEach(song => {
                         // Handle duration format - it's a timespan string like "00:03:22.8000000"
                         let duration = 'N/A';
@@ -341,6 +349,10 @@
                         html += '<td>' + song.title + '</td>';
                         html += '<td>' + (song.artistName || 'Unknown') + '</td>';
                         html += '<td>' + duration + '</td>';
+                        html += '<td>' +
+                            '<a href="/Songs/Edit/' + song.id + '" class="btn btn-sm btn-outline-primary me-1">Edit</a>' +
+                            '<a href="/Songs/Delete/' + song.id + '" class="btn btn-sm btn-outline-danger">Delete</a>' +
+                            '</td>';
                         html += '</tr>';
                     });
                     

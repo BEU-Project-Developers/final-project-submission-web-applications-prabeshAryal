@@ -91,7 +91,7 @@
                                                class="btn btn-sm btn-outline-primary" title="View Details">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            @if (user.Roles?.Contains("Admin") != true || User.Identity.Name != user.Username)
+                                            @if (user != null && user.Roles != null && user.Roles.Contains("Admin") != true || User.Identity.Name != user.Username)
                                             {
                                                 <button type="button" class="btn btn-sm btn-outline-danger" 
                                                         title="Delete User" 

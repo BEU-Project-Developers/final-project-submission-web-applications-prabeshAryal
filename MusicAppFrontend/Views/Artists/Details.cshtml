@@ -9,17 +9,7 @@
     {
         int randomId = randomGen.Next(1, 1085);
         return $"https://picsum.photos/id/{randomId}/{width}/{height}";
-    }
-    var bannerImageUrl = string.IsNullOrEmpty(Model.ImageUrl) ? GetRandomImageUrl(1200, 400) : Model.ImageUrl;
-
-    // Theme variables (can be accessed via ViewData or CSS)
-    var ytmBgPrimary = "var(--ytm-bg-primary)";
-    var ytmBgSecondary = "var(--ytm-bg-secondary)";
-    var ytmBgTertiary = "var(--ytm-bg-tertiary)";
-    var ytmTextPrimary = "var(--ytm-text-primary)";
-    var ytmTextSecondary = "var(--ytm-text-secondary)";
-    var ytmAccentRed = "var(--ytm-accent-red)";
-    var ytmBorderColor = "var(--ytm-border-color)";
+    }    var bannerImageUrl = string.IsNullOrEmpty(Model.ImageUrl) ? GetRandomImageUrl(1200, 400) : Model.ImageUrl;
 }
 
 @* Add specific styles for this page *@
@@ -50,51 +40,45 @@
         flex-direction: column;
         justify-content: flex-end; /* Align text to bottom */
         padding: 2rem;
-    }
-
-    .artist-banner-title {
+    }    .artist-banner-title {
         font-size: 3rem;
         font-weight: 700;
-        color: var(--ytm-text-primary);
+        color: #ffffff;
         margin-bottom: 0.5rem;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-    }
-
-    .artist-banner-details {
+    }    .artist-banner-details {
         font-size: 1rem;
-        color: var(--ytm-text-secondary);
+        color: #aaaaaa;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
     }
 
         .artist-banner-details span {
             margin-right: 1rem; /* Spacing between details */
-        }
-
-    /* Section Styling */
+        }    /* Section Styling */
     .details-section {
-        background-color: var(--ytm-bg-secondary); /* Use theme variable */
+        background-color: #212121;
         padding: 1.5rem;
         border-radius: 8px;
         margin-bottom: 2rem;
-        border: 1px solid var(--ytm-border-color);
+        border: 1px solid #383838;
     }
 
         .details-section h3 {
-            color: var(--ytm-text-primary);
+            color: #ffffff;
             margin-bottom: 1rem;
             font-weight: 500;
         }
 
         .details-section p {
-            color: var(--ytm-text-secondary);
+            color: #aaaaaa;
             line-height: 1.6;
             font-size: 0.95rem;
         }
 
     /* Social Buttons */
     .social-buttons .btn {
-        color: var(--ytm-text-secondary);
-        border-color: var(--ytm-border-color);
+        color: #aaaaaa;
+        border-color: #383838;
         border-radius: 50%; /* Circular */
         width: 40px;
         height: 40px;
@@ -103,12 +87,10 @@
         align-items: center;
         padding: 0;
         transition: all 0.2s ease;
-    }
-
-        .social-buttons .btn:hover {
-            color: var(--ytm-text-primary);
-            background-color: var(--ytm-bg-tertiary);
-            border-color: var(--ytm-bg-tertiary);
+    }        .social-buttons .btn:hover {
+            color: #ffffff;
+            background-color: #383838;
+            border-color: #383838;
         }
 
     /* Top Songs List */

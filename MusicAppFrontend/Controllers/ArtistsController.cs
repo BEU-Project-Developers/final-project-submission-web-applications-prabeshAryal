@@ -101,5 +101,72 @@ namespace MusicApp.Controllers
             }
             return View(model);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var artist = await _apiService.GetAsync<ArtistDto>($"api/Artists/{id}");
+            if (artist == null)
+            {
+                return NotFound();
+            }
+            return View(artist);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, ArtistDto model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+            try
+            {
+                var updateDto = new {
+                    Name = model.Name,
+                    Genre = model.Genre,
+                    Bio = model.Bio,
+                    Country = model.Country,
+                    FormedDate = model.FormedDate,
+                    MonthlyListeners = model.MonthlyListeners
+                };
+                await _apiService.PutAsync<object>($"api/Artists/{id}", updateDto);
+                TempData["SuccessMessage"] = "Artist updated successfully.";
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = $"Error updating artist: {ex.Message}";
+                return View(model);
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var artist = await _apiService.GetAsync<ArtistDto>($"api/Artists/{id}");
+            if (artist == null)
+            {
+                return NotFound();
+            }
+            return View(artist);
+        }
+
+        [HttpPost, ActionName("DeleteConfirmed")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            try
+            {
+                await _apiService.DeleteAsync($"api/Artists/{id}");
+                TempData["SuccessMessage"] = "Artist deleted successfully.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error deleting artist: {ex.Message}";
+            }
+            return RedirectToAction("Index");
+        }
     }
 }

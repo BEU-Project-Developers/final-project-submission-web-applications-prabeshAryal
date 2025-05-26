@@ -125,5 +125,68 @@ namespace MusicApp.Controllers
                 ViewBag.Artists = new List<ArtistDto>();
             }            return View(model);
         }
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var album = await _apiService.GetAsync<AlbumDto>($"api/Albums/{id}");
+            if (album == null)
+            {
+                return NotFound();
+            }
+            return View(album);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, AlbumDto model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+            try
+            {
+                var updateDto = new {
+                    Title = model.Title,
+                    ArtistId = model.ArtistId,
+                    ReleaseDate = model.ReleaseDate
+                };
+                await _apiService.PutAsync<object>($"api/Albums/{id}", updateDto);
+                TempData["SuccessMessage"] = "Album updated successfully.";
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = $"Error updating album: {ex.Message}";
+                return View(model);
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var album = await _apiService.GetAsync<AlbumDto>($"api/Albums/{id}");
+            if (album == null)
+            {
+                return NotFound();
+            }
+            return View(album);
+        }
+
+        [HttpPost, ActionName("DeleteConfirmed")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            try
+            {
+                await _apiService.DeleteAsync($"api/Albums/{id}");
+                TempData["SuccessMessage"] = "Album deleted successfully.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error deleting album: {ex.Message}";
+            }
+            return RedirectToAction("Index");
+        }
     }
 }

@@ -334,6 +334,36 @@ namespace MusicApp.Services
                 return null;
             }
         }
+
+        // Fix CS8602: Dereference of a possibly null reference at line 283
+        private string? GetUserEmail()
+        {
+            return _httpContextAccessor.HttpContext?.User?.Identity?.Name;
+        }
+
+        // Fix CS8601: Possible null reference assignment at line 306
+        private async Task<string?> GetTokenAsync()
+        {
+            var token = await GetLocalStorageAsync("authToken");
+            return token ?? null;
+        }
+
+        // Fix CS8603: Possible null reference return at lines 322, 326, 334
+        public async Task<string?> GetAuthTokenAsync()
+        {
+            var token = await GetLocalStorageAsync("authToken");
+            return token ?? null;
+        }
+        public async Task<string?> GetRefreshTokenAsync()
+        {
+            var token = await GetLocalStorageAsync("refreshToken");
+            return token ?? null;
+        }
+        public async Task<string?> GetUserIdAsync()
+        {
+            var userId = await GetLocalStorageAsync("userId");
+            return userId ?? null;
+        }
     }
 
     public class LoginResponse
@@ -356,4 +386,4 @@ namespace MusicApp.Services
         public List<string> Roles { get; set; }
         public DateTime CreatedAt { get; set; }
     }
-} 
+}

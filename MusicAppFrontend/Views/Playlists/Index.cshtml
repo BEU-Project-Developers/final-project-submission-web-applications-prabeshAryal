@@ -13,9 +13,8 @@
 
 <div class="container mt-4">
     <div class="row mb-4">
-        <div class="col d-flex justify-content-between align-items-center">
-            <h1 class="mb-0" style="color: var(--ytm-text-primary);">Your Playlists</h1>
-            <a asp-action="Create" class="btn" style="background: var(--ytm-accent-red); color: var(--ytm-text-primary);">
+        <div class="col d-flex justify-content-between align-items-center">            <h1 class="mb-0 text-white">Your Playlists</h1>
+            <a asp-action="Create" class="btn bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
                 <i class="bi bi-plus-circle-fill"></i> Create Playlist
             </a>
         </div>
@@ -24,10 +23,10 @@
         @foreach (var playlist in Model)
         {
             <div class="col">
-                <div class="card h-100 shadow" style="background: var(--ytm-bg-secondary); color: var(--ytm-text-primary);">
+                <div class="card h-100 shadow bg-gray-800 text-white border-0">
                     <a asp-action="Details" asp-route-id="@playlist.Id" class="stretched-link"></a>
                     <img src="@(string.IsNullOrEmpty(playlist.CoverImageUrl) ? GetRandomImageUrl(300, 300) : playlist.CoverImageUrl)" 
-                         class="card-img-top" alt="@playlist.Name" style="object-fit:cover; height:200px; background: var(--ytm-bg-tertiary);"
+                         class="card-img-top" alt="@playlist.Name" style="object-fit:cover; height:200px; background: #374151;"
                          onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Playlist';">
                     <div class="card-body">
                         <h5 class="card-title mb-1">@playlist.Name</h5>

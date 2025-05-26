@@ -1,13 +1,6 @@
 @model MusicApp.Models.DTOs.SongDto
 @{
     ViewData["Title"] = $"{Model.Title} - Song";
-    
-    // Theme variables (can be accessed via ViewData or CSS)
-    var ytmBgPrimary = "var(--ytm-bg-primary)";
-    var ytmBgSecondary = "var(--ytm-bg-secondary)";
-    var ytmBgTertiary = "var(--ytm-bg-tertiary)";
-    var ytmTextPrimary = "var(--ytm-text-primary)";
-    var ytmTextSecondary = "var(--ytm-text-secondary)";
 
     Random randomGen = new Random();
     string GetRandomImageUrl(int width, int height)
@@ -19,7 +12,7 @@
 
 <style>
     .song-container {
-        background-color: var(--ytm-bg-secondary);
+        background-color: #1f1f1f;
         border-radius: 12px;
         overflow: hidden;
         margin-bottom: 2rem;
@@ -53,13 +46,13 @@
     .song-title {
         font-size: 2.5rem;
         font-weight: 700;
-        color: var(--ytm-text-primary);
+        color: #ffffff;
         margin-bottom: 0.5rem;
     }
 
     .song-artist {
         font-size: 1.3rem;
-        color: var(--ytm-text-secondary);
+        color: #aaaaaa;
         margin-bottom: 1rem;
     }
 
@@ -71,7 +64,7 @@
     }
 
     .meta-item {
-        color: var(--ytm-text-secondary);
+        color: #aaaaaa;
         font-size: 0.9rem;
         display: flex;
         align-items: center;
@@ -88,8 +81,8 @@
     }
 
     .btn-play {
-        background-color: var(--ytm-accent-red);
-        color: var(--ytm-text-primary);
+        background-color: #ff0000;
+        color: #ffffff;
         border: none;
         border-radius: 20px;
         padding: 0.5rem 1.5rem;
@@ -105,12 +98,12 @@
 
     .btn-play:hover {
         background-color: #cc0000;
-        color: var(--ytm-text-primary);
+        color: #ffffff;
     }
 
     .btn-action {
-        color: var(--ytm-text-secondary);
-        border: 1px solid var(--ytm-border-color);
+        color: #aaaaaa;
+        border: 1px solid #444444;
         background: transparent;
         border-radius: 20px;
         padding: 0.5rem 1.5rem;
@@ -123,48 +116,46 @@
     }
 
     .btn-action:hover {
-        background-color: var(--ytm-bg-tertiary);
-        color: var(--ytm-text-primary);
+        background-color: #333333;
+        color: #ffffff;
     }
 
     .song-player {
         padding: 1rem 2rem;
-        border-top: 1px solid var(--ytm-border-color);
+        border-top: 1px solid #444444;
     }
 
     .player-container {
         width: 100%;
-        background-color: var(--ytm-bg-tertiary);
+        background-color: #333333;
         padding: 1rem;
         border-radius: 8px;
     }
 
     .audio-player {
         width: 100%;
-    }
-
-    .related-section {
+    }    .related-section {
         margin-top: 2rem;
     }
 
     .section-title {
-        color: var(--ytm-text-primary);
+        color: #ffffff;
         margin-bottom: 1.5rem;
         font-weight: 500;
     }
 
     .related-tracks {
-        background-color: var(--ytm-bg-secondary);
+        background-color: #1f1f1f;
         border-radius: 8px;
         overflow: hidden;
-        border: 1px solid var(--ytm-border-color);
+        border: 1px solid #444444;
     }
 
     .track-item {
         display: flex;
         align-items: center;
         padding: 0.75rem 1rem;
-        border-bottom: 1px solid var(--ytm-border-color);
+        border-bottom: 1px solid #444444;
         transition: background-color 0.2s ease;
     }
 
@@ -173,7 +164,7 @@
     }
 
     .track-item:hover {
-        background-color: var(--ytm-bg-tertiary);
+        background-color: #333333;
     }
 
     .track-cover {
@@ -189,18 +180,18 @@
     }
 
     .track-title {
-        color: var(--ytm-text-primary);
+        color: #ffffff;
         font-weight: 500;
         margin-bottom: 0.25rem;
     }
 
     .track-artist {
-        color: var(--ytm-text-secondary);
+        color: #aaaaaa;
         font-size: 0.85rem;
     }
 
     .track-duration {
-        color: var(--ytm-text-secondary);
+        color: #aaaaaa;
         margin-left: 1rem;
         font-size: 0.9rem;
     }
