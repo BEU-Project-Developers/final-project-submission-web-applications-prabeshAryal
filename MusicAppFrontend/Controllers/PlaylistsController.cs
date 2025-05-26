@@ -20,23 +20,35 @@ namespace MusicApp.Controllers
             _fileUploadService = fileUploadService;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
         {
             try
             {
-                var response = await _apiService.GetAsync<PagedResponse<PlaylistDto>>("api/Playlists");
-                
-                // Return the data from the API response
-                return View(response?.Data ?? new List<PlaylistDto>());
+                var response = await _apiService.GetAsync<PagedResponse<PlaylistDto>>($"api/Playlists?page={page}&pageSize={pageSize}");
+                // Always return a PagedResponse, even if null
+                if (response == null)
+                {
+                    response = new PagedResponse<PlaylistDto> {
+                        Data = new List<PlaylistDto>(),
+                        CurrentPage = page,
+                        PageSize = pageSize,
+                        TotalPages = 1,
+                        TotalCount = 0
+                    };
+                }
+                return View(response);
             }
             catch (Exception ex)
             {
-                // Log the error
                 Console.WriteLine($"Error retrieving playlists: {ex.Message}");
-                
-                // Return an empty list with error message
                 ViewBag.ErrorMessage = "Unable to load playlists from the server. Please try again later.";
-                return View(new List<PlaylistDto>());
+                return View(new PagedResponse<PlaylistDto> {
+                    Data = new List<PlaylistDto>(),
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    TotalPages = 1,
+                    TotalCount = 0
+                });
             }
         }
 

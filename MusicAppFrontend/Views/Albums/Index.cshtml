@@ -1,4 +1,5 @@
-﻿@model IEnumerable<MusicApp.Models.DTOs.AlbumDto>
+﻿@model PagedResponse<MusicApp.Models.DTOs.AlbumDto>
+@using MusicApp.Helpers
 
 @{
     ViewData["Title"] = "Albums";
@@ -8,6 +9,9 @@
         int randomId = randomGen.Next(1, 1085);
         return $"https://picsum.photos/id/{randomId}/{width}/{height}";
     }
+    int currentPage = Model?.CurrentPage ?? 1;
+    int totalPages = Model?.TotalPages ?? 1;
+    int pageSize = Model?.PageSize ?? 20;
 }
 
 @if (User.IsInRole("Admin"))
@@ -34,7 +38,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[var(--ytm-border-color)]">
-                        @foreach (var album in Model)
+                        @foreach (var album in Model.Data)
                         {
                             <tr class="hover:bg-[var(--ytm-bg-tertiary)] transition-colors">
                                 <td class="px-6 py-4">
@@ -78,7 +82,28 @@
             </div>
         </div>
 
-        @if (!Model.Any())
+        <!-- Pagination Controls -->
+        @if (totalPages > 1)
+        {
+            <nav class="flex justify-center mt-10">
+                <ul class="inline-flex -space-x-px">
+                    <li>
+                        <a asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 ml-0 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-l-lg @(currentPage == 1 ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary)]")">Prev</a>
+                    </li>
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li>
+                            <a asp-action="Index" asp-route-page="@i" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight border border-[var(--ytm-border-color)] @(i == currentPage ? "bg-[var(--ytm-accent-red)] text-white" : "bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-secondary)] hover:bg-[var(--ytm-bg-secondary)]")">@i</a>
+                        </li>
+                    }
+                    <li>
+                        <a asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-r-lg @(currentPage == totalPages ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary)]")">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+
+        @if (!(Model.Data?.Any() ?? false))
         {
             <div class="text-center py-12">
                 <i class="fas fa-compact-disc text-6xl text-[var(--ytm-bg-tertiary)] mb-4"></i>
@@ -96,12 +121,12 @@ else
             <div class="flex justify-between items-center mb-8">
                 <h1 class="text-4xl font-bold text-[var(--ytm-text-primary)]">Albums</h1>
                 <div class="text-[var(--ytm-text-secondary)]">
-                    @Model.Count() albums available
+                    @(Model.TotalCount) albums available
                 </div>
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                @foreach (var album in Model)
+                @foreach (var album in Model.Data)
                 {
                     <div class="group cursor-pointer" onclick="window.location.href='@Url.Action("Details", new { id = album.Id })'">
                         <div class="relative overflow-hidden rounded-lg bg-[var(--ytm-bg-secondary)] hover:bg-[var(--ytm-bg-tertiary)] transition-colors border border-[var(--ytm-border-color)]">
@@ -128,7 +153,28 @@ else
                 }
             </div>
 
-            @if (!Model.Any())
+            <!-- Pagination Controls -->
+            @if (totalPages > 1)
+            {
+                <nav class="flex justify-center mt-10">
+                    <ul class="inline-flex -space-x-px">
+                        <li>
+                            <a asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 ml-0 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-l-lg @(currentPage == 1 ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary)]")">Prev</a>
+                        </li>
+                        @for (int i = 1; i <= totalPages; i++)
+                        {
+                            <li>
+                                <a asp-action="Index" asp-route-page="@i" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight border border-[var(--ytm-border-color)] @(i == currentPage ? "bg-[var(--ytm-accent-red)] text-white" : "bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-secondary)] hover:bg-[var(--ytm-bg-secondary)]")">@i</a>
+                            </li>
+                        }
+                        <li>
+                            <a asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-r-lg @(currentPage == totalPages ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary)]")">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+
+            @if (!(Model.Data?.Any() ?? false))
             {
                 <div class="text-center py-12">
                     <i class="fas fa-compact-disc text-6xl text-[var(--ytm-bg-tertiary)] mb-4"></i>

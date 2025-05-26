@@ -1,7 +1,10 @@
-@model IEnumerable<MusicApp.Models.DTOs.SongDto>
+@model PagedResponse<MusicApp.Models.DTOs.SongDto>
 
 @{
     ViewData["Title"] = "Songs";
+    int currentPage = Model?.CurrentPage ?? 1;
+    int totalPages = Model?.TotalPages ?? 1;
+    int pageSize = Model?.PageSize ?? 20;
 }
 
 @if (User.IsInRole("Admin"))
@@ -14,7 +17,6 @@
                 <i class="fas fa-plus mr-2"></i>Add New Song
             </a>
         </div>
-
         <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">
@@ -29,7 +31,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-700">
-                        @foreach (var song in Model)
+                        @foreach (var song in Model.Data)
                         {
                             <tr class="hover:bg-gray-700 transition-colors">
                                 <td class="px-6 py-4">
@@ -80,63 +82,104 @@
                 </table>
             </div>
         </div>
+        <!-- Pagination Controls -->
+        @if (totalPages > 1)
+        {
+            <nav class="flex justify-center mt-10">
+                <ul class="inline-flex -space-x-px">
+                    <li>
+                        <a asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 ml-0 leading-tight text-gray-300 bg-gray-700 border border-gray-600 rounded-l-lg @(currentPage == 1 ? "pointer-events-none opacity-50" : "hover:bg-gray-800")">Prev</a>
+                    </li>
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li>
+                            <a asp-action="Index" asp-route-page="@i" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight border border-gray-600 @(i == currentPage ? "bg-red-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-800")">@i</a>
+                        </li>
+                    }
+                    <li>
+                        <a asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight text-gray-300 bg-gray-700 border border-gray-600 rounded-r-lg @(currentPage == totalPages ? "pointer-events-none opacity-50" : "hover:bg-gray-800")">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+        @if (!(Model.Data?.Any() ?? false))
+        {
+            <div class="mt-8 px-4 py-3 rounded-lg bg-gray-800 text-gray-300 border border-gray-700">No songs found. Create your first song!</div>
+        }
     </div>
 }
 else
 {
-    <!-- User-Friendly Song List View -->
-    <div class="min-h-screen bg-gray-900 text-white">
-        <div class="container mx-auto px-4 py-8">
-            <div class="flex justify-between items-center mb-8">
-                <h1 class="text-4xl font-bold text-white">Songs</h1>
-                <div class="text-gray-400">
-                    @Model.Count() songs available
-                </div>
-            </div>
-
-            <div class="space-y-4">
-                @foreach (var song in Model)
-                {
-                    <div class="bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition-colors cursor-pointer" 
-                         onclick="window.location.href='@Url.Action("Details", new { id = song.Id })'">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-music text-2xl text-gray-400"></i>
-                            </div>
-                            <div class="flex-1">
-                                <div class="font-semibold text-lg text-white">@song.Title</div>                                <div class="text-gray-400">@song.ArtistName</div>
-                                @if (!string.IsNullOrEmpty(song.AlbumTitle))
-                                {
-                                    <div class="text-sm text-gray-500">@song.AlbumTitle</div>
-                                }
-                            </div>                            <div class="text-right">
-                                @if (song.Duration != TimeSpan.Zero)
-                                {
-                                    <div class="text-gray-400">
-                                        @song.Duration.ToString(@"mm\:ss")
+    <!-- User Song Grid/Table View (implement as needed) -->
+    <div class="min-h-screen bg-gray-900 text-white p-6">
+        <h1 class="text-3xl font-bold mb-6">Songs</h1>
+        <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-700">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-200">Title</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-200">Artist</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-200">Album</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-200">Duration</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-200">Genre</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        @foreach (var song in Model.Data)
+                        {
+                            <tr class="hover:bg-gray-700 transition-colors" onclick="window.location.href='@Url.Action("Details", new { id = song.Id })'">
+                                <td class="px-6 py-4">
+                                    <div class="font-medium text-white">@song.Title</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-gray-300">@song.ArtistName</div>
+                                </td>                                <td class="px-6 py-4">
+                                    <div class="text-gray-300">@song.AlbumTitle</div>
+                                </td>                                <td class="px-6 py-4">
+                                    <div class="text-gray-300">
+                                        @if (song.Duration != TimeSpan.Zero)
+                                        {
+                                            @song.Duration.ToString(@"mm\:ss")
+                                        }
+                                        else
+                                        {
+                                            @:--:--
+                                        }
                                     </div>
-                                }
-                                @if (!string.IsNullOrEmpty(song.Genre))
-                                {
-                                    <div class="text-xs text-gray-500 uppercase">@song.Genre</div>
-                                }
-                            </div>
-                            <div class="text-gray-400 hover:text-white transition-colors">
-                                <i class="fas fa-play-circle text-2xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                }
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-gray-300">@song.Genre</div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
-
-            @if (!Model.Any())
-            {
-                <div class="text-center py-12">
-                    <i class="fas fa-music text-6xl text-gray-600 mb-4"></i>
-                    <h3 class="text-xl text-gray-400 mb-2">No songs available</h3>
-                    <p class="text-gray-500">Check back later for new music!</p>
-                </div>
-            }
         </div>
+        <!-- Pagination Controls -->
+        @if (totalPages > 1)
+        {
+            <nav class="flex justify-center mt-10">
+                <ul class="inline-flex -space-x-px">
+                    <li>
+                        <a asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 ml-0 leading-tight text-gray-300 bg-gray-700 border border-gray-600 rounded-l-lg @(currentPage == 1 ? "pointer-events-none opacity-50" : "hover:bg-gray-800")">Prev</a>
+                    </li>
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li>
+                            <a asp-action="Index" asp-route-page="@i" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight border border-gray-600 @(i == currentPage ? "bg-red-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-800")">@i</a>
+                        </li>
+                    }
+                    <li>
+                        <a asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight text-gray-300 bg-gray-700 border border-gray-600 rounded-r-lg @(currentPage == totalPages ? "pointer-events-none opacity-50" : "hover:bg-gray-800")">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+        @if (!(Model.Data?.Any() ?? false))
+        {
+            <div class="mt-8 px-4 py-3 rounded-lg bg-gray-800 text-gray-300 border border-gray-700">No songs found. Check back later!</div>
+        }
     </div>
 }

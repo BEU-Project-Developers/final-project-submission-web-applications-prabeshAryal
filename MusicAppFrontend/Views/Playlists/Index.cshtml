@@ -1,6 +1,5 @@
-﻿@model IEnumerable<MusicApp.Models.DTOs.PlaylistDto>
+﻿@model PagedResponse<MusicApp.Models.DTOs.PlaylistDto>
 @using MusicApp.Helpers
-
 @{
     ViewData["Title"] = "Playlists";
     Random randomGen = new Random();
@@ -9,6 +8,9 @@
         int randomId = randomGen.Next(1, 1085);
         return $"https://picsum.photos/id/{randomId}/{width}/{height}";
     }
+    int currentPage = Model?.CurrentPage ?? 1;
+    int totalPages = Model?.TotalPages ?? 1;
+    int pageSize = Model?.PageSize ?? 20;
 }
 
 <div class="min-h-screen bg-[var(--ytm-bg-primary)] py-8">
@@ -20,7 +22,7 @@
             </a>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            @foreach (var playlist in Model)
+            @foreach (var playlist in Model.Data)
             {
                 <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow border border-[var(--ytm-border-color)] flex flex-col h-full">
                     <a asp-action="Details" asp-route-id="@playlist.Id"></a>
@@ -42,7 +44,27 @@
                 </div>
             }
         </div>
-        @if (!Model.Any())
+        <!-- Pagination Controls -->
+        @if (totalPages > 1)
+        {
+            <nav class="flex justify-center mt-10">
+                <ul class="inline-flex -space-x-px">
+                    <li>
+                        <a asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 ml-0 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-l-lg @(currentPage == 1 ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary)]")">Prev</a>
+                    </li>
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li>
+                            <a asp-action="Index" asp-route-page="@i" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight border border-[var(--ytm-border-color)] @(i == currentPage ? "bg-[var(--ytm-accent-red)] text-white" : "bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-secondary)] hover:bg-[var(--ytm-bg-secondary)]")">@i</a>
+                        </li>
+                    }
+                    <li>
+                        <a asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-r-lg @(currentPage == totalPages ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary)]")">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+        @if (!(Model.Data?.Any() ?? false))
         {
             <div class="mt-8 px-4 py-3 rounded-lg bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-secondary)] border border-[var(--ytm-border-color)]">No playlists found. Create your first playlist!</div>
         }

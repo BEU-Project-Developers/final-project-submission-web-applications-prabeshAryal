@@ -18,23 +18,34 @@ namespace MusicApp.Controllers
             _apiService = apiService;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
         {
             try
             {
-                var response = await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists");
-                
-                // Return the data from the API response
-                return View(response?.Data ?? new List<ArtistDto>());
+                var response = await _apiService.GetAsync<PagedResponse<ArtistDto>>($"api/Artists?page={page}&pageSize={pageSize}");
+                if (response == null)
+                {
+                    response = new PagedResponse<ArtistDto> {
+                        Data = new List<ArtistDto>(),
+                        CurrentPage = page,
+                        PageSize = pageSize,
+                        TotalPages = 1,
+                        TotalCount = 0
+                    };
+                }
+                return View(response);
             }
             catch (Exception ex)
             {
-                // Log the error
                 Console.WriteLine($"Error retrieving artists: {ex.Message}");
-                
-                // Return an empty list with error message
                 ViewBag.ErrorMessage = "Unable to load artists from the server. Please try again later.";
-                return View(new List<ArtistDto>());
+                return View(new PagedResponse<ArtistDto> {
+                    Data = new List<ArtistDto>(),
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    TotalPages = 1,
+                    TotalCount = 0
+                });
             }
         }
 
