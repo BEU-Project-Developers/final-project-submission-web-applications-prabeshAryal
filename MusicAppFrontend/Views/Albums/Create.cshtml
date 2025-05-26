@@ -3,54 +3,48 @@
     ViewBag.Title = "Add New Album";
 }
 
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title mb-0">Add New Album</h2>
-                </div>
-                <div class="card-body">
-                    <form asp-action="Create" method="post">
-                        <div class="form-group mb-3">
-                            <label asp-for="Title" class="form-label">Album Title</label>
-                            <input asp-for="Title" class="form-control" placeholder="Enter album title" />
-                            <span asp-validation-for="Title" class="text-danger"></span>
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label asp-for="ArtistId" class="form-label">Artist</label>
-                            <select asp-for="ArtistId" class="form-control">
-                                <option value="">Select an Artist</option>
-                                @if (ViewBag.Artists != null)
+<div class="min-h-screen flex items-center justify-center bg-[var(--ytm-bg-primary)] py-8">
+    <div class="w-full max-w-lg">
+        <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow-xl border border-[var(--ytm-border-color)]">
+            <div class="px-8 py-6 border-b border-[var(--ytm-border-color)]">
+                <h2 class="text-2xl font-bold text-[var(--ytm-text-primary)] mb-0">Add New Album</h2>
+            </div>
+            <div class="px-8 py-6">
+                <form asp-action="Create" method="post" class="space-y-5">
+                    <div>
+                        <label asp-for="Title" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-1">Album Title</label>
+                        <input asp-for="Title" class="w-full rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] placeholder-[var(--ytm-text-secondary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" placeholder="Enter album title" />
+                        <span asp-validation-for="Title" class="text-[var(--ytm-accent-red)] text-xs"></span>
+                    </div>
+                    <div>
+                        <label asp-for="ArtistId" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-1">Artist</label>
+                        <select asp-for="ArtistId" class="w-full rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition">
+                            <option value="">Select an Artist</option>
+                            @if (ViewBag.Artists != null)
+                            {
+                                @foreach (var artist in ViewBag.Artists)
                                 {
-                                    @foreach (var artist in ViewBag.Artists)
-                                    {
-                                        <option value="@artist.Id">@artist.Name</option>
-                                    }
+                                    <option value="@artist.Id">@artist.Name</option>
                                 }
-                            </select>
-                            <span asp-validation-for="ArtistId" class="text-danger"></span>
-                        </div>
-                        
-                        <div class="form-group mb-3">
-                            <label asp-for="ReleaseDate" class="form-label">Release Date</label>
-                            <input asp-for="ReleaseDate" class="form-control" type="date" />
-                            <span asp-validation-for="ReleaseDate" class="text-danger"></span>
-                        </div>
-                        
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="@Url.Action("AdminDashboard", "Account")" class="btn btn-secondary me-md-2">Cancel</a>
-                            <button type="submit" class="btn btn-primary">Add Album</button>
-                        </div>
-                    </form>
-                </div>
+                            }
+                        </select>
+                        <span asp-validation-for="ArtistId" class="text-[var(--ytm-accent-red)] text-xs"></span>
+                    </div>
+                    <div>
+                        <label asp-for="ReleaseDate" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-1">Release Date</label>
+                        <input asp-for="ReleaseDate" class="w-full rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" type="date" />
+                        <span asp-validation-for="ReleaseDate" class="text-[var(--ytm-accent-red)] text-xs"></span>
+                    </div>
+                    <div class="flex justify-end space-x-2 pt-2">
+                        <a href="@Url.Action("AdminDashboard", "Account")" class="px-4 py-2 rounded-lg bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-secondary)] hover:bg-[var(--ytm-bg-secondary)] border border-[var(--ytm-border-color)] transition">Cancel</a>
+                        <button type="submit" class="px-4 py-2 rounded-lg bg-[var(--ytm-accent-red)] text-white font-semibold hover:bg-[var(--ytm-accent-red-hover)] transition">Add Album</button>
+                    </div>
+                </form>
             </div>
         </div>
+        @if (ViewBag.ErrorMessage != null) 
+        {
+            <div class="mt-4 px-4 py-3 rounded-lg bg-[var(--ytm-accent-red)] bg-opacity-20 text-[var(--ytm-accent-red)] border border-[var(--ytm-accent-red)]">@ViewBag.ErrorMessage</div>
+        }
     </div>
 </div>
-
-@if (ViewBag.ErrorMessage != null) 
-{
-    <div class="alert alert-danger mt-3">@ViewBag.ErrorMessage</div>
-}

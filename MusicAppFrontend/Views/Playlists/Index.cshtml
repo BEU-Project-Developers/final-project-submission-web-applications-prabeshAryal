@@ -11,40 +11,41 @@
     }
 }
 
-<div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col d-flex justify-content-between align-items-center">            <h1 class="mb-0 text-white">Your Playlists</h1>
-            <a asp-action="Create" class="btn bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
-                <i class="bi bi-plus-circle-fill"></i> Create Playlist
+<div class="min-h-screen bg-[var(--ytm-bg-primary)] py-8">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex justify-between items-center mb-8 sticky top-0 z-10 bg-[var(--ytm-bg-primary)]">
+            <h1 class="text-3xl font-bold text-[var(--ytm-text-primary)] mb-0">Your Playlists</h1>
+            <a asp-action="Create" class="bg-[var(--ytm-accent-red)] hover:bg-[var(--ytm-accent-red-hover)] text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                <i class="bi bi-plus-circle-fill mr-2"></i> Create Playlist
             </a>
         </div>
-    </div>
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
-        @foreach (var playlist in Model)
-        {
-            <div class="col">
-                <div class="card h-100 shadow bg-gray-800 text-white border-0">
-                    <a asp-action="Details" asp-route-id="@playlist.Id" class="stretched-link"></a>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            @foreach (var playlist in Model)
+            {
+                <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow border border-[var(--ytm-border-color)] flex flex-col h-full">
+                    <a asp-action="Details" asp-route-id="@playlist.Id"></a>
                     <img src="@(string.IsNullOrEmpty(playlist.CoverImageUrl) ? GetRandomImageUrl(300, 300) : playlist.CoverImageUrl)" 
-                         class="card-img-top" alt="@playlist.Name" style="object-fit:cover; height:200px; background: #374151;"
+                         class="rounded-t-xl w-full object-cover" style="height:200px; background: var(--ytm-bg-tertiary);" alt="@playlist.Name"
                          onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Playlist';">
-                    <div class="card-body">
-                        <h5 class="card-title mb-1">@playlist.Name</h5>
-                        <div class="card-text text-secondary mb-2" style="font-size:0.95em;">@playlist.Description</div>
-                        <div class="d-flex flex-wrap small text-secondary">
-                            <span class="me-3"><i class="bi bi-music-note-list"></i> @playlist.SongCount songs</span>
-                            <span class="me-3"><i class="bi bi-person"></i> @playlist.Username</span>
-                            <span class="me-3"><i class="bi bi-calendar"></i> @playlist.CreatedAt.ToString("MMM d, yyyy")</span>
-                            <span class="badge @(playlist.IsPublic ? "bg-success" : "bg-secondary")">@(playlist.IsPublic ? "Public" : "Private")</span>
+                    <div class="p-4 flex-1 flex flex-col">
+                        <h5 class="font-semibold text-lg text-[var(--ytm-text-primary)] mb-1">@playlist.Name</h5>
+                        <div class="text-[var(--ytm-text-secondary)] mb-2 text-sm">@playlist.Description</div>
+                        <div class="flex flex-wrap gap-3 text-xs text-[var(--ytm-text-tertiary)] mt-auto">
+                            <span><i class="bi bi-music-note-list"></i> @playlist.SongCount songs</span>
+                            <span><i class="bi bi-person"></i> @playlist.Username</span>
+                            <span><i class="bi bi-calendar"></i> @playlist.CreatedAt.ToString("MMM d, yyyy")</span>
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold ml-auto" style="background: @(playlist.IsPublic ? "var(--ytm-accent-green)" : "var(--ytm-bg-tertiary)"); color: @(playlist.IsPublic ? "#fff" : "var(--ytm-text-tertiary)");">
+                                @(playlist.IsPublic ? "Public" : "Private")
+                            </span>
                         </div>
                     </div>
                 </div>
-            </div>
+            }
+        </div>
+        @if (!Model.Any())
+        {
+            <div class="mt-8 px-4 py-3 rounded-lg bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-secondary)] border border-[var(--ytm-border-color)]">No playlists found. Create your first playlist!</div>
         }
     </div>
-    @if (!Model.Any())
-    {
-        <div class="alert alert-info mt-4">No playlists found. Create your first playlist!</div>
-    }
 </div>
 
