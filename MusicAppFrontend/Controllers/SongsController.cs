@@ -5,6 +5,7 @@ using MusicApp.Services;
 using MusicApp.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MusicApp.Controllers
@@ -164,21 +165,37 @@ namespace MusicApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, SongDto model)
         {
+            Console.WriteLine($"Received song model for update: Id={model.Id}, Title={model.Title}, ArtistId={model.ArtistId}, AlbumId={model.AlbumId}, Duration={model.Duration}, AudioUrl={model.AudioUrl}, CoverImageUrl={model.CoverImageUrl}, TrackNumber={model.TrackNumber}, Genre={model.Genre}, ReleaseDate={model.ReleaseDate}, PlayCount={model.PlayCount}");
+
             if (!ModelState.IsValid)
             {
+                foreach (var state in ModelState)
+                {
+                    if (state.Value.Errors.Any())
+                    {
+                        Console.WriteLine($"ModelState Error for {state.Key}: {string.Join(", ", state.Value.Errors.Select(e => e.ErrorMessage))}");
+                    }
+                }
                 return View(model);
             }
             try
             {
-                var updateDto = new {
+                var updateDto = new SongUpdateDto
+                {
                     Title = model.Title,
                     ArtistId = model.ArtistId,
                     AlbumId = model.AlbumId,
                     Duration = model.Duration,
+                    AudioUrl = model.AudioUrl,
+                    CoverImageUrl = model.CoverImageUrl,
                     TrackNumber = model.TrackNumber,
                     Genre = model.Genre,
-                    ReleaseDate = model.ReleaseDate
+                    ReleaseDate = model.ReleaseDate,
+                    PlayCount = model.PlayCount
                 };
+                
+                Console.WriteLine($"Sending SongUpdateDto to backend: Title={updateDto.Title}, ArtistId={updateDto.ArtistId}, AlbumId={updateDto.AlbumId}, Duration={updateDto.Duration}, AudioUrl={updateDto.AudioUrl}, CoverImageUrl={updateDto.CoverImageUrl}, TrackNumber={updateDto.TrackNumber}, Genre={updateDto.Genre}, ReleaseDate={updateDto.ReleaseDate}, PlayCount={updateDto.PlayCount}");
+
                 await _apiService.PutAsync<object>($"api/Songs/{id}", updateDto);
                 TempData["SuccessMessage"] = "Song updated successfully.";
                 return RedirectToAction("Index");

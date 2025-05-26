@@ -151,13 +151,31 @@ namespace MusicApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, AlbumDto model)
         {
+            Console.WriteLine($"AlbumsController.Edit POST action hit with id: {id} and model.Id: {model.Id}"); // New log
+            if (id != model.Id)
+            {
+                Console.WriteLine("AlbumsController.Edit POST: id mismatch."); // New log
+                return BadRequest();
+            }
+
             if (!ModelState.IsValid)
             {
+                Console.WriteLine("AlbumsController.Edit POST: ModelState is invalid."); // New log
+                // Log ModelState errors
+                foreach (var entry in ModelState.Values)
+                {
+                    foreach (var error in entry.Errors)
+                    {
+                        Console.WriteLine($"ModelState Error: {error.ErrorMessage}");
+                    }
+                }
                 return View(model);
             }
             try
             {
-                var updateDto = new {
+                Console.WriteLine("AlbumsController.Edit POST: Attempting to update album."); // New log
+                var updateDto = new AlbumUpdateDto
+                {
                     Title = model.Title ?? string.Empty,
                     ArtistId = model.ArtistId,
                     Year = model.Year,
@@ -166,14 +184,22 @@ namespace MusicApp.Controllers
                     ReleaseDate = model.ReleaseDate,
                     TotalTracks = model.TotalTracks,
                     Duration = model.Duration,
-                    CoverImageUrl = model.CoverImageUrl ?? string.Empty
+                    // CoverImageUrl is not part of AlbumUpdateDTO as it's handled separately
                 };
                 await _apiService.PutAsync<object>($"api/Albums/{id}", updateDto);
                 TempData["SuccessMessage"] = "Album updated successfully.";
                 return RedirectToAction("Index");
             }
+            catch (HttpRequestException httpEx)
+            {
+                // Log the full exception details, including status code if available
+                Console.WriteLine($"HTTP request error updating album: {httpEx.Message}, Status Code: {httpEx.StatusCode}");
+                ViewBag.ErrorMessage = $"Error updating album: {httpEx.Message}. Status Code: {httpEx.StatusCode}";
+                return View(model);
+            }
             catch (Exception ex)
             {
+                Console.WriteLine($"Generic error updating album: {ex.Message}");
                 ViewBag.ErrorMessage = $"Error updating album: {ex.Message}";
                 return View(model);
             }

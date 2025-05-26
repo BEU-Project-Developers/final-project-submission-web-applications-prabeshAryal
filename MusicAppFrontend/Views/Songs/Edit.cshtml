@@ -35,6 +35,26 @@
         <input asp-for="ReleaseDate" class="form-control" type="date" />
         <span asp-validation-for="ReleaseDate" class="text-danger"></span>
     </div>
+    <div class="mb-3">
+        <label asp-for="AudioUrl" class="form-label">Audio URL</label>
+        <input asp-for="AudioUrl" class="form-control" />
+        <span asp-validation-for="AudioUrl" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="CoverImageUrl" class="form-label">Cover Image URL</label>
+        <input asp-for="CoverImageUrl" class="form-control" />
+        <span asp-validation-for="CoverImageUrl" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="TrackNumber" class="form-label">Track Number</label>
+        <input asp-for="TrackNumber" class="form-control" type="number" />
+        <span asp-validation-for="TrackNumber" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="PlayCount" class="form-label">Play Count</label>
+        <input asp-for="PlayCount" class="form-control" type="number" />
+        <span asp-validation-for="PlayCount" class="text-danger"></span>
+    </div>
     <button type="submit" class="btn btn-primary">Save Changes</button>
     <a asp-action="Index" class="btn btn-secondary">Cancel</a>
 </form>

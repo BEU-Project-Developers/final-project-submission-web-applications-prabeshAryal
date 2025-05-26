@@ -43,15 +43,14 @@ namespace MusicApp.Models.DTOs
         public int Id { get; set; }
         public string Title { get; set; }
         public int ArtistId { get; set; }
-        public string ArtistName { get; set; }
+        public string? ArtistName { get; set; } // Made nullable
         public string? CoverImageUrl { get; set; }
         public int? Year { get; set; }
         public string? Genre { get; set; }
         public DateTime? ReleaseDate { get; set; }
         public int? TotalTracks { get; set; }
-        public TimeSpan? Duration { get; set; }
-        public string? Description { get; set; }
-        public bool IsActive { get; set; } // Added for admin edit
+        public string? Description { get; set; } // Added
+        public TimeSpan? Duration { get; set; } // Added
         public List<SongDto> Songs { get; set; } = new List<SongDto>();
         
         // Additional properties for compatibility
@@ -59,11 +58,19 @@ namespace MusicApp.Models.DTOs
         public double TotalDuration => Duration?.TotalMinutes ?? 0.0;
     }
     
-    public class AlbumDetailDto : AlbumDto
+    public class AlbumUpdateDto
     {
-        // Remove duplicate properties to avoid hiding warnings
+        public string? Title { get; set; }
+        public int? ArtistId { get; set; }
+        public int? Year { get; set; }
+        public string? Description { get; set; }
+        public string? Genre { get; set; }
+        public DateTime? ReleaseDate { get; set; }
+        public int? TotalTracks { get; set; }
+        public TimeSpan? Duration { get; set; }
     }
-      public class SongDto
+
+    public class SongDto
     {
         public int Id { get; set; }
         public string Title { get; set; }
@@ -79,6 +86,20 @@ namespace MusicApp.Models.DTOs
         public DateTime? ReleaseDate { get; set; }
         public int PlayCount { get; set; }
         public bool IsFavorited { get; set; } = false;
+    }
+
+    public class SongUpdateDto
+    {
+        public string Title { get; set; }
+        public int? ArtistId { get; set; }
+        public int? AlbumId { get; set; }
+        public TimeSpan? Duration { get; set; }
+        public string? AudioUrl { get; set; }
+        public string? CoverImageUrl { get; set; }
+        public int? TrackNumber { get; set; }
+        public string? Genre { get; set; }
+        public DateTime? ReleaseDate { get; set; }
+        public int? PlayCount { get; set; }
     }
     
     public class PlaylistDto
