@@ -5,6 +5,7 @@ using MusicApp.Services;
 using MusicApp.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace MusicApp.Controllers
@@ -25,7 +26,8 @@ namespace MusicApp.Controllers
                 var response = await _apiService.GetAsync<PagedResponse<ArtistDto>>($"api/Artists?page={page}&pageSize={pageSize}");
                 if (response == null)
                 {
-                    response = new PagedResponse<ArtistDto> {
+                    response = new PagedResponse<ArtistDto>
+                    {
                         Data = new List<ArtistDto>(),
                         CurrentPage = page,
                         PageSize = pageSize,
@@ -39,7 +41,8 @@ namespace MusicApp.Controllers
             {
                 Console.WriteLine($"Error retrieving artists: {ex.Message}");
                 ViewBag.ErrorMessage = "Unable to load artists from the server. Please try again later.";
-                return View(new PagedResponse<ArtistDto> {
+                return View(new PagedResponse<ArtistDto>
+                {
                     Data = new List<ArtistDto>(),
                     CurrentPage = page,
                     PageSize = pageSize,
@@ -54,19 +57,19 @@ namespace MusicApp.Controllers
             try
             {
                 var artist = await _apiService.GetAsync<ArtistDto>($"api/Artists/{id}");
-                
+
                 if (artist == null)
                 {
                     return NotFound();
                 }
-                
+
                 return View(artist);
             }
             catch (Exception ex)
             {
                 // Log the error
                 Console.WriteLine($"Error retrieving artist details: {ex.Message}");
-                
+
                 // Redirect to index with error message
                 TempData["ErrorMessage"] = "Unable to load artist details. Please try again later.";
                 return RedirectToAction(nameof(Index));
@@ -90,7 +93,8 @@ namespace MusicApp.Controllers
             try
             {
                 // Map to backend DTO
-                var artistCreateDto = new {
+                var artistCreateDto = new
+                {
                     Name = model.Name,
                     Bio = model.Bio,
                     Country = model.Country,
@@ -108,7 +112,8 @@ namespace MusicApp.Controllers
                 ViewBag.ErrorMessage = "Failed to add artist.";
             }
             catch (Exception ex)
-            {            ViewBag.ErrorMessage = $"Error: {ex.Message}";
+            {
+                ViewBag.ErrorMessage = $"Error: {ex.Message}";
             }
             return View(model);
         }
@@ -134,13 +139,17 @@ namespace MusicApp.Controllers
             }
             try
             {
-                var updateDto = new {
+                var updateDto = new ArtistUpdateDto
+                {
+                    Id = id,
                     Name = model.Name,
                     Genre = model.Genre,
                     Bio = model.Bio,
                     Country = model.Country,
                     FormedDate = model.FormedDate,
-                    MonthlyListeners = model.MonthlyListeners
+                    MonthlyListeners = model.MonthlyListeners,
+                    ImageUrl = model.ImageUrl,
+                    IsActive = model.IsActive
                 };
                 await _apiService.PutAsync<object>($"api/Artists/{id}", updateDto);
                 TempData["SuccessMessage"] = "Artist updated successfully.";
@@ -148,7 +157,14 @@ namespace MusicApp.Controllers
             }
             catch (Exception ex)
             {
-                ViewBag.ErrorMessage = $"Error updating artist: {ex.Message}";
+                // Log the detailed error, including status code if it's an HttpRequestException
+                var errorMessage = $"Error updating artist: {ex.Message}";
+                if (ex is HttpRequestException httpEx && httpEx.StatusCode.HasValue)
+                {
+                    errorMessage += $" Status Code: {httpEx.StatusCode.Value}";
+                }
+                Console.WriteLine(errorMessage);
+                ViewBag.ErrorMessage = errorMessage;
                 return View(model);
             }
         }

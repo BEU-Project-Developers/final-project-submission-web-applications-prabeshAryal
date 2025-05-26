@@ -158,9 +158,15 @@ namespace MusicApp.Controllers
             try
             {
                 var updateDto = new {
-                    Title = model.Title,
+                    Title = model.Title ?? string.Empty,
                     ArtistId = model.ArtistId,
-                    ReleaseDate = model.ReleaseDate
+                    Year = model.Year,
+                    Description = model.Description ?? string.Empty,
+                    Genre = model.Genre ?? string.Empty,
+                    ReleaseDate = model.ReleaseDate,
+                    TotalTracks = model.TotalTracks,
+                    Duration = model.Duration,
+                    CoverImageUrl = model.CoverImageUrl ?? string.Empty
                 };
                 await _apiService.PutAsync<object>($"api/Albums/{id}", updateDto);
                 TempData["SuccessMessage"] = "Album updated successfully.";

@@ -29,6 +29,7 @@ namespace MusicApp.Models.DTOs
         public string Genre { get; set; }
         public DateTime? FormedDate { get; set; }
         public int MonthlyListeners { get; set; }
+        public bool IsActive { get; set; } // Added for admin edit
         public List<AlbumDto> Albums { get; set; } = new List<AlbumDto>();
         public List<SongDto> Songs { get; set; } = new List<SongDto>();
         public int FollowersCount { get; set; }
@@ -50,6 +51,7 @@ namespace MusicApp.Models.DTOs
         public int? TotalTracks { get; set; }
         public TimeSpan? Duration { get; set; }
         public string? Description { get; set; }
+        public bool IsActive { get; set; } // Added for admin edit
         public List<SongDto> Songs { get; set; } = new List<SongDto>();
         
         // Additional properties for compatibility
@@ -143,5 +145,29 @@ namespace MusicApp.Models.DTOs
         public string AlbumTitle { get; set; }
         public int Duration { get; set; }
         public string CoverImageUrl { get; set; }
+    }
+    
+    public class ArtistCreateDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Bio { get; set; }
+        public string? Country { get; set; }
+        public string? Genre { get; set; }
+        public DateTime? FormedDate { get; set; }
+        public int? MonthlyListeners { get; set; }
+        public bool? IsActive { get; set; }
+    }
+
+    public class ArtistUpdateDto
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public string? Bio { get; set; }
+        public string? Country { get; set; }
+        public string? Genre { get; set; }
+        public DateTime? FormedDate { get; set; }
+        public int? MonthlyListeners { get; set; }
+        public string? ImageUrl { get; set; }
+        public bool? IsActive { get; set; }
     }
 }

@@ -4,7 +4,17 @@
 }
 
 <h2>Edit Artist</h2>
-<form asp-action="Edit" method="post">
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+}
+
+<form id="artistEditForm" asp-action="Edit" method="post">
     <input type="hidden" asp-for="Id" />
     <div class="mb-3">
         <label asp-for="Name" class="form-label"></label>
@@ -16,6 +26,43 @@
         <input asp-for="Genre" class="form-control" />
         <span asp-validation-for="Genre" class="text-danger"></span>
     </div>
+    <div class="mb-3">
+        <label asp-for="Bio" class="form-label"></label>
+        <input asp-for="Bio" class="form-control" />
+        <span asp-validation-for="Bio" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Country" class="form-label"></label>
+        <input asp-for="Country" class="form-control" />
+        <span asp-validation-for="Country" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="FormedDate" class="form-label"></label>
+        <input asp-for="FormedDate" class="form-control" type="date" />
+        <span asp-validation-for="FormedDate" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="MonthlyListeners" class="form-label"></label>
+        <input asp-for="MonthlyListeners" class="form-control" />
+        <span asp-validation-for="MonthlyListeners" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="ImageUrl" class="form-label"></label>
+        <input asp-for="ImageUrl" class="form-control" />
+        <span asp-validation-for="ImageUrl" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="IsActive" class="form-label"></label>
+        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+        <span asp-validation-for="IsActive" class="text-danger"></span>
+    </div>
     <button type="submit" class="btn btn-primary">Save Changes</button>
     <a asp-action="Index" class="btn btn-secondary">Cancel</a>
 </form>
+
+@section Scripts {
+<script>
+    // Remove the custom form submission handler to use normal MVC form submission
+    // The form will now submit to the ArtistsController.Edit action
+</script>
+}

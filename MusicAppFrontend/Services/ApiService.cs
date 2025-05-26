@@ -28,12 +28,29 @@ namespace MusicApp.Services
             _baseUrl = _configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5117";
             
             // Check if we're in a server-side rendering context
-            _isServerSideRendering = jsRuntime is IJSInProcessRuntime == false;
-        }
+            _isServerSideRendering = jsRuntime is IJSInProcessRuntime == false;        }
 
         private async Task<string?> GetTokenAsync()
         {
-            // First check if we're authenticated via cookies and can get the token from HttpContext
+            // First try to get from localStorage (primary method for JWT)
+            if (!_isServerSideRendering)
+            {
+                try
+                {
+                    var token = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "jwt_token");
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        Console.WriteLine("Using token from localStorage");
+                        return token;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error getting token from localStorage: {ex.Message}");
+                }
+            }
+            
+            // Fallback: check if we're authenticated via cookies and can get the token from HttpContext
             if (_httpContextAccessor?.HttpContext?.User?.Identity?.IsAuthenticated == true)
             {
                 var tokenClaim = _httpContextAccessor.HttpContext.User.FindFirst("jwt_token");
@@ -44,33 +61,7 @@ namespace MusicApp.Services
                 }
             }
             
-            // Fallback to localStorage if not available in HttpContext
-            if (_isServerSideRendering)
-                return null;
-                
-            try
-            {
-                // We'll attempt to get the token from localStorage using JS interop
-                var token = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "jwt_token");
-                
-                if (!string.IsNullOrEmpty(token))
-                {
-                    Console.WriteLine("Using token from localStorage");
-                    return token;
-                }
-                return null;
-            }
-            catch (InvalidOperationException)
-            {
-                // This will happen during server-side rendering
-                return null;
-            }
-            catch (Exception ex)
-            {
-                // Log the error
-                Console.WriteLine($"Error getting token: {ex.Message}");
-                return null;
-            }
+            return null;
         }
 
         public async Task<HttpClient> GetHttpClientAsync()
@@ -192,6 +183,9 @@ namespace MusicApp.Services
             var json = JsonSerializer.Serialize(data);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             
+            // Log the Authorization header
+            Console.WriteLine($"Authorization Header: {client.DefaultRequestHeaders.Authorization}");
+
             var response = await client.PutAsync(endpoint, content);
             
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
@@ -199,7 +193,14 @@ namespace MusicApp.Services
                 await HandleUnauthorized();
                 return default;
             }
-              response.EnsureSuccessStatusCode();
+
+            // Handle 204 No Content response
+            if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+            {
+                return default; // Return default value for T when no content is expected
+            }
+
+            response.EnsureSuccessStatusCode();
             
             var responseContent = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<T>(responseContent, new JsonSerializerOptions 

@@ -4,7 +4,17 @@
 }
 
 <h2>Edit Album</h2>
-<form asp-action="Edit" method="post">
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+}
+
+<form id="albumEditForm" asp-action="Edit" method="post">
     <input type="hidden" asp-for="Id" />
     <div class="mb-3">
         <label asp-for="Title" class="form-label"></label>
@@ -12,14 +22,55 @@
         <span asp-validation-for="Title" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="ArtistName" class="form-label">Artist</label>
-        <input asp-for="ArtistName" class="form-control" readonly />
+        <label asp-for="ArtistId" class="form-label">Artist</label>
+        <input asp-for="ArtistId" class="form-control" />
     </div>
     <div class="mb-3">
         <label asp-for="Year" class="form-label"></label>
         <input asp-for="Year" class="form-control" />
-        <span asp-validation-for="Year" class="text-danger"></span>
     </div>
+    <div class="mb-3">
+        <label asp-for="Genre" class="form-label"></label>
+        <input asp-for="Genre" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="IsActive" class="form-label"></label>
+        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+        <span asp-validation-for="IsActive" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <input asp-for="Description" class="form-control" />
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="CoverImageUrl" class="form-label"></label>
+        <input asp-for="CoverImageUrl" class="form-control" />
+        <span asp-validation-for="CoverImageUrl" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="TotalTracks" class="form-label"></label>
+        <input asp-for="TotalTracks" class="form-control" />
+        <span asp-validation-for="TotalTracks" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Duration" class="form-label"></label>
+        <input asp-for="Duration" class="form-control" />
+        <span asp-validation-for="Duration" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="ReleaseDate" class="form-label"></label>
+        <input asp-for="ReleaseDate" class="form-control" type="date" />
+        <span asp-validation-for="ReleaseDate" class="text-danger"></span>
+    </div>
+    <!-- Add other fields as needed -->
     <button type="submit" class="btn btn-primary">Save Changes</button>
     <a asp-action="Index" class="btn btn-secondary">Cancel</a>
 </form>
+
+@section Scripts {
+<script>
+    // Remove the custom form submission handler to use normal MVC form submission
+    // The form will now submit to the AlbumsController.Edit action
+</script>
+}
