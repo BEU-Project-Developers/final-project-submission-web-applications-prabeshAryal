@@ -148,17 +148,31 @@ namespace MusicApp.Controllers
                 ViewBag.Artists = new List<ArtistDto>();
                 ViewBag.Albums = new List<AlbumDto>();
             }            return View(model);
-        }
-
-        [HttpGet]
+        }        [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var song = await _apiService.GetAsync<SongDto>($"api/Songs/{id}");
-            if (song == null)
+            try
             {
-                return NotFound();
+                var song = await _apiService.GetAsync<SongDto>($"api/Songs/{id}");
+                if (song == null)
+                {
+                    return NotFound();
+                }
+
+                // Load artists and albums for dropdowns
+                var artists = await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists");
+                var albums = await _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums");
+                ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
+                ViewBag.Albums = albums?.Data ?? new List<AlbumDto>();
+
+                return View(song);
             }
-            return View(song);
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving song for edit: {ex.Message}");
+                TempData["ErrorMessage"] = "Unable to load song details. Please try again later.";
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         [HttpPost]

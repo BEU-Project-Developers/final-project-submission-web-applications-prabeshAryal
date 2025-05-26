@@ -265,9 +265,8 @@
                     <div class="track-info">
                         <div class="track-title">@song.Title</div>
                         <div class="track-artist">@song.ArtistName</div>
-                    </div>
-                    <div class="track-duration">
-                        @song.Duration.ToString(@"m\:ss")
+                    </div>                    <div class="track-duration">
+                        @(song.Duration?.ToString(@"m\:ss") ?? "--:--")
                     </div>
                     <div class="track-actions">
                         <button class="btn" title="Play">

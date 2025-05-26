@@ -5,6 +5,10 @@
 
 <h2>Edit Song</h2>
 
+@* Show validation summary for better error feedback *@
+<partial name="_ValidationScriptsPartial" />
+@Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
 <form asp-action="Edit" method="post">
     <input type="hidden" asp-for="Id" />
     <div class="mb-3">
@@ -13,12 +17,30 @@
         <span asp-validation-for="Title" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="ArtistName" class="form-label">Artist</label>
-        <input asp-for="ArtistName" class="form-control" readonly />
+        <label asp-for="ArtistId" class="form-label">Artist</label>        <select asp-for="ArtistId" class="form-select">
+            <option value="">-- Select Artist --</option>
+            @if (ViewBag.Artists != null)
+            {
+                foreach (var artist in ViewBag.Artists)
+                {
+                    <option value="@artist.Id" selected="@(Model.ArtistId == artist.Id)">@artist.Name</option>
+                }
+            }
+        </select>
+        <span asp-validation-for="ArtistId" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="AlbumTitle" class="form-label">Album</label>
-        <input asp-for="AlbumTitle" class="form-control" readonly />
+        <label asp-for="AlbumId" class="form-label">Album</label>        <select asp-for="AlbumId" class="form-select">
+            <option value="">-- Select Album --</option>
+            @if (ViewBag.Albums != null)
+            {
+                foreach (var album in ViewBag.Albums)
+                {
+                    <option value="@album.Id" selected="@(Model.AlbumId == album.Id)">@album.Title</option>
+                }
+            }
+        </select>
+        <span asp-validation-for="AlbumId" class="text-danger"></span>
     </div>
     <div class="mb-3">
         <label asp-for="Duration" class="form-label"></label>

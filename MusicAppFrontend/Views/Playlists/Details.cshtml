@@ -137,11 +137,10 @@
                                             <td>
                                                 <img src="@(song.CoverImageUrl ?? "/assets/default-album.png")" 
                                                      alt="cover" style="width:32px;height:32px;object-fit:cover;border-radius:4px;" />
-                                            </td>
-                                            <td>@song.Title</td>
+                                            </td>                                            <td>@song.Title</td>
                                             <td>@song.ArtistName</td>
                                             <td>@song.AlbumTitle</td>
-                                            <td>@song.Duration.ToString(@"m\:ss")</td>
+                                            <td>@(song.Duration?.ToString(@"m\:ss") ?? "--:--")</td>
                                             <td>
                                                 <form method="post" asp-action="AddSongToPlaylist" style="display:inline">
                                                     <input type="hidden" name="playlistId" value="@Model.Id" />

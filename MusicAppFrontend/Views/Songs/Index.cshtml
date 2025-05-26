@@ -10,42 +10,42 @@
 @if (User.IsInRole("Admin"))
 {
     <!-- Admin Table View -->
-    <div class="min-h-screen bg-gray-900 text-white p-6">
+    <div class="min-h-screen bg-[var(--ytm-bg-primary)] text-[var(--ytm-text-primary)] p-6">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl font-bold">Songs Management</h1>
-            <a asp-action="Create" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
+            <a asp-action="Create" class="bg-[var(--ytm-accent-red)] hover:bg-red-700 text-[var(--ytm-text-primary)] px-4 py-2 rounded-lg transition-colors">
                 <i class="fas fa-plus mr-2"></i>Add New Song
             </a>
         </div>
-        <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden">
+        <div class="bg-[var(--ytm-bg-secondary)] rounded-lg shadow-xl overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">
-                    <thead class="bg-gray-700">
+                    <thead class="bg-[var(--ytm-bg-tertiary)]">
                         <tr>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-200">Title</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-200">Artist</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-200">Album</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-200">Duration</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-200">Genre</th>
-                            <th class="px-6 py-4 text-center text-sm font-semibold text-gray-200">Actions</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Title</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Artist</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Album</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Duration</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Genre</th>
+                            <th class="px-6 py-4 text-center text-sm font-semibold text-[var(--ytm-text-secondary)]">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-700">
+                    <tbody class="divide-y divide-[var(--ytm-border-color)]">
                         @foreach (var song in Model.Data)
                         {
-                            <tr class="hover:bg-gray-700 transition-colors">
+                            <tr class="hover:bg-[var(--ytm-bg-tertiary)] transition-colors">
                                 <td class="px-6 py-4">
-                                    <div class="font-medium text-white">@song.Title</div>
+                                    <div class="font-medium text-[var(--ytm-text-primary)]">@song.Title</div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-gray-300">@song.ArtistName</div>
+                                    <div class="text-[var(--ytm-text-secondary)]">@(song.ArtistName ?? "-")</div>
                                 </td>                                <td class="px-6 py-4">
-                                    <div class="text-gray-300">@song.AlbumTitle</div>
+                                    <div class="text-[var(--ytm-text-secondary)]">@(song.AlbumTitle ?? "-")</div>
                                 </td>                                <td class="px-6 py-4">
-                                    <div class="text-gray-300">
-                                        @if (song.Duration != TimeSpan.Zero)
+                                    <div class="text-[var(--ytm-text-secondary)]">
+                                        @if (song.Duration.HasValue && song.Duration.Value != TimeSpan.Zero)
                                         {
-                                            @song.Duration.ToString(@"mm\:ss")
+                                            @song.Duration.Value.ToString(@"mm\:ss")
                                         }
                                         else
                                         {
@@ -54,23 +54,23 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-gray-300">@song.Genre</div>
+                                    <div class="text-[var(--ytm-text-secondary)]">@(song.Genre ?? "-")</div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex justify-center space-x-2">
-                                        <a asp-action="Details" asp-route-id="@song.Id" 
-                                           class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                        <a asp-action="Details" asp-route-id="@song.Id"
+                                           class="bg-[var(--ytm-bg-tertiary)] hover:bg-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] px-3 py-1 rounded text-sm transition-colors">
                                             <i class="fas fa-eye mr-1"></i>View
                                         </a>
                                         <a asp-action="Edit" asp-route-id="@song.Id" 
-                                           class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                           class="bg-[var(--ytm-bg-tertiary)] hover:bg-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] px-3 py-1 rounded text-sm transition-colors">
                                             <i class="fas fa-edit mr-1"></i>Edit
                                         </a>
                                         <form asp-action="DeleteConfirmed" asp-route-id="@song.Id" method="post" style="display: inline;" 
                                               onsubmit="return confirm('Are you sure you want to delete this song?');">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" 
-                                                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                                    class="bg-[var(--ytm-accent-red)] hover:bg-red-700 text-[var(--ytm-text-primary)] px-3 py-1 rounded text-sm transition-colors">
                                                 <i class="fas fa-trash mr-1"></i>Delete
                                             </button>
                                         </form>
@@ -88,59 +88,59 @@
             <nav class="flex justify-center mt-10">
                 <ul class="inline-flex -space-x-px">
                     <li>
-                        <a asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 ml-0 leading-tight text-gray-300 bg-gray-700 border border-gray-600 rounded-l-lg @(currentPage == 1 ? "pointer-events-none opacity-50" : "hover:bg-gray-800")">Prev</a>
+                        <a asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 ml-0 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-l-lg @(currentPage == 1 ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary)]")">Prev</a>
                     </li>
                     @for (int i = 1; i <= totalPages; i++)
                     {
                         <li>
-                            <a asp-action="Index" asp-route-page="@i" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight border border-gray-600 @(i == currentPage ? "bg-red-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-800")">@i</a>
+                            <a asp-action="Index" asp-route-page="@i" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight border border-[var(--ytm-border-color)] @(i == currentPage ? "bg-[var(--ytm-accent-red)] text-[var(--ytm-text-primary)]" : "bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-secondary)] hover:bg-[var(--ytm-bg-secondary)]")">@i</a>
                         </li>
                     }
                     <li>
-                        <a asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight text-gray-300 bg-gray-700 border border-gray-600 rounded-r-lg @(currentPage == totalPages ? "pointer-events-none opacity-50" : "hover:bg-gray-800")">Next</a>
+                        <a asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-r-lg @(currentPage == totalPages ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary)]")">Next</a>
                     </li>
                 </ul>
             </nav>
         }
         @if (!(Model.Data?.Any() ?? false))
         {
-            <div class="mt-8 px-4 py-3 rounded-lg bg-gray-800 text-gray-300 border border-gray-700">No songs found. Create your first song!</div>
+            <div class="mt-8 px-4 py-3 rounded-lg bg-[var(--ytm-bg-secondary)] text-[var(--ytm-text-secondary)] border border-[var(--ytm-border-color)]">No songs found. Create your first song!</div>
         }
     </div>
 }
 else
 {
     <!-- User Song Grid/Table View (implement as needed) -->
-    <div class="min-h-screen bg-gray-900 text-white p-6">
+    <div class="min-h-screen bg-[var(--ytm-bg-primary)] text-[var(--ytm-text-primary)] p-6">
         <h1 class="text-3xl font-bold mb-6">Songs</h1>
-        <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden">
+        <div class="bg-[var(--ytm-bg-secondary)] rounded-lg shadow-xl overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">
-                    <thead class="bg-gray-700">
+                    <thead class="bg-[var(--ytm-bg-tertiary]">
                         <tr>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-200">Title</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-200">Artist</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-200">Album</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-200">Duration</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-200">Genre</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Title</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Artist</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Album</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Duration</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Genre</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-700">
+                    <tbody class="divide-y divide-[var(--ytm-border-color)]">
                         @foreach (var song in Model.Data)
                         {
-                            <tr class="hover:bg-gray-700 transition-colors" onclick="window.location.href='@Url.Action("Details", new { id = song.Id })'">
+                            <tr class="hover:bg-[var(--ytm-bg-tertiary)] transition-colors" onclick="window.location.href='@Url.Action("Details", new { id = song.Id })'">
                                 <td class="px-6 py-4">
-                                    <div class="font-medium text-white">@song.Title</div>
+                                    <div class="font-medium text-[var(--ytm-text-primary)]">@song.Title</div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-gray-300">@song.ArtistName</div>
+                                    <div class="text-[var(--ytm-text-secondary)]">@(song.ArtistName ?? "-")</div>
                                 </td>                                <td class="px-6 py-4">
-                                    <div class="text-gray-300">@song.AlbumTitle</div>
+                                    <div class="text-[var(--ytm-text-secondary)]">@(song.AlbumTitle ?? "-")</div>
                                 </td>                                <td class="px-6 py-4">
-                                    <div class="text-gray-300">
-                                        @if (song.Duration != TimeSpan.Zero)
+                                    <div class="text-[var(--ytm-text-secondary)]">
+                                        @if (song.Duration.HasValue && song.Duration.Value != TimeSpan.Zero)
                                         {
-                                            @song.Duration.ToString(@"mm\:ss")
+                                            @song.Duration.Value.ToString(@"mm\:ss")
                                         }
                                         else
                                         {
@@ -149,7 +149,7 @@ else
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-gray-300">@song.Genre</div>
+                                    <div class="text-[var(--ytm-text-secondary)]">@(song.Genre ?? "-")</div>
                                 </td>
                             </tr>
                         }
@@ -163,23 +163,23 @@ else
             <nav class="flex justify-center mt-10">
                 <ul class="inline-flex -space-x-px">
                     <li>
-                        <a asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 ml-0 leading-tight text-gray-300 bg-gray-700 border border-gray-600 rounded-l-lg @(currentPage == 1 ? "pointer-events-none opacity-50" : "hover:bg-gray-800")">Prev</a>
+                        <a asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 ml-0 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-l-lg @(currentPage == 1 ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary)]")">Prev</a>
                     </li>
                     @for (int i = 1; i <= totalPages; i++)
                     {
                         <li>
-                            <a asp-action="Index" asp-route-page="@i" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight border border-gray-600 @(i == currentPage ? "bg-red-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-800")">@i</a>
+                            <a asp-action="Index" asp-route-page="@i" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight border border-[var(--ytm-border-color)] @(i == currentPage ? "bg-[var(--ytm-accent-red)] text-[var(--ytm-text-primary)]" : "bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-secondary)] hover:bg-[var(--ytm-bg-secondary)]")">@i</a>
                         </li>
                     }
                     <li>
-                        <a asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight text-gray-300 bg-gray-700 border border-gray-600 rounded-r-lg @(currentPage == totalPages ? "pointer-events-none opacity-50" : "hover:bg-gray-800")">Next</a>
+                        <a asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-r-lg @(currentPage == totalPages ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary]")">Next</a>
                     </li>
                 </ul>
             </nav>
         }
         @if (!(Model.Data?.Any() ?? false))
         {
-            <div class="mt-8 px-4 py-3 rounded-lg bg-gray-800 text-gray-300 border border-gray-700">No songs found. Check back later!</div>
+            <div class="mt-8 px-4 py-3 rounded-lg bg-[var(--ytm-bg-secondary)] text-[var(--ytm-text-secondary)] border border-[var(--ytm-border-color)]">No songs found. Check back later!</div>
         }
     </div>
 }

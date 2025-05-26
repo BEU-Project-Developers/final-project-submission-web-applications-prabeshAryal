@@ -222,13 +222,12 @@ namespace MusicApp.Controllers
                         {
                             foreach (var track in recentTracks)
                             {
-                                profile.RecentlyPlayedTracks.Add(new ProfileViewModel.RecentlyPlayedTrack
-                    {
+                                profile.RecentlyPlayedTracks.Add(new ProfileViewModel.RecentlyPlayedTrack                                {
                                     Id = track.Id,
                                     SongTitle = track.Title,
                                     ArtistName = track.ArtistName,
                                     AlbumName = track.AlbumTitle,
-                                    Duration = track.Duration.ToString(@"m\:ss"),
+                                    Duration = track.Duration?.ToString(@"m\:ss") ?? "--:--",
                                     CoverImageUrl = track.CoverImageUrl
                                 });
                             }
