@@ -60,12 +60,14 @@ namespace MusicAppBackend.Data
                 }
                 
                 logger.LogInformation("Database initialization completed successfully.");
-            }
-            catch (Exception ex)
+            }            catch (Exception ex)
             {
                 var logger = services.GetRequiredService<ILogger<MusicDbContext>>();
-                logger.LogError(ex, "An error occurred while seeding the database.");
-                throw;
+                logger.LogError(ex, "An error occurred while seeding the database. The application will continue without database initialization.");
+                
+                // Don't throw the exception - allow the application to start
+                // The database connection will be attempted again when API calls are made
+                return;
             }
         }
         
@@ -487,4 +489,4 @@ namespace MusicAppBackend.Data
             logger.LogInformation("Playlists seeded successfully.");
         }
     }
-} 
+}

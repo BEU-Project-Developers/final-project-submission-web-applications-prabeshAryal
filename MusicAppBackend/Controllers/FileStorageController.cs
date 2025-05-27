@@ -76,26 +76,25 @@ namespace MusicAppBackend.Controllers
             {
                 _logger.LogError(ex, "Error uploading file");
                 return StatusCode(500, new { success = false, message = $"Upload error: {ex.Message}" });
-            }
-        }
+            }        }
 
         // POST: api/FileStorage/delete
         [HttpPost("delete")]
         //[Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DeleteFile([FromBody] DeleteFileRequest request)
+        public Task<IActionResult> DeleteFile([FromBody] DeleteFileRequest request)
         {
             try
             {
                 if (string.IsNullOrEmpty(request.FileType) || string.IsNullOrEmpty(request.FileName))
                 {
-                    return BadRequest(new { success = false, message = "File type and name are required" });
+                    return Task.FromResult<IActionResult>(BadRequest(new { success = false, message = "File type and name are required" }));
                 }
 
                 // Find the file in the directory structure
                 var basePath = Path.Combine(_baseStoragePath, request.FileType);
                 if (!Directory.Exists(basePath))
                 {
-                    return NotFound(new { success = false, message = "File not found" });
+                    return Task.FromResult<IActionResult>(NotFound(new { success = false, message = "File not found" }));
                 }
 
                 // Search for the file recursively
@@ -103,30 +102,29 @@ namespace MusicAppBackend.Controllers
                 
                 if (files.Length == 0)
                 {
-                    return NotFound(new { success = false, message = "File not found" });
+                    return Task.FromResult<IActionResult>(NotFound(new { success = false, message = "File not found" }));
                 }
 
                 // Delete the first matching file
                 var fileToDelete = files[0];
                 System.IO.File.Delete(fileToDelete);
 
-                return Ok(new { success = true, message = "File deleted successfully" });
+                return Task.FromResult<IActionResult>(Ok(new { success = true, message = "File deleted successfully" }));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting file");
-                return StatusCode(500, new { success = false, message = $"Delete error: {ex.Message}" });
+                return Task.FromResult<IActionResult>(StatusCode(500, new { success = false, message = $"Delete error: {ex.Message}" }));
             }
         }
 
         // POST: api/FileStorage/cleanup
         [HttpPost("cleanup")]
         //[Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CleanupUnusedFiles()
+        public Task<IActionResult> CleanupUnusedFiles()
         {
             try
             {
-                int deletedCount = 0;
                 var fileTypes = new[] { "songs", "albums", "artists", "users", "playlists" };
 
                 foreach (var fileType in fileTypes)
@@ -140,19 +138,18 @@ namespace MusicAppBackend.Controllers
                     }
                 }
 
-                return Ok(new { success = true, message = $"Cleanup completed. Processed {fileTypes.Length} directories." });
+                return Task.FromResult<IActionResult>(Ok(new { success = true, message = $"Cleanup completed. Processed {fileTypes.Length} directories." }));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during cleanup");
-                return StatusCode(500, new { success = false, message = $"Cleanup error: {ex.Message}" });
-            }
-        }
+                return Task.FromResult<IActionResult>(StatusCode(500, new { success = false, message = $"Cleanup error: {ex.Message}" }));
+            }        }
 
         // POST: api/FileStorage/generate-thumbnails
         [HttpPost("generate-thumbnails")]
         //[Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GenerateThumbnails()
+        public Task<IActionResult> GenerateThumbnails()
         {
             try
             {
@@ -175,12 +172,12 @@ namespace MusicAppBackend.Controllers
                     }
                 }
 
-                return Ok(new { success = true, message = $"Thumbnail generation completed. Processed {processedCount} images." });
+                return Task.FromResult<IActionResult>(Ok(new { success = true, message = $"Thumbnail generation completed. Processed {processedCount} images." }));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating thumbnails");
-                return StatusCode(500, new { success = false, message = $"Thumbnail generation error: {ex.Message}" });
+                return Task.FromResult<IActionResult>(StatusCode(500, new { success = false, message = $"Thumbnail generation error: {ex.Message}" }));
             }
         }
 
@@ -235,11 +232,9 @@ namespace MusicAppBackend.Controllers
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
             return new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp" }.Contains(extension);
         }
-    }
-
-    public class DeleteFileRequest
+    }    public class DeleteFileRequest
     {
-        public string FileType { get; set; }
-        public string FileName { get; set; }
+        public required string FileType { get; set; }
+        public required string FileName { get; set; }
     }
 }

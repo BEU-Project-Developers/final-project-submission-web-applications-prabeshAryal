@@ -100,7 +100,15 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 // Initialize database and seed data
-await DbInitializer.Initialize(app.Services);
+try
+{
+    await DbInitializer.Initialize(app.Services);
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogWarning(ex, "Database initialization failed. The application will start without initial data.");
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
