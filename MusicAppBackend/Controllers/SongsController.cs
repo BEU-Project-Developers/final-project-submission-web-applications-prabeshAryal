@@ -12,17 +12,14 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace MusicAppBackend.Controllers
-{
-    [Route("api/[controller]")]
-    [ApiController]
-    public class SongsController : ControllerBase
+{    [Route("api/[controller]")]
+    public class SongsController : BaseController
     {
-        private readonly MusicDbContext _context;
         private readonly IFileStorageService _fileStorage;
 
-        public SongsController(MusicDbContext context, IFileStorageService fileStorage)
+        public SongsController(MusicDbContext context, IFileStorageService fileStorage, ILogger<SongsController> logger)
+            : base(context, logger)
         {
-            _context = context;
             _fileStorage = fileStorage;
         }
 
@@ -38,104 +35,111 @@ namespace MusicAppBackend.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            IQueryable<Song> query = _context.Songs
-                .Include(s => s.Artist)
-                .Include(s => s.Album);
-
-            // Apply filters
-            if (artistId.HasValue)
+            try
             {
-                query = query.Where(s => s.ArtistId == artistId);
-            }
+                IQueryable<Song> query = _context.Songs
+                    .Include(s => s.Artist)
+                    .Include(s => s.Album);
 
-            if (albumId.HasValue)
-            {
-                query = query.Where(s => s.AlbumId == albumId);
-            }
-
-            if (!string.IsNullOrEmpty(genre))
-            {
-                query = query.Where(s => s.Genre == genre);
-            }
-
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(s => s.Title.Contains(search) || 
-                                         s.Artist!.Name.Contains(search) || 
-                                         s.Album!.Title.Contains(search));
-            }
-
-            // Apply sorting
-            if (!string.IsNullOrEmpty(sortBy))
-            {
-                switch (sortBy.ToLower())
+                // Apply filters
+                if (artistId.HasValue)
                 {
-                    case "title":
-                        query = desc ? query.OrderByDescending(s => s.Title) : query.OrderBy(s => s.Title);
-                        break;
-                    case "artist":
-                        query = desc ? query.OrderByDescending(s => s.Artist!.Name) : query.OrderBy(s => s.Artist!.Name);
-                        break;
-                    case "album":
-                        query = desc ? query.OrderByDescending(s => s.Album!.Title) : query.OrderBy(s => s.Album!.Title);
-                        break;
-                    case "duration":
-                        query = desc ? query.OrderByDescending(s => s.Duration) : query.OrderBy(s => s.Duration);
-                        break;
-                    case "releasedate":
-                        query = desc ? query.OrderByDescending(s => s.ReleaseDate) : query.OrderBy(s => s.ReleaseDate);
-                        break;
-                    case "playcount":
-                        query = desc ? query.OrderByDescending(s => s.PlayCount) : query.OrderBy(s => s.PlayCount);
-                        break;
-                    default:
-                        query = desc ? query.OrderByDescending(s => s.Id) : query.OrderBy(s => s.Id);
-                        break;
+                    query = query.Where(s => s.ArtistId == artistId);
                 }
-            }
-            else
-            {
-                // Default sort
-                query = query.OrderByDescending(s => s.PlayCount);
-            }
 
-            // Apply pagination
-            var totalCount = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-
-            var songs = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(s => new
+                if (albumId.HasValue)
                 {
-                    s.Id,
-                    s.Title,
-                    s.ArtistId,
-                    ArtistName = s.Artist != null ? s.Artist.Name : null,
-                    s.AlbumId,
-                    AlbumTitle = s.Album != null ? s.Album.Title : null,
-                    s.Duration,
-                    AudioUrl = !string.IsNullOrEmpty(s.AudioUrl) ? 
-                        _fileStorage.GetFileUrl(s.AudioUrl) : null,
-                    CoverImageUrl = !string.IsNullOrEmpty(s.CoverImageUrl) ? 
-                        _fileStorage.GetFileUrl(s.CoverImageUrl) : 
-                        (!string.IsNullOrEmpty(s.Album!.CoverImageUrl) ? 
-                            _fileStorage.GetFileUrl(s.Album.CoverImageUrl) : null),
-                    s.TrackNumber,
-                    s.Genre,
-                    s.ReleaseDate,
-                    s.PlayCount
-                })
-                .ToListAsync();
+                    query = query.Where(s => s.AlbumId == albumId);
+                }
 
-            return Ok(new
+                if (!string.IsNullOrEmpty(genre))
+                {
+                    query = query.Where(s => s.Genre == genre);
+                }
+
+                if (!string.IsNullOrEmpty(search))
+                {
+                    query = query.Where(s => s.Title.Contains(search) || 
+                                             (s.Artist != null && s.Artist.Name.Contains(search)) || 
+                                             (s.Album != null && s.Album.Title.Contains(search)));
+                }
+
+                // Apply sorting
+                if (!string.IsNullOrEmpty(sortBy))
+                {
+                    switch (sortBy.ToLower())
+                    {
+                        case "title":
+                            query = desc ? query.OrderByDescending(s => s.Title) : query.OrderBy(s => s.Title);
+                            break;
+                        case "artist":
+                            query = desc ? query.OrderByDescending(s => s.Artist != null ? s.Artist.Name : null) : query.OrderBy(s => s.Artist != null ? s.Artist.Name : null);
+                            break;
+                        case "album":
+                            query = desc ? query.OrderByDescending(s => s.Album != null ? s.Album.Title : null) : query.OrderBy(s => s.Album != null ? s.Album.Title : null);
+                            break;
+                        case "duration":
+                            query = desc ? query.OrderByDescending(s => s.Duration) : query.OrderBy(s => s.Duration);
+                            break;
+                        case "releasedate":
+                            query = desc ? query.OrderByDescending(s => s.ReleaseDate) : query.OrderBy(s => s.ReleaseDate);
+                            break;
+                        case "playcount":
+                            query = desc ? query.OrderByDescending(s => s.PlayCount) : query.OrderBy(s => s.PlayCount);
+                            break;
+                        default:
+                            query = desc ? query.OrderByDescending(s => s.Id) : query.OrderBy(s => s.Id);
+                            break;
+                    }
+                }
+                else
+                {
+                    // Default sort
+                    query = query.OrderByDescending(s => s.PlayCount);
+                }
+
+                // Apply pagination
+                var totalCount = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+                var songs = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(s => new
+                    {
+                        s.Id,
+                        s.Title,
+                        s.ArtistId,
+                        ArtistName = s.Artist != null ? s.Artist.Name : null,
+                        s.AlbumId,
+                        AlbumTitle = s.Album != null ? s.Album.Title : null,
+                        s.Duration,
+                        AudioUrl = !string.IsNullOrEmpty(s.AudioUrl) ? 
+                            _fileStorage.GetFileUrl(s.AudioUrl) : null,
+                        CoverImageUrl = !string.IsNullOrEmpty(s.CoverImageUrl) ? 
+                            _fileStorage.GetFileUrl(s.CoverImageUrl) : 
+                            (s.Album != null && !string.IsNullOrEmpty(s.Album.CoverImageUrl) ? 
+                                _fileStorage.GetFileUrl(s.Album.CoverImageUrl) : null),
+                        s.TrackNumber,
+                        s.Genre,
+                        s.ReleaseDate,
+                        s.PlayCount
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    TotalCount = totalCount,
+                    TotalPages = totalPages,
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    Data = songs
+                });
+            }
+            catch (Exception ex)
             {
-                TotalCount = totalCount,
-                TotalPages = totalPages,
-                CurrentPage = page,
-                PageSize = pageSize,
-                Data = songs
-            });
+                return StatusCode(500, $"An error occurred while retrieving songs: {ex.Message}");
+            }
         }
 
         // GET: api/Songs/5

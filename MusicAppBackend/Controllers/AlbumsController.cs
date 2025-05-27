@@ -14,14 +14,13 @@ namespace MusicAppBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AlbumsController : ControllerBase
+    public class AlbumsController : BaseController
     {
-        private readonly MusicDbContext _context;
         private readonly IFileStorageService _fileStorage;
 
-        public AlbumsController(MusicDbContext context, IFileStorageService fileStorage)
+        public AlbumsController(MusicDbContext context, IFileStorageService fileStorage, ILogger<AlbumsController> logger)
+            : base(context, logger)
         {
-            _context = context;
             _fileStorage = fileStorage;
         }
 

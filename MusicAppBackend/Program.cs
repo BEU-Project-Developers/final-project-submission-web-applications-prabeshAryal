@@ -21,7 +21,8 @@ builder.Services.AddControllers()
 
 // Configure SQL Server connection
 builder.Services.AddDbContext<MusicDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+    sqlServerOptions => sqlServerOptions.CommandTimeout(60)));
 
 // Configure authentication
 builder.Services.AddAuthentication(options =>
@@ -99,15 +100,58 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Initialize database and seed data
-try
+// Ensure database is created and migrations are applied in a safe way
+using (var scope = app.Services.CreateScope())
 {
-    await DbInitializer.Initialize(app.Services);
-}
-catch (Exception ex)
-{
-    var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    logger.LogWarning(ex, "Database initialization failed. The application will start without initial data.");
+    var dbContext = scope.ServiceProvider.GetRequiredService<MusicDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
+    try
+    {
+        logger.LogInformation("Starting database setup...");
+        
+        // Check if we can connect to the database server
+        logger.LogInformation("Testing database connection...");
+        
+        // Apply any pending migrations
+        var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
+        if (pendingMigrations.Any())
+        {
+            logger.LogInformation($"Applying {pendingMigrations.Count()} pending migrations...");
+            await dbContext.Database.MigrateAsync();
+            logger.LogInformation("Database migrations applied successfully.");
+        }
+        else
+        {
+            logger.LogInformation("Database is up to date.");
+        }
+        
+        // Verify database connection
+        if (await dbContext.Database.CanConnectAsync())
+        {
+            logger.LogInformation("Successfully connected to the database.");
+            
+            // Initialize database and seed data
+            try
+            {
+                logger.LogInformation("Initializing database with seed data...");
+                await DbInitializer.Initialize(app.Services);
+                logger.LogInformation("Database initialization completed successfully.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Database initialization failed. The application will start without initial data.");
+            }
+        }
+        else
+        {
+            logger.LogError("Cannot connect to the database. Please check connection string and server availability.");
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred while setting up the database. The application will continue but database functionality may be limited.");
+    }
 }
 
 // Configure the HTTP request pipeline.
@@ -116,6 +160,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Add global exception handling
+app.UseMiddleware<MusicAppBackend.Middleware.GlobalExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 

@@ -227,7 +227,7 @@ namespace MusicAppBackend.Migrations
                         column: x => x.ArtistId,
                         principalTable: "Artists",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -236,7 +236,7 @@ namespace MusicAppBackend.Migrations
                 {
                     PlaylistId = table.Column<int>(type: "int", nullable: false),
                     SongId = table.Column<int>(type: "int", nullable: false),
-                    Order = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    Order = table.Column<int>(type: "int", nullable: false),
                     AddedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>

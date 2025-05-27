@@ -12,23 +12,19 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace MusicAppBackend.Controllers
-{
-    [Route("api/[controller]")]
-    [ApiController]
-    public class ArtistsController : ControllerBase
+{    [Route("api/[controller]")]
+    public class ArtistsController : BaseController
     {
-        private readonly MusicDbContext _context;
         private readonly IFileStorageService _fileStorage;
 
-        public ArtistsController(MusicDbContext context, IFileStorageService fileStorage)
+        public ArtistsController(MusicDbContext context, IFileStorageService fileStorage, ILogger<ArtistsController> logger)
+            : base(context, logger)
         {
-            _context = context;
             _fileStorage = fileStorage;
         }
 
         // GET: api/Artists
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<object>>> GetArtists(
+        [HttpGet]        public async Task<ActionResult<IEnumerable<object>>> GetArtists(
             [FromQuery] string? genre,
             [FromQuery] string? country,
             [FromQuery] string? search,
@@ -37,7 +33,12 @@ namespace MusicAppBackend.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            IQueryable<Artist> query = _context.Artists;
+            return (ActionResult<IEnumerable<object>>)await HandlePaginatedOperation(async () =>
+            {
+                // Validate pagination parameters
+                (page, pageSize) = ValidatePagination(page, pageSize);
+
+                IQueryable<Artist> query = _context.Artists;
 
             // Apply filters
             if (!string.IsNullOrEmpty(genre))
@@ -101,17 +102,10 @@ namespace MusicAppBackend.Controllers
                     a.IsActive,
                     ImageUrl = !string.IsNullOrEmpty(a.ImageUrl) ? 
                         _fileStorage.GetFileUrl(a.ImageUrl) : null
-                })
-                .ToListAsync();
+                })                .ToListAsync();
 
-            return Ok(new
-            {
-                TotalCount = totalCount,
-                TotalPages = totalPages,
-                CurrentPage = page,
-                PageSize = pageSize,
-                Data = artists
-            });
+                return CreatePaginatedResponse(artists, page, pageSize, totalCount);
+            }, "GetArtists");
         }
 
         // GET: api/Artists/5

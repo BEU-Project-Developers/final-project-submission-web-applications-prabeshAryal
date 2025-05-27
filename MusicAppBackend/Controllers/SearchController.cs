@@ -9,14 +9,13 @@ namespace MusicAppBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class SearchController : ControllerBase
+    public class SearchController : BaseController
     {
-        private readonly MusicDbContext _context;
         private readonly IFileStorageService _fileStorage;
 
-        public SearchController(MusicDbContext context, IFileStorageService fileStorage)
+        public SearchController(MusicDbContext context, IFileStorageService fileStorage, ILogger<SearchController> logger)
+            : base(context, logger)
         {
-            _context = context;
             _fileStorage = fileStorage;
         }
 
@@ -31,87 +30,93 @@ namespace MusicAppBackend.Controllers
 
             var loweredQuery = query.ToLower();
 
-            // Search songs
-            var songs = await _context.Songs
-                .Include(s => s.Artist)
-                .Include(s => s.Album)
-                .Where(s => s.Title.ToLower().Contains(loweredQuery))
-                .Take(limit)
-                .Select(s => new
-                {
-                    Id = s.Id,
-                    Title = s.Title,
-                    Type = "song",
-                    ArtistName = s.Artist != null ? s.Artist.Name : null,
-                    AlbumTitle = s.Album != null ? s.Album.Title : null,
-                    Duration = s.Duration,
-                    CoverImageUrl = !string.IsNullOrEmpty(s.CoverImageUrl) ?
-                        _fileStorage.GetFileUrl(s.CoverImageUrl) :
-                        (!string.IsNullOrEmpty(s.Album!.CoverImageUrl) ?
-                            _fileStorage.GetFileUrl(s.Album.CoverImageUrl) : null),
-                })
-                .ToListAsync();
-
-            // Search artists
-            var artists = await _context.Artists
-                .Where(a => a.Name.ToLower().Contains(loweredQuery))
-                .Take(limit)
-                .Select(a => new
-                {
-                    Id = a.Id,
-                    Name = a.Name,
-                    Type = "artist",
-                    ImageUrl = !string.IsNullOrEmpty(a.ImageUrl) ?
-                        _fileStorage.GetFileUrl(a.ImageUrl) : null,
-                    Genre = a.Genre,
-                })
-                .ToListAsync();
-
-            // Search albums
-            var albums = await _context.Albums
-                .Include(a => a.Artist)
-                .Where(a => a.Title.ToLower().Contains(loweredQuery))
-                .Take(limit)
-                .Select(a => new
-                {
-                    Id = a.Id,
-                    Title = a.Title,
-                    Type = "album",
-                    ArtistName = a.Artist.Name,
-                    Year = a.Year,
-                    CoverImageUrl = !string.IsNullOrEmpty(a.CoverImageUrl) ?
-                        _fileStorage.GetFileUrl(a.CoverImageUrl) : null,
-                })
-                .ToListAsync();
-
-            // Search playlists (only public ones)
-            var playlists = await _context.Playlists
-                .Include(p => p.User)
-                .Where(p => p.IsPublic && p.Name.ToLower().Contains(loweredQuery))
-                .Take(limit)
-                .Select(p => new
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Type = "playlist",
-                    CreatorUsername = p.User.Username,
-                    SongCount = p.PlaylistSongs.Count,
-                    CoverImageUrl = !string.IsNullOrEmpty(p.CoverImageUrl) ?
-                        _fileStorage.GetFileUrl(p.CoverImageUrl) : null,
-                })
-                .ToListAsync();
-
-            return Ok(new
+            try
             {
-                Query = query,
-                Results = new
+                // Search songs
+                var songs = await _context.Songs
+                    .Include(s => s.Artist)
+                    .Include(s => s.Album)
+                    .Where(s => s.Title.ToLower().Contains(loweredQuery))
+                    .Take(limit)
+                    .Select(s => new
+                    {
+                        Id = s.Id,
+                        Title = s.Title,
+                        Type = "song",
+                        ArtistName = s.Artist != null ? s.Artist.Name : null,
+                        AlbumTitle = s.Album != null ? s.Album.Title : null,
+                        Duration = s.Duration,                        CoverImageUrl = !string.IsNullOrEmpty(s.CoverImageUrl) ?
+                            _fileStorage.GetFileUrl(s.CoverImageUrl) :
+                            (s.Album != null && !string.IsNullOrEmpty(s.Album.CoverImageUrl) ?
+                                _fileStorage.GetFileUrl(s.Album.CoverImageUrl) : null),
+                    })
+                    .ToListAsync();
+
+                // Search artists
+                var artists = await _context.Artists
+                    .Where(a => a.Name.ToLower().Contains(loweredQuery))
+                    .Take(limit)
+                    .Select(a => new
+                    {
+                        Id = a.Id,
+                        Name = a.Name,
+                        Type = "artist",
+                        ImageUrl = !string.IsNullOrEmpty(a.ImageUrl) ?
+                            _fileStorage.GetFileUrl(a.ImageUrl) : null,
+                        Genre = a.Genre,
+                    })
+                    .ToListAsync();
+
+                // Search albums
+                var albums = await _context.Albums
+                    .Include(a => a.Artist)
+                    .Where(a => a.Title.ToLower().Contains(loweredQuery))
+                    .Take(limit)
+                    .Select(a => new
+                    {
+                        Id = a.Id,
+                        Title = a.Title,
+                        Type = "album",
+                        ArtistName = a.Artist != null ? a.Artist.Name : null,
+                        Year = a.Year,
+                        CoverImageUrl = !string.IsNullOrEmpty(a.CoverImageUrl) ?
+                            _fileStorage.GetFileUrl(a.CoverImageUrl) : null,
+                    })
+                    .ToListAsync();
+
+                // Search playlists (only public ones)
+                var playlists = await _context.Playlists
+                    .Include(p => p.User)
+                    .Where(p => p.IsPublic && p.Name.ToLower().Contains(loweredQuery))
+                    .Take(limit)
+                    .Select(p => new
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        Type = "playlist",
+                        CreatorUsername = p.User.Username,
+                        SongCount = p.PlaylistSongs.Count,
+                        CoverImageUrl = !string.IsNullOrEmpty(p.CoverImageUrl) ?
+                            _fileStorage.GetFileUrl(p.CoverImageUrl) : null,
+                    })
+                    .ToListAsync();
+
+                return Ok(new
                 {
-                    Songs = songs,
-                    Artists = artists,
-                    Albums = albums,
-                    Playlists = playlists
-                }
-            });
+                    Query = query,
+                    Results = new
+                    {
+                        Songs = songs,
+                        Artists = artists,
+                        Albums = albums,
+                        Playlists = playlists
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while searching: {ex.Message}");
+            }
         }
 
         // GET: api/Search/songs?query=something

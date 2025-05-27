@@ -12,7 +12,7 @@ using MusicAppBackend.Data;
 namespace MusicAppBackend.Migrations
 {
     [DbContext(typeof(MusicDbContext))]
-    [Migration("20250527170445_InitialCreate")]
+    [Migration("20250527215708_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -20,7 +20,7 @@ namespace MusicAppBackend.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.4")
+                .HasAnnotation("ProductVersion", "9.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -176,9 +176,7 @@ namespace MusicAppBackend.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<int>("Order")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
+                        .HasColumnType("int");
 
                     b.HasKey("PlaylistId", "SongId");
 
@@ -457,7 +455,7 @@ namespace MusicAppBackend.Migrations
                     b.HasOne("MusicAppBackend.Models.Artist", "Artist")
                         .WithMany()
                         .HasForeignKey("ArtistId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Album");
 
