@@ -5,8 +5,7 @@ using Microsoft.JSInterop;
 using Microsoft.AspNetCore.Http;
 
 namespace MusicApp.Services
-{
-    public class ApiService
+{    public class ApiService
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IJSRuntime _jsRuntime;
@@ -14,21 +13,23 @@ namespace MusicApp.Services
         private readonly string _baseUrl;
         private static bool _isServerSideRendering;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ILogger<ApiService> _logger;
 
         public ApiService(
             IHttpClientFactory httpClientFactory, 
-            IJSRuntime jsRuntime, 
-            IConfiguration configuration, 
-            IHttpContextAccessor httpContextAccessor = null)
+            IJSRuntime jsRuntime,            IConfiguration configuration,
+            IHttpContextAccessor httpContextAccessor = null,
+            ILogger<ApiService> logger = null)
         {
             _httpClientFactory = httpClientFactory;
             _jsRuntime = jsRuntime;
             _configuration = configuration;
             _httpContextAccessor = httpContextAccessor ?? new HttpContextAccessor();
+            _logger = logger;
             _baseUrl = _configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5117";
             
             // Check if we're in a server-side rendering context
-            _isServerSideRendering = jsRuntime is IJSInProcessRuntime == false;        }
+            _isServerSideRendering = jsRuntime is IJSInProcessRuntime == false;}
 
         private async Task<string?> GetTokenAsync()
         {
@@ -40,13 +41,13 @@ namespace MusicApp.Services
                     var token = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "jwt_token");
                     if (!string.IsNullOrEmpty(token))
                     {
-                        Console.WriteLine("Using token from localStorage");
+                        _logger?.LogInformation("Using token from localStorage");
                         return token;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error getting token from localStorage: {ex.Message}");
+                    _logger?.LogError(ex, "Error getting token from localStorage: {ErrorMessage}", ex.Message);
                 }
             }
             
@@ -56,7 +57,7 @@ namespace MusicApp.Services
                 var tokenClaim = _httpContextAccessor.HttpContext.User.FindFirst("jwt_token");
                 if (tokenClaim != null && !string.IsNullOrEmpty(tokenClaim.Value))
                 {
-                    Console.WriteLine("Using token from HttpContext claims");
+                    _logger?.LogInformation("Using token from HttpContext claims");
                     return tokenClaim.Value;
                 }
             }
@@ -108,15 +109,13 @@ namespace MusicApp.Services
             var client = await GetHttpClientAsync();
             var json = JsonSerializer.Serialize(data);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
-            Console.WriteLine($"Making POST request to {endpoint}");
-            Console.WriteLine($"Request data: {json}");
+              _logger?.LogInformation("Making POST request to {Endpoint}", endpoint);
+            _logger?.LogInformation("Request data: {Json}", json);
             
             var response = await client.PostAsync(endpoint, content);
             var responseContent = await response.Content.ReadAsStringAsync();
-            
-            Console.WriteLine($"Response status: {response.StatusCode}");
-            Console.WriteLine($"Response content: {responseContent}");
+              _logger?.LogInformation("Response status: {StatusCode}", response.StatusCode);
+            _logger?.LogInformation("Response content: {ResponseContent}", responseContent);
             
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {                // Try to deserialize error message
@@ -170,9 +169,8 @@ namespace MusicApp.Services
                 });
             }
             catch (JsonException ex)
-            {
-                Console.WriteLine($"JSON deserialization error: {ex.Message}");
-                Console.WriteLine($"Response content: {responseContent}");
+            {                _logger?.LogError(ex, "JSON deserialization error: {ErrorMessage}", ex.Message);
+                _logger?.LogError("Response content: {ResponseContent}", responseContent);
                 throw;
             }
         }
@@ -184,7 +182,7 @@ namespace MusicApp.Services
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             
             // Log the Authorization header
-            Console.WriteLine($"Authorization Header: {client.DefaultRequestHeaders.Authorization}");
+            _logger?.LogInformation("Authorization Header: {AuthHeader}", client.DefaultRequestHeaders.Authorization);
 
             var response = await client.PutAsync(endpoint, content);
             
