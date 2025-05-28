@@ -81,145 +81,356 @@ namespace MusicApp.Services
             }
 
             return client;
-        }
-
-        public async Task<T> GetAsync<T>(string endpoint)
+        }        public async Task<T> GetAsync<T>(string endpoint)
         {
-            var client = await GetHttpClientAsync();
-            var response = await client.GetAsync(endpoint);
-            
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {
-                // Handle token refresh or redirect to login
-                await HandleUnauthorized();
-                return default;
-            }
-              response.EnsureSuccessStatusCode();
-            
-            var content = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<T>(content, new JsonSerializerOptions 
-            { 
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
-        }
-
-        public async Task<T> PostAsync<T>(string endpoint, object data)
-        {
-            var client = await GetHttpClientAsync();
-            var json = JsonSerializer.Serialize(data);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-              _logger?.LogInformation("Making POST request to {Endpoint}", endpoint);
-            _logger?.LogInformation("Request data: {Json}", json);
-            
-            var response = await client.PostAsync(endpoint, content);
-            var responseContent = await response.Content.ReadAsStringAsync();
-              _logger?.LogInformation("Response status: {StatusCode}", response.StatusCode);
-            _logger?.LogInformation("Response content: {ResponseContent}", responseContent);
-            
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {                // Try to deserialize error message
-                try
-                {
-                    var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(responseContent, 
-                        new JsonSerializerOptions 
-                        { 
-                            PropertyNameCaseInsensitive = true,
-                            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                        });
-                    
-                    if (errorResponse != null && !string.IsNullOrEmpty(errorResponse.Message))
-                    {
-                        throw new HttpRequestException($"401 Unauthorized: {errorResponse.Message}", null, System.Net.HttpStatusCode.Unauthorized);
-                    }
-                }
-                catch (JsonException) { /* Continue with default handling */ }
-                
-                await HandleUnauthorized();
-                throw new HttpRequestException("Authentication failed", null, System.Net.HttpStatusCode.Unauthorized);
-            }
-            
-            if (!response.IsSuccessStatusCode)
-            {                // Try to deserialize error message
-                try
-                {
-                    var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(responseContent, 
-                        new JsonSerializerOptions 
-                        { 
-                            PropertyNameCaseInsensitive = true,
-                            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                        });
-                    
-                    if (errorResponse != null && !string.IsNullOrEmpty(errorResponse.Message))
-                    {
-                        throw new HttpRequestException($"API request failed with status code {response.StatusCode}: {errorResponse.Message}");
-                    }
-                }
-                catch (JsonException) { /* Continue with default error message */ }
-                
-                throw new HttpRequestException($"API request failed with status code {response.StatusCode}: {responseContent}");
-            }
-            
             try
             {
-                return JsonSerializer.Deserialize<T>(responseContent, new JsonSerializerOptions 
-                { 
-                    PropertyNameCaseInsensitive = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
+                var client = await GetHttpClientAsync();
+                var response = await client.GetAsync(endpoint);
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    // Handle token refresh or redirect to login
+                    await HandleUnauthorized();
+                    return default;
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger?.LogError("GET request failed for {Endpoint} with status {StatusCode}: {Content}", 
+                        endpoint, response.StatusCode, errorContent);
+                    
+                    // Try to parse error response
+                    try
+                    {
+                        var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(errorContent, 
+                            new JsonSerializerOptions 
+                            { 
+                                PropertyNameCaseInsensitive = true,
+                                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                            });
+                        
+                        if (errorResponse != null && !string.IsNullOrEmpty(errorResponse.Message))
+                        {
+                            throw new HttpRequestException($"API request failed: {errorResponse.Message}", null, response.StatusCode);
+                        }
+                    }
+                    catch (JsonException) { /* Continue with default handling */ }
+                    
+                    throw new HttpRequestException($"API request failed with status code {response.StatusCode}", null, response.StatusCode);
+                }
+                
+                var content = await response.Content.ReadAsStringAsync();
+                
+                // Handle empty responses gracefully
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    _logger?.LogWarning("Empty response received from {Endpoint}", endpoint);
+                    return default;
+                }
+                
+                // Try to deserialize the response
+                try
+                {
+                    var result = JsonSerializer.Deserialize<T>(content, new JsonSerializerOptions 
+                    { 
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    });
+                    
+                    // Handle false success status in response objects that have Success property
+                    if (result != null && HasSuccessProperty(result) && !GetSuccessValue(result))
+                    {
+                        _logger?.LogWarning("API returned success=false for {Endpoint}", endpoint);
+                        var message = GetMessageValue(result);
+                        if (!string.IsNullOrEmpty(message))
+                        {
+                            throw new InvalidOperationException($"API operation failed: {message}");
+                        }
+                        throw new InvalidOperationException("API operation returned success=false without specific message");
+                    }
+                    
+                    return result;
+                }
+                catch (JsonException ex)
+                {
+                    _logger?.LogError(ex, "JSON deserialization error for {Endpoint}: {ErrorMessage}", endpoint, ex.Message);
+                    _logger?.LogError("Response content: {ResponseContent}", content);
+                    throw new InvalidOperationException($"Invalid JSON response from API: {ex.Message}", ex);
+                }
             }
-            catch (JsonException ex)
-            {                _logger?.LogError(ex, "JSON deserialization error: {ErrorMessage}", ex.Message);
-                _logger?.LogError("Response content: {ResponseContent}", responseContent);
-                throw;
+            catch (HttpRequestException)
+            {
+                throw; // Re-throw HTTP exceptions as-is
+            }
+            catch (InvalidOperationException)
+            {
+                throw; // Re-throw operation exceptions as-is
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Unexpected error in GetAsync for {Endpoint}: {ErrorMessage}", endpoint, ex.Message);
+                throw new InvalidOperationException($"Unexpected error occurred while calling API: {ex.Message}", ex);
+            }
+        }        public async Task<T> PostAsync<T>(string endpoint, object data)
+        {
+            try
+            {
+                var client = await GetHttpClientAsync();
+                var json = JsonSerializer.Serialize(data);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                  _logger?.LogInformation("Making POST request to {Endpoint}", endpoint);
+                _logger?.LogInformation("Request data: {Json}", json);
+                
+                var response = await client.PostAsync(endpoint, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+                  _logger?.LogInformation("Response status: {StatusCode}", response.StatusCode);
+                _logger?.LogInformation("Response content: {ResponseContent}", responseContent);
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {                    // Try to deserialize error message
+                    try
+                    {
+                        var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(responseContent, 
+                            new JsonSerializerOptions 
+                            { 
+                                PropertyNameCaseInsensitive = true,
+                                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                            });
+                        
+                        if (errorResponse != null && !string.IsNullOrEmpty(errorResponse.Message))
+                        {
+                            throw new HttpRequestException($"401 Unauthorized: {errorResponse.Message}", null, System.Net.HttpStatusCode.Unauthorized);
+                        }
+                    }
+                    catch (JsonException) { /* Continue with default handling */ }
+                    
+                    await HandleUnauthorized();
+                    throw new HttpRequestException("Authentication failed", null, System.Net.HttpStatusCode.Unauthorized);
+                }
+                
+                if (!response.IsSuccessStatusCode)
+                {                    // Try to deserialize error message
+                    try
+                    {
+                        var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(responseContent, 
+                            new JsonSerializerOptions 
+                            { 
+                                PropertyNameCaseInsensitive = true,
+                                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                            });
+                        
+                        if (errorResponse != null && !string.IsNullOrEmpty(errorResponse.Message))
+                        {
+                            throw new HttpRequestException($"API request failed: {errorResponse.Message}", null, response.StatusCode);
+                        }
+                    }
+                    catch (JsonException) { /* Continue with default error message */ }
+                    
+                    throw new HttpRequestException($"API request failed with status code {response.StatusCode}: {responseContent}", null, response.StatusCode);
+                }
+                
+                // Handle empty responses gracefully
+                if (string.IsNullOrWhiteSpace(responseContent))
+                {
+                    _logger?.LogWarning("Empty response received from POST to {Endpoint}", endpoint);
+                    return default;
+                }
+                
+                try
+                {
+                    var result = JsonSerializer.Deserialize<T>(responseContent, new JsonSerializerOptions 
+                    { 
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    });
+                    
+                    // Handle false success status in response objects that have Success property
+                    if (result != null && HasSuccessProperty(result) && !GetSuccessValue(result))
+                    {
+                        _logger?.LogWarning("POST API returned success=false for {Endpoint}", endpoint);
+                        var message = GetMessageValue(result);
+                        if (!string.IsNullOrEmpty(message))
+                        {
+                            throw new InvalidOperationException($"API operation failed: {message}");
+                        }
+                        throw new InvalidOperationException("API operation returned success=false without specific message");
+                    }
+                    
+                    return result;
+                }
+                catch (JsonException ex)
+                {                    _logger?.LogError(ex, "JSON deserialization error for POST {Endpoint}: {ErrorMessage}", endpoint, ex.Message);
+                    _logger?.LogError("Response content: {ResponseContent}", responseContent);
+                    throw new InvalidOperationException($"Invalid JSON response from API: {ex.Message}", ex);
+                }
+            }
+            catch (HttpRequestException)
+            {
+                throw; // Re-throw HTTP exceptions as-is
+            }
+            catch (InvalidOperationException)
+            {
+                throw; // Re-throw operation exceptions as-is
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Unexpected error in PostAsync for {Endpoint}: {ErrorMessage}", endpoint, ex.Message);
+                throw new InvalidOperationException($"Unexpected error occurred while calling API: {ex.Message}", ex);
             }
         }
-        
-        public async Task<T> PutAsync<T>(string endpoint, object data)
+          public async Task<T> PutAsync<T>(string endpoint, object data)
         {
-            var client = await GetHttpClientAsync();
-            var json = JsonSerializer.Serialize(data);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
-            // Log the Authorization header
-            _logger?.LogInformation("Authorization Header: {AuthHeader}", client.DefaultRequestHeaders.Authorization);
-
-            var response = await client.PutAsync(endpoint, content);
-            
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            try
             {
-                await HandleUnauthorized();
-                return default;
-            }
+                var client = await GetHttpClientAsync();
+                var json = JsonSerializer.Serialize(data);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                
+                // Log the Authorization header
+                _logger?.LogInformation("Authorization Header: {AuthHeader}", client.DefaultRequestHeaders.Authorization);
 
-            // Handle 204 No Content response
-            if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+                var response = await client.PutAsync(endpoint, content);
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    await HandleUnauthorized();
+                    return default;
+                }
+
+                // Handle 204 No Content response
+                if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+                {
+                    return default; // Return default value for T when no content is expected
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger?.LogError("PUT request failed for {Endpoint} with status {StatusCode}: {Content}", 
+                        endpoint, response.StatusCode, errorContent);
+                    
+                    // Try to parse error response
+                    try
+                    {
+                        var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(errorContent, 
+                            new JsonSerializerOptions 
+                            { 
+                                PropertyNameCaseInsensitive = true,
+                                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                            });
+                        
+                        if (errorResponse != null && !string.IsNullOrEmpty(errorResponse.Message))
+                        {
+                            throw new HttpRequestException($"API request failed: {errorResponse.Message}", null, response.StatusCode);
+                        }
+                    }
+                    catch (JsonException) { /* Continue with default handling */ }
+                    
+                    throw new HttpRequestException($"API request failed with status code {response.StatusCode}", null, response.StatusCode);
+                }
+                
+                var responseContent = await response.Content.ReadAsStringAsync();
+                
+                // Handle empty responses gracefully
+                if (string.IsNullOrWhiteSpace(responseContent))
+                {
+                    _logger?.LogWarning("Empty response received from PUT to {Endpoint}", endpoint);
+                    return default;
+                }
+                
+                try
+                {
+                    var result = JsonSerializer.Deserialize<T>(responseContent, new JsonSerializerOptions 
+                    { 
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    });
+                    
+                    // Handle false success status in response objects that have Success property
+                    if (result != null && HasSuccessProperty(result) && !GetSuccessValue(result))
+                    {
+                        _logger?.LogWarning("PUT API returned success=false for {Endpoint}", endpoint);
+                        var message = GetMessageValue(result);
+                        if (!string.IsNullOrEmpty(message))
+                        {
+                            throw new InvalidOperationException($"API operation failed: {message}");
+                        }
+                        throw new InvalidOperationException("API operation returned success=false without specific message");
+                    }
+                    
+                    return result;
+                }
+                catch (JsonException ex)
+                {
+                    _logger?.LogError(ex, "JSON deserialization error for PUT {Endpoint}: {ErrorMessage}", endpoint, ex.Message);
+                    _logger?.LogError("Response content: {ResponseContent}", responseContent);
+                    throw new InvalidOperationException($"Invalid JSON response from API: {ex.Message}", ex);
+                }
+            }
+            catch (HttpRequestException)
             {
-                return default; // Return default value for T when no content is expected
+                throw; // Re-throw HTTP exceptions as-is
             }
-
-            response.EnsureSuccessStatusCode();
-            
-            var responseContent = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<T>(responseContent, new JsonSerializerOptions 
-            { 
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+            catch (InvalidOperationException)
+            {
+                throw; // Re-throw operation exceptions as-is
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Unexpected error in PutAsync for {Endpoint}: {ErrorMessage}", endpoint, ex.Message);
+                throw new InvalidOperationException($"Unexpected error occurred while calling API: {ex.Message}", ex);
+            }
         }
-        
-        public async Task DeleteAsync(string endpoint)
+          public async Task DeleteAsync(string endpoint)
         {
-            var client = await GetHttpClientAsync();
-            var response = await client.DeleteAsync(endpoint);
-            
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            try
             {
-                await HandleUnauthorized();
-                return;
+                var client = await GetHttpClientAsync();
+                var response = await client.DeleteAsync(endpoint);
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    await HandleUnauthorized();
+                    return;
+                }
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger?.LogError("DELETE request failed for {Endpoint} with status {StatusCode}: {Content}", 
+                        endpoint, response.StatusCode, errorContent);
+                    
+                    // Try to parse error response
+                    try
+                    {
+                        var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(errorContent, 
+                            new JsonSerializerOptions 
+                            { 
+                                PropertyNameCaseInsensitive = true,
+                                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                            });
+                        
+                        if (errorResponse != null && !string.IsNullOrEmpty(errorResponse.Message))
+                        {
+                            throw new HttpRequestException($"Delete operation failed: {errorResponse.Message}", null, response.StatusCode);
+                        }
+                    }
+                    catch (JsonException) { /* Continue with default handling */ }
+                    
+                    throw new HttpRequestException($"Delete operation failed with status code {response.StatusCode}", null, response.StatusCode);
+                }
             }
-            
-            response.EnsureSuccessStatusCode();
+            catch (HttpRequestException)
+            {
+                throw; // Re-throw HTTP exceptions as-is
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Unexpected error in DeleteAsync for {Endpoint}: {ErrorMessage}", endpoint, ex.Message);
+                throw new InvalidOperationException($"Unexpected error occurred while deleting: {ex.Message}", ex);
+            }
         }
         
         public async Task<Stream?> GetStreamAsync(string endpoint)
@@ -373,9 +584,7 @@ namespace MusicApp.Services
             }
             
             throw new HttpRequestException($"Thumbnail generation failed with status code {response.StatusCode}");
-        }
-
-        private async Task HandleUnauthorized()
+        }        private async Task HandleUnauthorized()
         {
             if (_isServerSideRendering)
                 return;
@@ -460,6 +669,38 @@ namespace MusicApp.Services
                     // Ignore errors during cleanup
                 }
             }
+        }
+
+        // Helper methods for checking Success property in response objects
+        private bool HasSuccessProperty<T>(T obj)
+        {
+            if (obj == null) return false;
+            var type = obj.GetType();
+            return type.GetProperty("Success") != null;
+        }
+
+        private bool GetSuccessValue<T>(T obj)
+        {
+            if (obj == null) return false;
+            var type = obj.GetType();
+            var property = type.GetProperty("Success");
+            if (property != null && property.PropertyType == typeof(bool))
+            {
+                return (bool)property.GetValue(obj);
+            }
+            return true; // Default to true if no Success property
+        }
+
+        private string GetMessageValue<T>(T obj)
+        {
+            if (obj == null) return null;
+            var type = obj.GetType();
+            var property = type.GetProperty("Message");
+            if (property != null && property.PropertyType == typeof(string))
+            {
+                return (string)property.GetValue(obj);
+            }
+            return null;
         }
     }
     

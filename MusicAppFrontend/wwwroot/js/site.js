@@ -32,6 +32,104 @@ document.addEventListener('DOMContentLoaded', function () {
             document.body.insertBefore(banner, document.body.firstChild);
         });
 
+    // --- Helper Functions ---
+    
+    /**
+     * Safely handles API responses with consistent error handling
+     * @param {Response} response - The fetch response object
+     * @param {string} operation - The operation being performed (for error messages)
+     * @returns {Promise<Object>} - The parsed response data
+     */
+    async function handleApiResponse(response, operation = 'operation') {
+        let data;
+        
+        try {
+            const responseText = await response.text();
+            
+            // Handle empty responses
+            if (!responseText || responseText.trim() === '') {
+                console.warn(`Empty response received for ${operation}`);
+                return { 
+                    success: false, 
+                    message: 'Empty response from server' 
+                };
+            }
+            
+            // Try to parse as JSON
+            data = JSON.parse(responseText);
+            console.log(`${operation} response data:`, data);
+        } catch (jsonError) {
+            console.error(`Error parsing ${operation} response JSON:`, jsonError);
+            return { 
+                success: false, 
+                message: 'Invalid response format from server' 
+            };
+        }
+        
+        // Handle null/undefined data
+        if (!data) {
+            return { 
+                success: false, 
+                message: 'Empty response from server' 
+            };
+        }
+        
+        // Check for explicit success=false in response
+        if (typeof data === 'object' && data.success === false) {
+            console.warn(`${operation} returned success=false:`, data.message);
+            return {
+                success: false,
+                message: data.message || data.Message || `${operation} operation failed`
+            };
+        }
+        
+        // For non-ok responses, extract error message
+        if (!response.ok) {
+            const errorMessage = typeof data === 'string' ? data : 
+                               data.message || data.Message || 
+                               `${operation} failed with status ${response.status}`;
+            return {
+                success: false,
+                message: errorMessage
+            };
+        }
+        
+        return {
+            success: true,
+            data: data
+        };
+    }
+
+    /**
+     * Shows alert message with better error message handling
+     * @param {Element} alertElement - The alert element to show message in
+     * @param {string|Object} message - The message to display
+     * @param {string} type - The alert type (success, danger, etc.)
+     */
+    function showAlert(alertElement, message, type) {
+        if (!alertElement) {
+            console.error('Alert element not found');
+            return;
+        }
+        
+        // Extract message from object if necessary
+        let displayMessage = message;
+        if (typeof message === 'object') {
+            displayMessage = message.message || message.Message || 'An error occurred';
+        }
+        
+        alertElement.className = `alert alert-${type}`;
+        alertElement.textContent = displayMessage;
+        alertElement.style.display = 'block';
+        
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                alertElement.style.display = 'none';
+            }, 5000);
+        }
+    }
+
     // --- Element References ---
     const sidebar = document.getElementById('sidebar');
     const body = document.body;
@@ -289,19 +387,43 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
                 
                 console.log('Registration response status:', response.status);
-                
-                let data;
+                  let data;
                 try {
                     data = await response.json();
                     console.log('Registration response data:', data);
                 } catch (jsonError) {
                     console.error('Error parsing registration response JSON:', jsonError);
-                    data = { message: 'Error parsing server response' };
+                    data = { 
+                        success: false, 
+                        message: 'Empty response from server' 
+                    };
+                }
+                
+                // Handle empty or invalid response structure
+                if (!data) {
+                    data = { 
+                        success: false, 
+                        message: 'Empty response from server' 
+                    };
                 }
                 
                 if (!response.ok) {
-                    // Show error message
-                    showAlert(registerAlert, data, 'danger');
+                    // Show error message - handle both string and object responses
+                    const errorMessage = typeof data === 'string' ? data : 
+                                       data.message || data.Message || 
+                                       `Registration failed with status ${response.status}`;
+                    showAlert(registerAlert, errorMessage, 'danger');
+                    
+                    // Switch back to submit button
+                    registerSubmitBtn.classList.remove('d-none');
+                    registerLoadingBtn.classList.add('d-none');
+                    return;
+                }
+                
+                // Handle successful response with false success status
+                if (data && typeof data === 'object' && data.success === false) {
+                    const errorMessage = data.message || data.Message || 'Registration operation returned success=false';
+                    showAlert(registerAlert, errorMessage, 'danger');
                     
                     // Switch back to submit button
                     registerSubmitBtn.classList.remove('d-none');
@@ -401,19 +523,43 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
                 
                 console.log('Login response status:', response.status);
-                
-                let data;
+                  let data;
                 try {
                     data = await response.json();
                     console.log('Login response data:', data);
                 } catch (jsonError) {
                     console.error('Error parsing login response JSON:', jsonError);
-                    data = { message: 'Error parsing server response' };
+                    data = { 
+                        success: false, 
+                        message: 'Empty response from server' 
+                    };
+                }
+                
+                // Handle empty or invalid response structure
+                if (!data) {
+                    data = { 
+                        success: false, 
+                        message: 'Empty response from server' 
+                    };
                 }
                 
                 if (!response.ok) {
-                    // Show error message
-                    showAlert(loginAlert, data, 'danger');
+                    // Show error message - handle both string and object responses
+                    const errorMessage = typeof data === 'string' ? data : 
+                                       data.message || data.Message || 
+                                       `Login failed with status ${response.status}`;
+                    showAlert(loginAlert, errorMessage, 'danger');
+                    
+                    // Switch back to submit button
+                    loginSubmitBtn.classList.remove('d-none');
+                    loginLoadingBtn.classList.add('d-none');
+                    return;
+                }
+                
+                // Handle successful response with false success status
+                if (data && typeof data === 'object' && data.success === false) {
+                    const errorMessage = data.message || data.Message || 'Login operation returned success=false';
+                    showAlert(loginAlert, errorMessage, 'danger');
                     
                     // Switch back to submit button
                     loginSubmitBtn.classList.remove('d-none');

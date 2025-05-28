@@ -7,27 +7,39 @@ using System.Threading.Tasks;
 
 namespace MusicApp.Controllers
 {
-    public class AdminFileUploadController : Controller
+    public class AdminFileUploadController : BaseAppController
     {
-        private readonly ApiService _apiService;
         private readonly FileUploadService _fileUploadService;
 
-        public AdminFileUploadController(ApiService apiService, FileUploadService fileUploadService)
+        public AdminFileUploadController(ApiService apiService, FileUploadService fileUploadService, ILogger<AdminFileUploadController> logger)
+            : base(apiService, logger)
         {
-            _apiService = apiService;
             _fileUploadService = fileUploadService;
-        }
-
-        // GET: AdminFileUpload
+        }        // GET: AdminFileUpload
         public async Task<IActionResult> Index()
         {
-            try
+            return await SafeApiAction(async () =>
             {
                 // Load data for dropdowns
-                var songs = await _apiService.GetAsync<PagedResponse<SongDto>>("api/Songs?pageSize=1000");
-                var albums = await _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums?pageSize=1000");
-                var artists = await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists?pageSize=1000");
-                var playlists = await _apiService.GetAsync<PagedResponse<PlaylistDto>>("api/Playlists?pageSize=1000");
+                var songs = await SafeApiCall(
+                    () => _apiService.GetAsync<PagedResponse<SongDto>>("api/Songs?pageSize=1000"),
+                    new PagedResponse<SongDto> { Data = new List<SongDto>() }
+                );
+                
+                var albums = await SafeApiCall(
+                    () => _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums?pageSize=1000"),
+                    new PagedResponse<AlbumDto> { Data = new List<AlbumDto>() }
+                );
+                
+                var artists = await SafeApiCall(
+                    () => _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists?pageSize=1000"),
+                    new PagedResponse<ArtistDto> { Data = new List<ArtistDto>() }
+                );
+                
+                var playlists = await SafeApiCall(
+                    () => _apiService.GetAsync<PagedResponse<PlaylistDto>>("api/Playlists?pageSize=1000"),
+                    new PagedResponse<PlaylistDto> { Data = new List<PlaylistDto>() }
+                );
 
                 ViewBag.Songs = songs?.Data ?? new List<SongDto>();
                 ViewBag.Albums = albums?.Data ?? new List<AlbumDto>();
@@ -35,76 +47,71 @@ namespace MusicApp.Controllers
                 ViewBag.Playlists = playlists?.Data ?? new List<PlaylistDto>();
 
                 return View();
-            }
-            catch (Exception ex)
-            {
-                ViewBag.ErrorMessage = $"Error loading data: {ex.Message}";
+            },
+            () => {
+                SetErrorMessage("Error loading data for file upload interface.");
                 ViewBag.Songs = new List<SongDto>();
                 ViewBag.Albums = new List<AlbumDto>();
                 ViewBag.Artists = new List<ArtistDto>();
                 ViewBag.Playlists = new List<PlaylistDto>();
                 return View();
-            }
-        }
-
-        // POST: AdminFileUpload/UploadSongAudio
+            });
+        }        // POST: AdminFileUpload/UploadSongAudio
         [HttpPost]
         public async Task<IActionResult> UploadSongAudio(int songId, IFormFile audioFile)
         {
-            try
+            return await SafeApiAction(async () =>
             {
                 if (audioFile == null || audioFile.Length == 0)
                 {
-                    TempData["ErrorMessage"] = "Please select an audio file.";
+                    SetErrorMessage("Please select an audio file.");
                     return RedirectToAction("Index");
                 }
 
                 var result = await _fileUploadService.UploadSongAudioAsync(songId, audioFile);
                 if (!string.IsNullOrEmpty(result))
                 {
-                    TempData["SuccessMessage"] = "Audio file uploaded successfully.";
+                    SetSuccessMessage("Audio file uploaded successfully.");
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "Failed to upload audio file.";
+                    SetErrorMessage("Failed to upload audio file.");
                 }
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Error uploading audio: {ex.Message}";
-            }
 
-            return RedirectToAction("Index");
-        }
-
-        // POST: AdminFileUpload/UploadSongCover
+                return RedirectToAction("Index");
+            },
+            () => {
+                SetErrorMessage("Error uploading audio file. Please try again.");
+                return RedirectToAction("Index");
+            });
+        }        // POST: AdminFileUpload/UploadSongCover
         [HttpPost]
         public async Task<IActionResult> UploadSongCover(int songId, IFormFile coverFile)
         {
-            try
+            return await SafeApiAction(async () =>
             {
                 if (coverFile == null || coverFile.Length == 0)
                 {
-                    TempData["ErrorMessage"] = "Please select a cover image.";
+                    SetErrorMessage("Please select a cover image.");
                     return RedirectToAction("Index");
                 }
 
                 var result = await _fileUploadService.UploadSongCoverAsync(songId, coverFile);
                 if (!string.IsNullOrEmpty(result))
                 {
-                    TempData["SuccessMessage"] = "Cover image uploaded successfully.";
+                    SetSuccessMessage("Cover image uploaded successfully.");
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "Failed to upload cover image.";
+                    SetErrorMessage("Failed to upload cover image.");
                 }
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Error uploading cover: {ex.Message}";
-            }
 
-            return RedirectToAction("Index");
+                return RedirectToAction("Index");
+            },
+            () => {
+                SetErrorMessage("Error uploading cover image. Please try again.");
+                return RedirectToAction("Index");
+            });
         }
 
         // POST: AdminFileUpload/UploadSongFiles - Upload both audio and cover for a song

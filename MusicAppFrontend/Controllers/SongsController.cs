@@ -9,69 +9,55 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace MusicApp.Controllers
-{    public class SongsController : Controller
+{    public class SongsController : BaseAppController
     {
-        private readonly ApiService _apiService;
-        private readonly ILogger<SongsController> _logger;
-
         public SongsController(ApiService apiService, ILogger<SongsController> logger)
+            : base(apiService, logger)
         {
-            _apiService = apiService;
-            _logger = logger;
         }
 
         public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
         {
-            try
-            {
-                var response = await _apiService.GetAsync<PagedResponse<SongDto>>($"api/Songs?page={page}&pageSize={pageSize}");
-                if (response == null)
-                {
-                    response = new PagedResponse<SongDto> {
-                        Data = new List<SongDto>(),
-                        CurrentPage = page,
-                        PageSize = pageSize,
-                        TotalPages = 1,
-                        TotalCount = 0
-                    };
-                }
-                return View(response);
-            }            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving songs: {ErrorMessage}", ex.Message);
-                ViewBag.ErrorMessage = "Unable to load songs from the server. Please try again later.";
-                return View(new PagedResponse<SongDto> {
-                    Data = new List<SongDto>(),
-                    CurrentPage = page,
-                    PageSize = pageSize,
-                    TotalPages = 1,
-                    TotalCount = 0
-                });
-            }
+            var emptyResponse = new PagedResponse<SongDto> {
+                Data = new List<SongDto>(),
+                CurrentPage = page,
+                PageSize = pageSize,
+                TotalPages = 1,
+                TotalCount = 0
+            };
+
+            var response = await SafeApiCall(
+                async () => await _apiService.GetAsync<PagedResponse<SongDto>>($"api/Songs?page={page}&pageSize={pageSize}"),
+                emptyResponse,
+                GetStandardErrorMessage("load", "songs"),
+                "SongsController.Index"
+            );
+
+            return View(response);
         }
 
         public async Task<IActionResult> Details(int id)
         {
-            try
-            {
-                var song = await _apiService.GetAsync<SongDto>($"api/Songs/{id}");
-                
-                if (song == null)
+            return await SafeApiAction(
+                async () =>
                 {
-                    return NotFound();
-                }
-                
-                return View(song);
-            }            catch (Exception ex)
-            {
-                // Log the error
-                _logger.LogError(ex, "Error retrieving song details: {ErrorMessage}", ex.Message);
-                
-                // Redirect to index with error message
-                TempData["ErrorMessage"] = "Unable to load song details. Please try again later.";
-                return RedirectToAction(nameof(Index));
-            }
-        }        [HttpGet]
+                    var song = await _apiService.GetAsync<SongDto>($"api/Songs/{id}");
+                    
+                    if (song == null)
+                    {
+                        return NotFound();
+                    }
+                    
+                    return View(song);
+                },
+                () => {
+                    SetErrorMessage(GetStandardErrorMessage("load", "song details"));
+                    return RedirectToAction(nameof(Index));
+                },
+                GetStandardErrorMessage("load", "song details"),
+                $"SongsController.Details for ID {id}"
+            );
+        }[HttpGet]
         public async Task<IActionResult> Create()
         {
             try
@@ -95,22 +81,20 @@ namespace MusicApp.Controllers
         {
             if (!ModelState.IsValid)
             {
-                try
-                {
-                    // Reload dropdowns for validation failure
-                    var artists = await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists");
-                    var albums = await _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums");
-                    ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
-                    ViewBag.Albums = albums?.Data ?? new List<AlbumDto>();
-                }
-                catch
-                {
-                    ViewBag.Artists = new List<ArtistDto>();
-                    ViewBag.Albums = new List<AlbumDto>();
-                }
+                var artists = await SafeApiCall(
+                    () => _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists"),
+                    new PagedResponse<ArtistDto> { Data = new List<ArtistDto>() }
+                );
+                var albums = await SafeApiCall(
+                    () => _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums"),
+                    new PagedResponse<AlbumDto> { Data = new List<AlbumDto>() }
+                );
+                ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
+                ViewBag.Albums = albums?.Data ?? new List<AlbumDto>();
                 return View(model);
             }
-            try
+
+            return await SafeApiAction(async () =>
             {
                 // Map to backend DTO
                 var songCreateDto = new {
@@ -122,76 +106,92 @@ namespace MusicApp.Controllers
                     Genre = model.Genre,
                     ReleaseDate = model.ReleaseDate
                 };
+                
                 var result = await _apiService.PostAsync<object>("api/Songs", songCreateDto);
                 if (result != null)
                 {
-                    TempData["SuccessMessage"] = "Song added successfully.";
+                    SetSuccessMessage("Song added successfully.");
                     return RedirectToAction("Index");
                 }
-                ViewBag.ErrorMessage = "Failed to add song.";
-            }            catch (Exception ex)
-            {
-                ViewBag.ErrorMessage = $"Error: {ex.Message}";
-            }
-            
-            // Reload dropdowns on error
-            try
-            {
-                var artists = await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists");
-                var albums = await _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums");
+                
+                SetErrorMessage("Failed to add song.");
+                
+                // Reload dropdowns on error
+                var artists = await SafeApiCall(
+                    () => _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists"),
+                    new PagedResponse<ArtistDto> { Data = new List<ArtistDto>() }
+                );
+                var albums = await SafeApiCall(
+                    () => _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums"),
+                    new PagedResponse<AlbumDto> { Data = new List<AlbumDto>() }
+                );
                 ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
                 ViewBag.Albums = albums?.Data ?? new List<AlbumDto>();
-            }
-            catch
-            {
-                ViewBag.Artists = new List<ArtistDto>();
-                ViewBag.Albums = new List<AlbumDto>();
-            }            return View(model);
+                
+                return View(model);
+            },
+            async () => {
+                SetErrorMessage("Error creating song. Please try again.");
+                
+                // Reload dropdowns on error
+                var artists = await SafeApiCall(
+                    () => _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists"),
+                    new PagedResponse<ArtistDto> { Data = new List<ArtistDto>() }
+                );
+                var albums = await SafeApiCall(
+                    () => _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums"),
+                    new PagedResponse<AlbumDto> { Data = new List<AlbumDto>() }
+                );
+                ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
+                ViewBag.Albums = albums?.Data ?? new List<AlbumDto>();
+                
+                return View(model);
+            });
         }        [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            try
+            return await SafeApiAction(async () =>
             {
-                var song = await _apiService.GetAsync<SongDto>($"api/Songs/{id}");
+                var song = await SafeApiCall(
+                    () => _apiService.GetAsync<SongDto>($"api/Songs/{id}"),
+                    (SongDto)null
+                );
+                
                 if (song == null)
                 {
                     return NotFound();
                 }
 
                 // Load artists and albums for dropdowns
-                var artists = await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists");
-                var albums = await _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums");
+                var artists = await SafeApiCall(
+                    () => _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists"),
+                    new PagedResponse<ArtistDto> { Data = new List<ArtistDto>() }
+                );
+                var albums = await SafeApiCall(
+                    () => _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums"),
+                    new PagedResponse<AlbumDto> { Data = new List<AlbumDto>() }
+                );
                 ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
                 ViewBag.Albums = albums?.Data ?? new List<AlbumDto>();
 
                 return View(song);
-            }
-            catch (Exception ex)
-            {                _logger.LogError(ex, "Error retrieving song for edit: {ErrorMessage}", ex.Message);
-                TempData["ErrorMessage"] = "Unable to load song details. Please try again later.";
+            },
+            () => {
+                SetErrorMessage("Unable to load song details. Please try again later.");
                 return RedirectToAction(nameof(Index));
-            }
-        }
-
-        [HttpPost]
+            });
+        }        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, SongDto model)
         {
-            _logger.LogInformation("Received song model for update: Id={Id}, Title={Title}, ArtistId={ArtistId}, AlbumId={AlbumId}", 
-                model.Id, model.Title, model.ArtistId, model.AlbumId);
-
             if (!ModelState.IsValid)
             {
-                foreach (var state in ModelState)                {
-                    if (state.Value.Errors.Any())
-                    {
-                        _logger.LogError("ModelState Error for {StateKey}: {Errors}", state.Key, string.Join(", ", state.Value.Errors.Select(e => e.ErrorMessage)));
-                    }
-                }
                 return View(model);
             }
-            try
-            {                var updateDto = new SongUpdateDTO
+
+            return await SafeApiAction(async () =>
+            {
+                var updateDto = new SongUpdateDTO
                 {
                     Title = model.Title,
                     ArtistId = model.ArtistId,
@@ -202,48 +202,54 @@ namespace MusicApp.Controllers
                     TrackNumber = model.TrackNumber,
                     Genre = model.Genre,
                     ReleaseDate = model.ReleaseDate,
-                    PlayCount = model.PlayCount                };
-                
-                _logger.LogInformation("Sending SongUpdateDTO to backend: Title={Title}, ArtistId={ArtistId}, AlbumId={AlbumId}", 
-                    updateDto.Title, updateDto.ArtistId, updateDto.AlbumId);
+                    PlayCount = model.PlayCount
+                };
 
                 await _apiService.PutAsync<object>($"api/Songs/{id}", updateDto);
-                TempData["SuccessMessage"] = "Song updated successfully.";
+                SetSuccessMessage("Song updated successfully.");
                 return RedirectToAction("Index");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating song: {ErrorMessage}", ex.Message);
-                ViewBag.ErrorMessage = $"Error updating song: {ex.Message}";
+            },
+            () => {
+                SetErrorMessage("Error updating song. Please try again.");
                 return View(model);
-            }
-        }
-
-        [HttpGet]
+            });
+        }        [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
-            var song = await _apiService.GetAsync<SongDto>($"api/Songs/{id}");
-            if (song == null)
+            return await SafeApiAction(async () =>
             {
-                return NotFound();
-            }
-            return View(song);
+                var song = await SafeApiCall(
+                    () => _apiService.GetAsync<SongDto>($"api/Songs/{id}"),
+                    (SongDto)null
+                );
+                
+                if (song == null)
+                {
+                    return NotFound();
+                }
+                
+                return View(song);
+            },
+            () => {
+                SetErrorMessage("Unable to load song details for deletion.");
+                return RedirectToAction("Index");
+            });
         }
 
         [HttpPost, ActionName("DeleteConfirmed")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            try
+            return await SafeApiAction(async () =>
             {
                 await _apiService.DeleteAsync($"api/Songs/{id}");
-                TempData["SuccessMessage"] = "Song deleted successfully.";
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Error deleting song: {ex.Message}";
-            }
-            return RedirectToAction("Index");
+                SetSuccessMessage("Song deleted successfully.");
+                return RedirectToAction("Index");
+            },
+            () => {
+                SetErrorMessage("Error deleting song. Please try again.");
+                return RedirectToAction("Index");
+            });
         }
     }
 }

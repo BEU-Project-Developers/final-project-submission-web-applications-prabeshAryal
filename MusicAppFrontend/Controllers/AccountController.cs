@@ -18,19 +18,16 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace MusicApp.Controllers
 {
-    public class AccountController : Controller
+    public class AccountController : BaseAppController
     {
         private readonly ApplicationDbContext _context;
         private readonly AuthService _authService;
-        private readonly ApiService _apiService;
-        private readonly ILogger<AccountController> _logger;
 
         public AccountController(ApplicationDbContext context, AuthService authService, ApiService apiService, ILogger<AccountController> logger)
+            : base(apiService, logger)
         {
             _context = context;
             _authService = authService;
-            _apiService = apiService;
-            _logger = logger;
         }
 
         [HttpGet]
@@ -54,77 +51,40 @@ namespace MusicApp.Controllers
                 {
                     return Json(new { success = false, message = "Please check your input and try again." });
                 }
-                    return View(model);
-                }
+                return View(model);
+            }
 
-            try
+            return await SafeApiAction(async () =>
             {
-                _logger.LogInformation("Attempting login for email: {Email}", model.Email);
-                
                 var success = await _authService.LoginAsync(model.Email, model.Password, model.RememberMe);
-
-                _logger.LogInformation("Login attempt result: {Success}", success);
 
                 if (success)
                 {
-                    // If it's an AJAX request, return JSON
                     if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                {
-                        _logger.LogInformation("Returning AJAX success response");
+                    {
                         return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
                     }
-
-                    _logger.LogInformation("Redirecting to home page");
                     return RedirectToAction("Index", "Home");
                 }
 
-                _logger.LogWarning("Login failed - invalid credentials for email: {Email}", model.Email);
-                // If we get here, the login failed
-                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                {
-                    return Json(new { success = false, message = "Invalid email or password. Please try again." });
-                }
-
-                ModelState.AddModelError(string.Empty, "Invalid email or password");
-                    return View(model);
-                }
-            catch (HttpRequestException ex)
-            {
-                // Extract the specific error message
-                var errorMessage = ex.Message;
-                if (errorMessage.Contains(":"))
-                {
-                    errorMessage = errorMessage.Substring(errorMessage.IndexOf(":") + 1).Trim();
-                }
-                else
-                {
-                    errorMessage = "Invalid email or password. Please try again.";
-                }
-                
-                _logger.LogError("Login failed with HTTP error: {ErrorMessage}", errorMessage);
-                
+                // Login failed
+                var errorMessage = "Invalid email or password. Please try again.";
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
                     return Json(new { success = false, message = errorMessage });
                 }
-                
+
                 ModelState.AddModelError(string.Empty, errorMessage);
                 return View(model);
-            }
-            catch (Exception ex)
-            {
-                // Log the error
-                _logger.LogError(ex, "Login error: {ErrorMessage}", ex.Message);
-                
-                // If it's an AJAX request, return JSON with error
+            },
+            () => {
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
                     return Json(new { success = false, message = "An error occurred during login. Please try again." });
                 }
-
                 ModelState.AddModelError(string.Empty, "An error occurred during login");
-            return View(model);
-            }
+                return View(model);
+            });
         }
 
         [HttpGet]
@@ -142,7 +102,17 @@ namespace MusicApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Register(RegisterViewModel model, string returnUrl = null)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = false, message = "Please check your input and try again." });
+                }
+                ViewBag.ReturnUrl = returnUrl;
+                return View(model);
+            }
+
+            return await SafeApiAction(async () =>
             {
                 var success = await _authService.RegisterAsync(model);
                 
@@ -151,7 +121,7 @@ namespace MusicApp.Controllers
                     if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                     {
                         return Json(new { success = true });
-                }
+                    }
 
                     if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                         return Redirect(returnUrl);
@@ -160,22 +130,25 @@ namespace MusicApp.Controllers
                 }
 
                 // Registration failed
+                var errorMessage = "Registration failed. Email or username may already be in use.";
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
-                    return Json(new { success = false, message = "Registration failed. Email or username may already be in use." });
+                    return Json(new { success = false, message = errorMessage });
                 }
                 
-                ModelState.AddModelError(string.Empty, "Registration failed. Email or username may already be in use.");
-            }
-
-            // If we got this far, something failed
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
-                return Json(new { success = false, message = "Invalid registration attempt." });
-            }
-
-            ViewBag.ReturnUrl = returnUrl;
-            return View(model);
+                ModelState.AddModelError(string.Empty, errorMessage);
+                ViewBag.ReturnUrl = returnUrl;
+                return View(model);
+            },
+            () => {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = false, message = "An error occurred during registration. Please try again." });
+                }
+                ModelState.AddModelError(string.Empty, "An error occurred during registration");
+                ViewBag.ReturnUrl = returnUrl;
+                return View(model);
+            });
         }
 
         [HttpPost]
@@ -193,10 +166,13 @@ namespace MusicApp.Controllers
                 return RedirectToAction("Login", new { returnUrl = Url.Action("Dashboard") });
             }
 
-            try
+            return await SafeApiAction(async () =>
             {
                 // Try to get user profile from the API
-                var userProfile = await _apiService.GetAsync<UserDto>("api/Users/profile");
+                var userProfile = await SafeApiCall(
+                    () => _apiService.GetAsync<UserDto>("api/Users/profile"),
+                    (UserDto)null
+                );
                 
                 // Create and populate ProfileViewModel
                 var profile = new ProfileViewModel();
@@ -216,53 +192,48 @@ namespace MusicApp.Controllers
                     };
                     
                     // Get recently played tracks
-                    try 
+                    var recentTracks = await SafeApiCall(
+                        () => _apiService.GetAsync<List<SongDto>>("api/Users/recently-played"),
+                        new List<SongDto>()
+                    );
+
+                    if (recentTracks != null && recentTracks.Any())
                     {
-                        var recentTracks = await _apiService.GetAsync<List<SongDto>>("api/Users/recently-played");
-                        if (recentTracks != null && recentTracks.Any())
+                        foreach (var track in recentTracks)
                         {
-                            foreach (var track in recentTracks)
+                            profile.RecentlyPlayedTracks.Add(new ProfileViewModel.RecentlyPlayedTrack
                             {
-                                profile.RecentlyPlayedTracks.Add(new ProfileViewModel.RecentlyPlayedTrack                                {
-                                    Id = track.Id,
-                                    SongTitle = track.Title,
-                                    ArtistName = track.ArtistName,
-                                    AlbumName = track.AlbumTitle,
-                                    Duration = track.Duration?.ToString(@"m\:ss") ?? "--:--",
-                                    CoverImageUrl = track.CoverImageUrl
-                                });
-                            }
+                                Id = track.Id,
+                                SongTitle = track.Title,
+                                ArtistName = track.ArtistName,
+                                AlbumName = track.AlbumTitle,
+                                Duration = track.Duration?.ToString(@"m\:ss") ?? "--:--",
+                                CoverImageUrl = track.CoverImageUrl
+                            });
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error fetching recently played: {ErrorMessage}", ex.Message);
                     }
                     
                     // Get top artists
-                    try 
+                    var topArtists = await SafeApiCall(
+                        () => _apiService.GetAsync<List<ArtistDto>>("api/Users/top-artists"),
+                        new List<ArtistDto>()
+                    );
+
+                    if (topArtists != null && topArtists.Any())
                     {
-                        var topArtists = await _apiService.GetAsync<List<ArtistDto>>("api/Users/top-artists");
-                        if (topArtists != null && topArtists.Any())
+                        foreach (var artist in topArtists)
                         {
-                            foreach (var artist in topArtists)
+                            profile.TopArtists.Add(new ProfileViewModel.TopArtist
                             {
-                                profile.TopArtists.Add(new ProfileViewModel.TopArtist
-                    {
-                                    Id = artist.Id,
-                                    ArtistName = artist.Name,
-                                    PlayCount = artist.MonthlyListeners,
-                                    ArtistImageUrl = artist.ImageUrl
-                                });
-                            }
-                            
-                            // Set favorite artist
-                            profile.FavoriteArtist = topArtists.FirstOrDefault()?.Name ?? "None";
+                                Id = artist.Id,
+                                ArtistName = artist.Name,
+                                PlayCount = artist.MonthlyListeners,
+                                ArtistImageUrl = artist.ImageUrl
+                            });
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error fetching top artists: {ErrorMessage}", ex.Message);
+                        
+                        // Set favorite artist
+                        profile.FavoriteArtist = topArtists.FirstOrDefault()?.Name ?? "None";
                     }
                 }
                 else
@@ -272,17 +243,14 @@ namespace MusicApp.Controllers
                 }
                 
                 return View(profile);
-            }
-            catch (Exception ex)
-            {
-                // Log the error
-                _logger.LogError(ex, "Error retrieving profile: {ErrorMessage}", ex.Message);
-                
+            },
+            () => {
                 // Return a default profile to avoid null reference
                 var profile = new ProfileViewModel();
                 profile.AddSampleData();
+                SetErrorMessage("Unable to load dashboard data. Please try again later.");
                 return View(profile);
-            }
+            });
         }
 
         [HttpGet]
@@ -294,10 +262,13 @@ namespace MusicApp.Controllers
                 return RedirectToAction("Login", new { returnUrl = Url.Action("Profile") });
             }
 
-            try
+            return await SafeApiAction(async () =>
             {
                 // Get user profile from the API
-                var userProfile = await _apiService.GetAsync<UserDto>("api/Users/profile");
+                var userProfile = await SafeApiCall(
+                    () => _apiService.GetAsync<UserDto>("api/Users/profile"),
+                    (UserDto)null
+                );
                 
                 // Create and populate ProfileViewModel
                 var profile = new ProfileViewModel();
@@ -323,17 +294,14 @@ namespace MusicApp.Controllers
                 }
                 
                 return View(profile);
-            }
-            catch (Exception ex)
-            {
-                // Log the error
-                _logger.LogError(ex, "Error retrieving profile in Profile action: {ErrorMessage}", ex.Message);
-                
+            },
+            () => {
                 // Return a default profile to avoid null reference
                 var profile = new ProfileViewModel();
                 profile.AddSampleData();
+                SetErrorMessage("Unable to load profile data. Please try again later.");
                 return View(profile);
-            }
+            });
         }
 
         [HttpGet]
