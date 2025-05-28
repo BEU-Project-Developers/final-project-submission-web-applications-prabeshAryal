@@ -118,11 +118,12 @@ namespace MusicApp.Controllers
                 async () => await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists"),
                 new PagedResponse<ArtistDto> { Data = new List<ArtistDto>() },
                 "Unable to load artists",
-                "AlbumsController - loading artists on error"
-            );
+                "AlbumsController - loading artists on error"            );
             ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
             return View(model);
-        }        [HttpGet]
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
             return await SafeApiAction(
@@ -136,15 +137,13 @@ namespace MusicApp.Controllers
                     return View(album);
                 },
                 () => NotFound(),
-                GetStandardErrorMessage("load", "album"),
-                $"AlbumsController.Edit GET for ID {id}"
+                GetStandardErrorMessage("load", "album"),                $"AlbumsController.Edit GET for ID {id}"
             );
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]        public async Task<IActionResult> Edit(int id, AlbumDto model)
-        {        [HttpPost]
-        [ValidateAntiForgeryToken]        public async Task<IActionResult> Edit(int id, AlbumDto model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, AlbumDto model)
         {
             _logger.LogInformation("AlbumsController.Edit POST action hit with id: {Id} and model.Id: {ModelId}", id, model.Id);
             
@@ -191,9 +190,10 @@ namespace MusicApp.Controllers
                 },
                 () => View(model),
                 GetStandardErrorMessage("update", "album"),
-                $"AlbumsController.Edit POST for ID {id}"
-            );
-        }        [HttpGet]
+                $"AlbumsController.Edit POST for ID {id}"            );
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
             return await SafeApiAction(

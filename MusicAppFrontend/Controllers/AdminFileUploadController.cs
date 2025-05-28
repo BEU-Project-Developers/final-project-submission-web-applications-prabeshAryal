@@ -12,42 +12,50 @@ namespace MusicApp.Controllers
         private readonly FileUploadService _fileUploadService;
 
         public AdminFileUploadController(ApiService apiService, FileUploadService fileUploadService, ILogger<AdminFileUploadController> logger)
-            : base(apiService, logger)
-        {
+            : base(apiService, logger)        {
             _fileUploadService = fileUploadService;
-        }        // GET: AdminFileUpload
+        }
+
+        // GET: AdminFileUpload
         public async Task<IActionResult> Index()
         {
             return await SafeApiAction(async () =>
             {
                 // Load data for dropdowns
                 var songs = await SafeApiCall(
-                    () => _apiService.GetAsync<PagedResponse<SongDto>>("api/Songs?pageSize=1000"),
-                    new PagedResponse<SongDto> { Data = new List<SongDto>() }
+                    async () => await _apiService.GetAsync<PagedResponse<SongDto>>("api/Songs?pageSize=1000"),
+                    new PagedResponse<SongDto> { Data = new List<SongDto>() },
+                    "Unable to load songs at this time",
+                    "AdminFileUploadController.Index - Loading songs"
                 );
                 
                 var albums = await SafeApiCall(
-                    () => _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums?pageSize=1000"),
-                    new PagedResponse<AlbumDto> { Data = new List<AlbumDto>() }
+                    async () => await _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums?pageSize=1000"),
+                    new PagedResponse<AlbumDto> { Data = new List<AlbumDto>() },
+                    "Unable to load albums at this time",
+                    "AdminFileUploadController.Index - Loading albums"
                 );
                 
                 var artists = await SafeApiCall(
-                    () => _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists?pageSize=1000"),
-                    new PagedResponse<ArtistDto> { Data = new List<ArtistDto>() }
+                    async () => await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists?pageSize=1000"),
+                    new PagedResponse<ArtistDto> { Data = new List<ArtistDto>() },
+                    "Unable to load artists at this time",
+                    "AdminFileUploadController.Index - Loading artists"
                 );
                 
                 var playlists = await SafeApiCall(
-                    () => _apiService.GetAsync<PagedResponse<PlaylistDto>>("api/Playlists?pageSize=1000"),
-                    new PagedResponse<PlaylistDto> { Data = new List<PlaylistDto>() }
+                    async () => await _apiService.GetAsync<PagedResponse<PlaylistDto>>("api/Playlists?pageSize=1000"),
+                    new PagedResponse<PlaylistDto> { Data = new List<PlaylistDto>() },
+                    "Unable to load playlists at this time",
+                    "AdminFileUploadController.Index - Loading playlists"
                 );
 
                 ViewBag.Songs = songs?.Data ?? new List<SongDto>();
                 ViewBag.Albums = albums?.Data ?? new List<AlbumDto>();
                 ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
                 ViewBag.Playlists = playlists?.Data ?? new List<PlaylistDto>();
-
-                return View();
-            },
+                
+                return View();            },
             () => {
                 SetErrorMessage("Error loading data for file upload interface.");
                 ViewBag.Songs = new List<SongDto>();
@@ -55,8 +63,12 @@ namespace MusicApp.Controllers
                 ViewBag.Artists = new List<ArtistDto>();
                 ViewBag.Playlists = new List<PlaylistDto>();
                 return View();
-            });
-        }        // POST: AdminFileUpload/UploadSongAudio
+            },
+            "Unable to load file upload interface",
+            "AdminFileUploadController.Index");
+        }
+
+        // POST: AdminFileUpload/UploadSongAudio
         [HttpPost]
         public async Task<IActionResult> UploadSongAudio(int songId, IFormFile audioFile)
         {
@@ -76,14 +88,14 @@ namespace MusicApp.Controllers
                 else
                 {
                     SetErrorMessage("Failed to upload audio file.");
-                }
-
-                return RedirectToAction("Index");
+                }                return RedirectToAction("Index");
             },
             () => {
                 SetErrorMessage("Error uploading audio file. Please try again.");
                 return RedirectToAction("Index");
-            });
+            },
+            "Unable to upload audio file",
+            "AdminFileUploadController.UploadSongAudio");
         }        // POST: AdminFileUpload/UploadSongCover
         [HttpPost]
         public async Task<IActionResult> UploadSongCover(int songId, IFormFile coverFile)
@@ -104,14 +116,14 @@ namespace MusicApp.Controllers
                 else
                 {
                     SetErrorMessage("Failed to upload cover image.");
-                }
-
-                return RedirectToAction("Index");
+                }                return RedirectToAction("Index");
             },
             () => {
                 SetErrorMessage("Error uploading cover image. Please try again.");
                 return RedirectToAction("Index");
-            });
+            },
+            "Unable to upload cover image",
+            "AdminFileUploadController.UploadSongCover");
         }
 
         // POST: AdminFileUpload/UploadSongFiles - Upload both audio and cover for a song

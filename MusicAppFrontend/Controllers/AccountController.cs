@@ -84,7 +84,9 @@ namespace MusicApp.Controllers
                 }
                 ModelState.AddModelError(string.Empty, "An error occurred during login");
                 return View(model);
-            });
+            },
+            "An error occurred during login. Please try again.",
+            "AccountController.Login POST");
         }
 
         [HttpGet]
@@ -148,7 +150,9 @@ namespace MusicApp.Controllers
                 ModelState.AddModelError(string.Empty, "An error occurred during registration");
                 ViewBag.ReturnUrl = returnUrl;
                 return View(model);
-            });
+            },
+            "An error occurred during registration. Please try again.",
+            "AccountController.Register POST");
         }
 
         [HttpPost]
@@ -170,8 +174,10 @@ namespace MusicApp.Controllers
             {
                 // Try to get user profile from the API
                 var userProfile = await SafeApiCall(
-                    () => _apiService.GetAsync<UserDto>("api/Users/profile"),
-                    (UserDto)null
+                    async () => await _apiService.GetAsync<UserDto>("api/Users/profile"),
+                    (UserDto)null,
+                    "Unable to load user profile",
+                    "AccountController.Dashboard - Loading user profile"
                 );
                 
                 // Create and populate ProfileViewModel
@@ -193,8 +199,10 @@ namespace MusicApp.Controllers
                     
                     // Get recently played tracks
                     var recentTracks = await SafeApiCall(
-                        () => _apiService.GetAsync<List<SongDto>>("api/Users/recently-played"),
-                        new List<SongDto>()
+                        async () => await _apiService.GetAsync<List<SongDto>>("api/Users/recently-played"),
+                        new List<SongDto>(),
+                        "Unable to load recently played tracks",
+                        "AccountController.Dashboard - Loading recently played tracks"
                     );
 
                     if (recentTracks != null && recentTracks.Any())
@@ -215,8 +223,10 @@ namespace MusicApp.Controllers
                     
                     // Get top artists
                     var topArtists = await SafeApiCall(
-                        () => _apiService.GetAsync<List<ArtistDto>>("api/Users/top-artists"),
-                        new List<ArtistDto>()
+                        async () => await _apiService.GetAsync<List<ArtistDto>>("api/Users/top-artists"),
+                        new List<ArtistDto>(),
+                        "Unable to load top artists",
+                        "AccountController.Dashboard - Loading top artists"
                     );
 
                     if (topArtists != null && topArtists.Any())
@@ -250,7 +260,9 @@ namespace MusicApp.Controllers
                 profile.AddSampleData();
                 SetErrorMessage("Unable to load dashboard data. Please try again later.");
                 return View(profile);
-            });
+            },
+            "Unable to load dashboard data. Please try again later.",
+            "AccountController.Dashboard");
         }
 
         [HttpGet]
@@ -266,8 +278,10 @@ namespace MusicApp.Controllers
             {
                 // Get user profile from the API
                 var userProfile = await SafeApiCall(
-                    () => _apiService.GetAsync<UserDto>("api/Users/profile"),
-                    (UserDto)null
+                    async () => await _apiService.GetAsync<UserDto>("api/Users/profile"),
+                    (UserDto)null,
+                    "Unable to load user profile",
+                    "AccountController.Profile - Loading user profile"
                 );
                 
                 // Create and populate ProfileViewModel
@@ -301,7 +315,9 @@ namespace MusicApp.Controllers
                 profile.AddSampleData();
                 SetErrorMessage("Unable to load profile data. Please try again later.");
                 return View(profile);
-            });
+            },
+            "Unable to load profile data. Please try again later.",
+            "AccountController.Profile");
         }
 
         [HttpGet]
