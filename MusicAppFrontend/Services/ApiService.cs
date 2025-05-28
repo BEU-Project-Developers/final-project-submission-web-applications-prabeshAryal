@@ -669,14 +669,27 @@ namespace MusicApp.Services
                     // Ignore errors during cleanup
                 }
             }
-        }
-
-        // Helper methods for checking Success property in response objects
+        }        // Helper methods for checking Success property in response objects
         private bool HasSuccessProperty<T>(T obj)
         {
             if (obj == null) return false;
             var type = obj.GetType();
-            return type.GetProperty("Success") != null;
+            var successProperty = type.GetProperty("Success");
+            
+            // Debug logging to understand what's happening
+            _logger?.LogInformation("Checking HasSuccessProperty for type: {TypeName}", type.FullName);
+            if (successProperty != null)
+            {
+                _logger?.LogInformation("Found Success property - Type: {PropertyType}, CanRead: {CanRead}, CanWrite: {CanWrite}", 
+                    successProperty.PropertyType, successProperty.CanRead, successProperty.CanWrite);
+                
+                // Log all properties of the type for debugging
+                var allProperties = type.GetProperties();
+                _logger?.LogInformation("All properties on type {TypeName}: {Properties}", 
+                    type.FullName, string.Join(", ", allProperties.Select(p => $"{p.Name} ({p.PropertyType.Name})")));
+            }
+            
+            return successProperty != null;
         }
 
         private bool GetSuccessValue<T>(T obj)
@@ -686,7 +699,9 @@ namespace MusicApp.Services
             var property = type.GetProperty("Success");
             if (property != null && property.PropertyType == typeof(bool))
             {
-                return (bool)property.GetValue(obj);
+                var value = (bool)property.GetValue(obj);
+                _logger?.LogInformation("GetSuccessValue for {TypeName}: Success property value = {Value}", type.FullName, value);
+                return value;
             }
             return true; // Default to true if no Success property
         }

@@ -120,12 +120,11 @@ namespace MusicAppBackend.Controllers
                 {
                     // Return file with inline disposition for browser viewing
                     return File(fileBytes, contentType);
-                }
-                else
+                }                else
                 {
                     // Return file with attachment disposition for download
                     return File(fileBytes, contentType, filename);
-                }                }
+                }
             }
             catch (Exception ex)
             {

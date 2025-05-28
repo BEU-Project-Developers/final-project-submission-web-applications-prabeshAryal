@@ -363,15 +363,12 @@ namespace MusicApp.Services
             var userId = await GetLocalStorageAsync("userId");
             return userId ?? null;
         }
-    }
-
-    public class LoginResponse
+    }    public class LoginResponse
     {
         public string Token { get; set; }
         public string RefreshToken { get; set; }
         public AuthUserDto User { get; set; }
-        public bool Success { get; set; }
-        public string Message { get; set; }
+        // Removed Success and Message properties to match backend TokenResponseDTO
     }
 
     public class AuthUserDto
