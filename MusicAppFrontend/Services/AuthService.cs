@@ -8,19 +8,19 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 
 namespace MusicApp.Services
-{
-    public class AuthService
+{    public class AuthService
     {
         private readonly ApiService _apiService;
         private readonly IJSRuntime _jsRuntime;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ILogger<AuthService> _logger;
         private static bool _isServerSideRendering;
 
-        public AuthService(ApiService apiService, IJSRuntime jsRuntime, IHttpContextAccessor httpContextAccessor)
-        {
-            _apiService = apiService;
+        public AuthService(ApiService apiService, IJSRuntime jsRuntime, IHttpContextAccessor httpContextAccessor, ILogger<AuthService> logger)
+        {            _apiService = apiService;
             _jsRuntime = jsRuntime;
             _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
             
             // Check if we're in a server-side rendering context
             _isServerSideRendering = jsRuntime is IJSInProcessRuntime == false;
@@ -123,11 +123,11 @@ namespace MusicApp.Services
                             new ClaimsPrincipal(claimsIdentity),
                             authProperties);
                             
-                        Console.WriteLine("User authenticated via cookies: " + _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated);
+                        _logger.LogInformation("User authenticated via cookies: {IsAuthenticated}", _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated);
                     }
                     else
                     {
-                        Console.WriteLine("HttpContext is null during login attempt");
+                        _logger.LogWarning("HttpContext is null during login attempt");
                     }
                     
                     return true;
@@ -136,12 +136,12 @@ namespace MusicApp.Services
             }
             catch (HttpRequestException ex) when (ex.Message.Contains("401"))
             {
-                Console.WriteLine($"Login failed with authentication error: {ex.Message}");
+                _logger.LogError(ex, "Login failed with authentication error: {ErrorMessage}", ex.Message);
                 return false;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Login error: {ex.Message}");
+                _logger.LogError(ex, "Login error: {ErrorMessage}", ex.Message);
                 return false;
             }
         }
@@ -193,13 +193,12 @@ namespace MusicApp.Services
                             CookieAuthenticationDefaults.AuthenticationScheme,
                             new ClaimsPrincipal(claimsIdentity),
                             authProperties);
-                            
-                        Console.WriteLine("User registered and authenticated via cookies: " + 
+                              _logger.LogInformation("User registered and authenticated via cookies: {IsAuthenticated}", 
                             _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated);
                     }
                     else
                     {
-                        Console.WriteLine("HttpContext is null during registration");
+                        _logger.LogWarning("HttpContext is null during registration");
                     }
                     
                     return true;
@@ -208,7 +207,7 @@ namespace MusicApp.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Registration error: {ex.Message}");
+                _logger.LogError(ex, "Registration error: {ErrorMessage}", ex.Message);
                 return false;
             }
         }
@@ -239,12 +238,12 @@ namespace MusicApp.Services
         {
             if (_httpContextAccessor.HttpContext == null)
             {
-                Console.WriteLine("HttpContext is null when checking authentication");
+                _logger.LogWarning("HttpContext is null when checking authentication");
                 return false;
             }
             
             var isAuthenticated = _httpContextAccessor.HttpContext.User?.Identity?.IsAuthenticated ?? false;
-            Console.WriteLine("IsAuthenticated check: " + isAuthenticated);
+            _logger.LogInformation("IsAuthenticated check: {IsAuthenticated}", isAuthenticated);
             
             // Double check if we have the necessary claims
             if (isAuthenticated)
@@ -252,7 +251,7 @@ namespace MusicApp.Services
                 var nameIdentifier = _httpContextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (string.IsNullOrEmpty(nameIdentifier))
                 {
-                    Console.WriteLine("User appears authenticated but missing NameIdentifier claim");
+                    _logger.LogWarning("User appears authenticated but missing NameIdentifier claim");
                     return false;
                 }
             }

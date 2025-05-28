@@ -9,14 +9,15 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace MusicApp.Controllers
-{
-    public class SongsController : Controller
+{    public class SongsController : Controller
     {
         private readonly ApiService _apiService;
+        private readonly ILogger<SongsController> _logger;
 
-        public SongsController(ApiService apiService)
+        public SongsController(ApiService apiService, ILogger<SongsController> logger)
         {
             _apiService = apiService;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
@@ -35,10 +36,9 @@ namespace MusicApp.Controllers
                     };
                 }
                 return View(response);
-            }
-            catch (Exception ex)
+            }            catch (Exception ex)
             {
-                Console.WriteLine($"Error retrieving songs: {ex.Message}");
+                _logger.LogError(ex, "Error retrieving songs: {ErrorMessage}", ex.Message);
                 ViewBag.ErrorMessage = "Unable to load songs from the server. Please try again later.";
                 return View(new PagedResponse<SongDto> {
                     Data = new List<SongDto>(),
@@ -62,11 +62,10 @@ namespace MusicApp.Controllers
                 }
                 
                 return View(song);
-            }
-            catch (Exception ex)
+            }            catch (Exception ex)
             {
                 // Log the error
-                Console.WriteLine($"Error retrieving song details: {ex.Message}");
+                _logger.LogError(ex, "Error retrieving song details: {ErrorMessage}", ex.Message);
                 
                 // Redirect to index with error message
                 TempData["ErrorMessage"] = "Unable to load song details. Please try again later.";
@@ -168,8 +167,7 @@ namespace MusicApp.Controllers
                 return View(song);
             }
             catch (Exception ex)
-            {
-                Console.WriteLine($"Error retrieving song for edit: {ex.Message}");
+            {                _logger.LogError(ex, "Error retrieving song for edit: {ErrorMessage}", ex.Message);
                 TempData["ErrorMessage"] = "Unable to load song details. Please try again later.";
                 return RedirectToAction(nameof(Index));
             }
@@ -179,22 +177,21 @@ namespace MusicApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, SongDto model)
         {
-            Console.WriteLine($"Received song model for update: Id={model.Id}, Title={model.Title}, ArtistId={model.ArtistId}, AlbumId={model.AlbumId}, Duration={model.Duration}, AudioUrl={model.AudioUrl}, CoverImageUrl={model.CoverImageUrl}, TrackNumber={model.TrackNumber}, Genre={model.Genre}, ReleaseDate={model.ReleaseDate}, PlayCount={model.PlayCount}");
+            _logger.LogInformation("Received song model for update: Id={Id}, Title={Title}, ArtistId={ArtistId}, AlbumId={AlbumId}", 
+                model.Id, model.Title, model.ArtistId, model.AlbumId);
 
             if (!ModelState.IsValid)
             {
-                foreach (var state in ModelState)
-                {
+                foreach (var state in ModelState)                {
                     if (state.Value.Errors.Any())
                     {
-                        Console.WriteLine($"ModelState Error for {state.Key}: {string.Join(", ", state.Value.Errors.Select(e => e.ErrorMessage))}");
+                        _logger.LogError("ModelState Error for {StateKey}: {Errors}", state.Key, string.Join(", ", state.Value.Errors.Select(e => e.ErrorMessage)));
                     }
                 }
                 return View(model);
             }
             try
-            {
-                var updateDto = new SongUpdateDto
+            {                var updateDto = new SongUpdateDTO
                 {
                     Title = model.Title,
                     ArtistId = model.ArtistId,
@@ -205,10 +202,10 @@ namespace MusicApp.Controllers
                     TrackNumber = model.TrackNumber,
                     Genre = model.Genre,
                     ReleaseDate = model.ReleaseDate,
-                    PlayCount = model.PlayCount
-                };
+                    PlayCount = model.PlayCount                };
                 
-                Console.WriteLine($"Sending SongUpdateDto to backend: Title={updateDto.Title}, ArtistId={updateDto.ArtistId}, AlbumId={updateDto.AlbumId}, Duration={updateDto.Duration}, AudioUrl={updateDto.AudioUrl}, CoverImageUrl={updateDto.CoverImageUrl}, TrackNumber={updateDto.TrackNumber}, Genre={updateDto.Genre}, ReleaseDate={updateDto.ReleaseDate}, PlayCount={updateDto.PlayCount}");
+                _logger.LogInformation("Sending SongUpdateDTO to backend: Title={Title}, ArtistId={ArtistId}, AlbumId={AlbumId}", 
+                    updateDto.Title, updateDto.ArtistId, updateDto.AlbumId);
 
                 await _apiService.PutAsync<object>($"api/Songs/{id}", updateDto);
                 TempData["SuccessMessage"] = "Song updated successfully.";
@@ -216,6 +213,7 @@ namespace MusicApp.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error updating song: {ErrorMessage}", ex.Message);
                 ViewBag.ErrorMessage = $"Error updating song: {ex.Message}";
                 return View(model);
             }

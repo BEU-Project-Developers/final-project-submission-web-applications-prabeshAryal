@@ -12,7 +12,9 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace MusicAppBackend.Controllers
-{    [Route("api/[controller]")]
+{
+    [Route("api/[controller]")]
+    [ApiController]
     public class SongsController : BaseController
     {
         private readonly IFileStorageService _fileStorage;

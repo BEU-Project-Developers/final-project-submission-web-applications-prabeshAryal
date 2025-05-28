@@ -14,10 +14,12 @@ namespace MusicApp.Controllers
     public class HomeController : Controller
     {
         private readonly ApiService _apiService;
+        private readonly ILogger<HomeController> _logger;
 
-        public HomeController(ApiService apiService)
+        public HomeController(ApiService apiService, ILogger<HomeController> logger)
         {
             _apiService = apiService;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index()
@@ -57,7 +59,7 @@ namespace MusicApp.Controllers
             catch (JsonException ex)
             {
                 // Log the JSON conversion error
-                Console.WriteLine($"JSON conversion error: {ex.Message}");
+                _logger.LogError(ex, "JSON conversion error: {ErrorMessage}", ex.Message);
                 // Set default values for the view model
                 viewModel.FeaturedArtist = null;
                 viewModel.LatestAlbums = new List<AlbumViewModel>();
@@ -69,7 +71,7 @@ namespace MusicApp.Controllers
             catch (Exception ex)
             {
                 // Log other errors
-                Console.WriteLine($"Error fetching home page data: {ex.Message}");
+                _logger.LogError(ex, "Error fetching home page data: {ErrorMessage}", ex.Message);
                 // Set default values for the view model
                 viewModel.FeaturedArtist = null;
                 viewModel.LatestAlbums = new List<AlbumViewModel>();
@@ -109,7 +111,7 @@ namespace MusicApp.Controllers
             catch (Exception ex)
             {
                 ViewBag.Error = "An error occurred while searching. Please try again later.";
-                Console.WriteLine($"Search error: {ex.Message}");
+                _logger.LogError(ex, "Search error: {ErrorMessage}", ex.Message);
                 return View(new SearchResultsDto());
             }
         }

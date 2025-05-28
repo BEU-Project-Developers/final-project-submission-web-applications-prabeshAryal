@@ -23,12 +23,14 @@ namespace MusicApp.Controllers
         private readonly ApplicationDbContext _context;
         private readonly AuthService _authService;
         private readonly ApiService _apiService;
+        private readonly ILogger<AccountController> _logger;
 
-        public AccountController(ApplicationDbContext context, AuthService authService, ApiService apiService)
+        public AccountController(ApplicationDbContext context, AuthService authService, ApiService apiService, ILogger<AccountController> logger)
         {
             _context = context;
             _authService = authService;
             _apiService = apiService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -57,26 +59,26 @@ namespace MusicApp.Controllers
 
             try
             {
-                Console.WriteLine($"Attempting login for email: {model.Email}");
+                _logger.LogInformation("Attempting login for email: {Email}", model.Email);
                 
                 var success = await _authService.LoginAsync(model.Email, model.Password, model.RememberMe);
 
-                Console.WriteLine($"Login attempt result: {success}");
+                _logger.LogInformation("Login attempt result: {Success}", success);
 
                 if (success)
                 {
                     // If it's an AJAX request, return JSON
                     if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
-                        Console.WriteLine("Returning AJAX success response");
+                        _logger.LogInformation("Returning AJAX success response");
                         return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
                     }
 
-                    Console.WriteLine("Redirecting to home page");
+                    _logger.LogInformation("Redirecting to home page");
                     return RedirectToAction("Index", "Home");
                 }
 
-                Console.WriteLine("Login failed - invalid credentials");
+                _logger.LogWarning("Login failed - invalid credentials for email: {Email}", model.Email);
                 // If we get here, the login failed
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
@@ -99,7 +101,7 @@ namespace MusicApp.Controllers
                     errorMessage = "Invalid email or password. Please try again.";
                 }
                 
-                Console.WriteLine($"Login failed with HTTP error: {errorMessage}");
+                _logger.LogError("Login failed with HTTP error: {ErrorMessage}", errorMessage);
                 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
@@ -112,8 +114,7 @@ namespace MusicApp.Controllers
             catch (Exception ex)
             {
                 // Log the error
-                Console.WriteLine($"Login error: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                _logger.LogError(ex, "Login error: {ErrorMessage}", ex.Message);
                 
                 // If it's an AJAX request, return JSON with error
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -235,7 +236,7 @@ namespace MusicApp.Controllers
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error fetching recently played: {ex.Message}");
+                        _logger.LogError(ex, "Error fetching recently played: {ErrorMessage}", ex.Message);
                     }
                     
                     // Get top artists
@@ -261,7 +262,7 @@ namespace MusicApp.Controllers
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error fetching top artists: {ex.Message}");
+                        _logger.LogError(ex, "Error fetching top artists: {ErrorMessage}", ex.Message);
                     }
                 }
                 else
@@ -275,7 +276,7 @@ namespace MusicApp.Controllers
             catch (Exception ex)
             {
                 // Log the error
-                Console.WriteLine($"Error retrieving profile: {ex.Message}");
+                _logger.LogError(ex, "Error retrieving profile: {ErrorMessage}", ex.Message);
                 
                 // Return a default profile to avoid null reference
                 var profile = new ProfileViewModel();
@@ -326,7 +327,7 @@ namespace MusicApp.Controllers
             catch (Exception ex)
             {
                 // Log the error
-                Console.WriteLine($"Error retrieving profile: {ex.Message}");
+                _logger.LogError(ex, "Error retrieving profile in Profile action: {ErrorMessage}", ex.Message);
                 
                 // Return a default profile to avoid null reference
                 var profile = new ProfileViewModel();

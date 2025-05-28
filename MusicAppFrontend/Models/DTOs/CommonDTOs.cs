@@ -57,8 +57,7 @@ namespace MusicApp.Models.DTOs
         public int TrackCount => TotalTracks ?? 0;
         public double TotalDuration => Duration?.TotalMinutes ?? 0.0;
     }
-    
-    public class AlbumUpdateDto
+      public class AlbumUpdateDTO
     {
         public string? Title { get; set; }
         public int? ArtistId { get; set; }
@@ -68,7 +67,7 @@ namespace MusicApp.Models.DTOs
         public DateTime? ReleaseDate { get; set; }
         public int? TotalTracks { get; set; }
         public TimeSpan? Duration { get; set; }
-    }    public class SongDto
+    }public class SongDto
     {
         public int Id { get; set; }
         public string? Title { get; set; }
@@ -84,7 +83,7 @@ namespace MusicApp.Models.DTOs
         public DateTime? ReleaseDate { get; set; }
         public int PlayCount { get; set; }
         public bool IsFavorited { get; set; } = false;
-    }    public class SongUpdateDto
+    }    public class SongUpdateDTO
     {
         public string? Title { get; set; }
         public int? ArtistId { get; set; }
@@ -160,8 +159,7 @@ namespace MusicApp.Models.DTOs
         public int Duration { get; set; }
         public string CoverImageUrl { get; set; }
     }
-    
-    public class ArtistCreateDto
+      public class ArtistCreateDTO
     {
         public string Name { get; set; } = string.Empty;
         public string? Bio { get; set; }
@@ -172,7 +170,7 @@ namespace MusicApp.Models.DTOs
         public bool? IsActive { get; set; }
     }
 
-    public class ArtistUpdateDto
+    public class ArtistUpdateDTO
     {
         public int Id { get; set; }
         public string? Name { get; set; }

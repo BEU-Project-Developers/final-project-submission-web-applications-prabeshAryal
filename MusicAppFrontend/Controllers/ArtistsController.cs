@@ -9,14 +9,15 @@ using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace MusicApp.Controllers
-{
-    public class ArtistsController : Controller
+{    public class ArtistsController : Controller
     {
         private readonly ApiService _apiService;
+        private readonly ILogger<ArtistsController> _logger;
 
-        public ArtistsController(ApiService apiService)
+        public ArtistsController(ApiService apiService, ILogger<ArtistsController> logger)
         {
             _apiService = apiService;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
@@ -35,11 +36,10 @@ namespace MusicApp.Controllers
                         TotalCount = 0
                     };
                 }
-                return View(response);
-            }
+                return View(response);            }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error retrieving artists: {ex.Message}");
+                _logger.LogError(ex, "Error retrieving artists: {ErrorMessage}", ex.Message);
                 ViewBag.ErrorMessage = "Unable to load artists from the server. Please try again later.";
                 return View(new PagedResponse<ArtistDto>
                 {
@@ -64,11 +64,10 @@ namespace MusicApp.Controllers
                 }
 
                 return View(artist);
-            }
-            catch (Exception ex)
+            }            catch (Exception ex)
             {
                 // Log the error
-                Console.WriteLine($"Error retrieving artist details: {ex.Message}");
+                _logger.LogError(ex, "Error retrieving artist details: {ErrorMessage}", ex.Message);
 
                 // Redirect to index with error message
                 TempData["ErrorMessage"] = "Unable to load artist details. Please try again later.";
@@ -138,8 +137,7 @@ namespace MusicApp.Controllers
                 return View(model);
             }
             try
-            {
-                var updateDto = new ArtistUpdateDto
+            {                var updateDto = new ArtistUpdateDTO
                 {
                     Id = id,
                     Name = model.Name,
@@ -154,8 +152,7 @@ namespace MusicApp.Controllers
                 await _apiService.PutAsync<object>($"api/Artists/{id}", updateDto);
                 TempData["SuccessMessage"] = "Artist updated successfully.";
                 return RedirectToAction("Index");
-            }
-            catch (Exception ex)
+            }            catch (Exception ex)
             {
                 // Log the detailed error, including status code if it's an HttpRequestException
                 var errorMessage = $"Error updating artist: {ex.Message}";
@@ -163,7 +160,7 @@ namespace MusicApp.Controllers
                 {
                     errorMessage += $" Status Code: {httpEx.StatusCode.Value}";
                 }
-                Console.WriteLine(errorMessage);
+                _logger.LogError(ex, "Error updating artist: {ErrorMessage}", errorMessage);
                 ViewBag.ErrorMessage = errorMessage;
                 return View(model);
             }

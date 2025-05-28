@@ -12,7 +12,9 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace MusicAppBackend.Controllers
-{    [Route("api/[controller]")]
+{
+    [Route("api/[controller]")]
+    [ApiController]
     public class ArtistsController : BaseController
     {
         private readonly IFileStorageService _fileStorage;
@@ -21,10 +23,9 @@ namespace MusicAppBackend.Controllers
             : base(context, logger)
         {
             _fileStorage = fileStorage;
-        }
-
-        // GET: api/Artists
-        [HttpGet]        public async Task<ActionResult<IEnumerable<object>>> GetArtists(
+        }        // GET: api/Artists
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<object>>> GetArtists(
             [FromQuery] string? genre,
             [FromQuery] string? country,
             [FromQuery] string? search,

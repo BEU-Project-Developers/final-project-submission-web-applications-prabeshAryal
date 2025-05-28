@@ -9,16 +9,17 @@ using System.IO;
 using System.Threading.Tasks;
 
 namespace MusicApp.Controllers
-{
-    public class PlaylistsController : Controller
+{    public class PlaylistsController : Controller
     {
         private readonly ApiService _apiService;
         private readonly FileUploadService _fileUploadService;
+        private readonly ILogger<PlaylistsController> _logger;
 
-        public PlaylistsController(ApiService apiService, FileUploadService fileUploadService)
+        public PlaylistsController(ApiService apiService, FileUploadService fileUploadService, ILogger<PlaylistsController> logger)
         {
             _apiService = apiService;
             _fileUploadService = fileUploadService;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
@@ -41,7 +42,7 @@ namespace MusicApp.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error retrieving playlists: {ex.Message}");
+                _logger.LogError(ex, "Error retrieving playlists: {ErrorMessage}", ex.Message);
                 ViewBag.ErrorMessage = "Unable to load playlists from the server. Please try again later.";
                 return View(new PagedResponse<PlaylistDto> {
                     Data = new List<PlaylistDto>(),
@@ -75,7 +76,7 @@ namespace MusicApp.Controllers
                     }
                     catch (Exception searchEx)
                     {
-                        Console.WriteLine($"Search error: {searchEx.Message}");
+                        _logger.LogError(searchEx, "Search error: {ErrorMessage}", searchEx.Message);
                         ViewBag.SearchError = "Failed to search for songs. Please try again.";
                         ViewBag.SearchResults = new List<SongDto>();
                         ViewBag.SearchQuery = search;
@@ -96,7 +97,7 @@ namespace MusicApp.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error retrieving playlist details: {ex.Message}");
+                _logger.LogError(ex, "Error retrieving playlist details: {ErrorMessage}", ex.Message);
                 TempData["ErrorMessage"] = "Unable to load playlist details. Please try again later.";
                 return RedirectToAction(nameof(Index));
             }
@@ -122,7 +123,7 @@ namespace MusicApp.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error adding song to playlist: {ex.Message}");
+                _logger.LogError(ex, "Error adding song to playlist: {ErrorMessage}", ex.Message);
                 TempData["ErrorMessage"] = "Failed to add song to playlist. Please try again.";
             }
             return RedirectToAction(nameof(Details), new { id = playlistId });
@@ -175,7 +176,7 @@ namespace MusicApp.Controllers
                 catch (Exception ex)
                 {
                     // Log the error
-                    Console.WriteLine($"Error creating playlist: {ex.Message}");
+                    _logger.LogError(ex, "Error creating playlist: {ErrorMessage}", ex.Message);
                     ModelState.AddModelError("", "An error occurred while creating the playlist. Please try again.");
                 }
             }
@@ -198,7 +199,7 @@ namespace MusicApp.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading playlist for edit: {ex.Message}");
+                _logger.LogError(ex, "Error loading playlist for edit: {ErrorMessage}", ex.Message);
                 TempData["ErrorMessage"] = "Unable to load playlist for editing. Please try again later.";
                 return RedirectToAction(nameof(Index));
             }
@@ -246,7 +247,7 @@ namespace MusicApp.Controllers
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error editing playlist: {ex.Message}");
+                    _logger.LogError(ex, "Error editing playlist: {ErrorMessage}", ex.Message);
                     ModelState.AddModelError("", "An error occurred while editing the playlist. Please try again.");
                 }
             }
@@ -268,7 +269,7 @@ namespace MusicApp.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading playlist for delete: {ex.Message}");
+                _logger.LogError(ex, "Error loading playlist for delete: {ErrorMessage}", ex.Message);
                 TempData["ErrorMessage"] = "Unable to load playlist for deletion. Please try again later.";
                 return RedirectToAction(nameof(Index));
             }
@@ -284,7 +285,7 @@ namespace MusicApp.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error deleting playlist: {ex.Message}");
+                _logger.LogError(ex, "Error deleting playlist: {ErrorMessage}", ex.Message);
                 TempData["ErrorMessage"] = "An error occurred while deleting the playlist. Please try again.";
             }
             return RedirectToAction(nameof(Index));

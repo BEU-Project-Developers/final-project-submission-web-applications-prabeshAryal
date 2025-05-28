@@ -49,10 +49,9 @@ namespace MusicApp.Controllers
                 ViewBag.ErrorMessage = $"Error loading user details: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
-        }
-
-        // POST: Users/Delete/5
-        [HttpPost, ActionName("Delete")]        [ValidateAntiForgeryToken]
+        }        // POST: Users/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             try

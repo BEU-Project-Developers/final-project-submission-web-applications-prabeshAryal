@@ -8,14 +8,15 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace MusicApp.Controllers
-{
-    public class AlbumsController : Controller
+{    public class AlbumsController : Controller
     {
         private readonly ApiService _apiService;
+        private readonly ILogger<AlbumsController> _logger;
 
-        public AlbumsController(ApiService apiService)
+        public AlbumsController(ApiService apiService, ILogger<AlbumsController> logger)
         {
             _apiService = apiService;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
@@ -34,10 +35,9 @@ namespace MusicApp.Controllers
                     };
                 }
                 return View(response);
-            }
-            catch (Exception ex)
+            }            catch (Exception ex)
             {
-                Console.WriteLine($"Error retrieving albums: {ex.Message}");
+                _logger.LogError(ex, "Error retrieving albums: {ErrorMessage}", ex.Message);
                 ViewBag.ErrorMessage = "Unable to load albums from the server. Please try again later.";
                 return View(new PagedResponse<AlbumDto> {
                     Data = new List<AlbumDto>(),
@@ -61,11 +61,10 @@ namespace MusicApp.Controllers
                 }
                 
                 return View(album);
-            }
-            catch (Exception ex)
+            }            catch (Exception ex)
             {
                 // Log the error
-                Console.WriteLine($"Error retrieving album details: {ex.Message}");
+                _logger.LogError(ex, "Error retrieving album details: {ErrorMessage}", ex.Message);
                 
                 // Redirect to index with error message
                 TempData["ErrorMessage"] = "Unable to load album details. Please try again later.";
@@ -148,33 +147,32 @@ namespace MusicApp.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, AlbumDto model)
+        [ValidateAntiForgeryToken]        public async Task<IActionResult> Edit(int id, AlbumDto model)
         {
-            Console.WriteLine($"AlbumsController.Edit POST action hit with id: {id} and model.Id: {model.Id}"); // New log
+            _logger.LogInformation("AlbumsController.Edit POST action hit with id: {Id} and model.Id: {ModelId}", id, model.Id);
             if (id != model.Id)
             {
-                Console.WriteLine("AlbumsController.Edit POST: id mismatch."); // New log
+                _logger.LogWarning("AlbumsController.Edit POST: id mismatch. Expected: {ExpectedId}, Actual: {ActualId}", id, model.Id);
                 return BadRequest();
             }
 
             if (!ModelState.IsValid)
             {
-                Console.WriteLine("AlbumsController.Edit POST: ModelState is invalid."); // New log
+                _logger.LogWarning("AlbumsController.Edit POST: ModelState is invalid");
                 // Log ModelState errors
                 foreach (var entry in ModelState.Values)
                 {
                     foreach (var error in entry.Errors)
                     {
-                        Console.WriteLine($"ModelState Error: {error.ErrorMessage}");
+                        _logger.LogError("ModelState Error: {ErrorMessage}", error.ErrorMessage);
                     }
                 }
                 return View(model);
             }
             try
             {
-                Console.WriteLine("AlbumsController.Edit POST: Attempting to update album."); // New log
-                var updateDto = new AlbumUpdateDto
+                _logger.LogInformation("AlbumsController.Edit POST: Attempting to update album with id: {Id}", id);
+                var updateDto = new AlbumUpdateDTO
                 {
                     Title = model.Title ?? string.Empty,
                     ArtistId = model.ArtistId,
@@ -189,17 +187,16 @@ namespace MusicApp.Controllers
                 await _apiService.PutAsync<object>($"api/Albums/{id}", updateDto);
                 TempData["SuccessMessage"] = "Album updated successfully.";
                 return RedirectToAction("Index");
-            }
-            catch (HttpRequestException httpEx)
+            }            catch (HttpRequestException httpEx)
             {
                 // Log the full exception details, including status code if available
-                Console.WriteLine($"HTTP request error updating album: {httpEx.Message}, Status Code: {httpEx.StatusCode}");
+                _logger.LogError(httpEx, "HTTP request error updating album: {ErrorMessage}, Status Code: {StatusCode}", httpEx.Message, httpEx.StatusCode);
                 ViewBag.ErrorMessage = $"Error updating album: {httpEx.Message}. Status Code: {httpEx.StatusCode}";
                 return View(model);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Generic error updating album: {ex.Message}");
+                _logger.LogError(ex, "Generic error updating album: {ErrorMessage}", ex.Message);
                 ViewBag.ErrorMessage = $"Error updating album: {ex.Message}";
                 return View(model);
             }
