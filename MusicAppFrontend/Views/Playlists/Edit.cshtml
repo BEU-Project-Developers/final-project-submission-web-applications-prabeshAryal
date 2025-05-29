@@ -36,17 +36,19 @@
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="CoverImageUrl" class="form-label">Cover Image</label>
+                            <label for="coverImage" class="form-label">Cover Image</label>
                             @if (!string.IsNullOrEmpty(Model.CoverImageUrl))
                             {
                                 <div class="mb-2">
                                     <img src="@Model.CoverImageUrl" alt="Current cover" class="img-thumbnail" style="max-width: 200px;" />
                                 </div>
                             }
-                            <input type="file" name="coverImage" class="form-control bg-dark text-light" accept="image/*" />
+                            <input type="file" id="coverImage" name="coverImage" class="form-control bg-dark text-light" accept="image/*" />
                             <small class="form-text text-muted">Leave empty to keep current image</small>
-                            <span asp-validation-for="CoverImageUrl" class="text-danger"></span>
                         </div>
+
+                        <!-- Hidden field to preserve the current cover image URL -->
+                        <input type="hidden" asp-for="CoverImageUrl" />
 
                         <div class="mb-3 form-check">
                             <input asp-for="IsPublic" class="form-check-input" />

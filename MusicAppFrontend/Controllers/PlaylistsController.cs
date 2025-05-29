@@ -6,6 +6,7 @@ using MusicApp.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MusicApp.Controllers
@@ -18,7 +19,7 @@ namespace MusicApp.Controllers
             : base(apiService, logger)
         {
             _fileUploadService = fileUploadService;
-        }        public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
+        }        public async Task<IActionResult> Index(int page = 1, int pageSize = 20, string view = "my")
         {
             var emptyResponse = new PagedResponse<PlaylistDto> {
                 Data = new List<PlaylistDto>(),
@@ -28,15 +29,32 @@ namespace MusicApp.Controllers
                 TotalCount = 0
             };
 
+            string endpoint;
+            if (view == "all" && User.IsInRole("Admin"))
+            {
+                endpoint = $"api/Playlists?page={page}&pageSize={pageSize}&adminViewAll=true";
+                ViewBag.CurrentView = "all";
+            }
+            else if (view == "public")
+            {
+                endpoint = $"api/Playlists?page={page}&pageSize={pageSize}";
+                ViewBag.CurrentView = "public";
+            }
+            else
+            {
+                endpoint = $"api/Playlists/user?page={page}&pageSize={pageSize}";
+                ViewBag.CurrentView = "my";
+            }
+
             var response = await SafeApiCall(
-                async () => await _apiService.GetAsync<PagedResponse<PlaylistDto>>($"api/Playlists?page={page}&pageSize={pageSize}"),
+                async () => await _apiService.GetAsync<PagedResponse<PlaylistDto>>(endpoint),
                 emptyResponse,
                 GetStandardErrorMessage("load", "playlists"),
                 "PlaylistsController.Index"
             );
 
             return View(response);
-        }        public async Task<IActionResult> Details(int id, string search = null)
+        }public async Task<IActionResult> Details(int id, string search = null)
         {
             return await SafeApiAction(
                 async () =>
@@ -107,10 +125,21 @@ namespace MusicApp.Controllers
                 ViewBag.ErrorMessage = TempData["ErrorMessage"];
             }
             return View();
-        }
-          [HttpPost]
+        }        [HttpPost]
         public async Task<IActionResult> Create(PlaylistDto model, IFormFile coverImage)
         {
+            // Remove coverImage validation errors since it's not part of the model
+            // Check for different possible keys that might be causing validation issues
+            var keysToRemove = new[] { "coverImage", "CoverImage", "CoverImageUrl" };
+            foreach (var key in keysToRemove)
+            {
+                if (ModelState.ContainsKey(key))
+                {
+                    ModelState.Remove(key);
+                    _logger.LogInformation("Removed ModelState key: {Key}", key);
+                }
+            }
+            
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -173,21 +202,49 @@ namespace MusicApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(int id, PlaylistDto model, IFormFile coverImage)
         {
-            if (id != model.Id)
+            _logger.LogInformation("Edit POST called - ID: {Id}, Model: {@Model}, CoverImage: {CoverImagePresent}", 
+                id, model, coverImage != null);
+                  if (id != model.Id)
             {
+                _logger.LogWarning("ID mismatch - URL ID: {UrlId}, Model ID: {ModelId}", id, model.Id);
                 SetErrorMessage("Invalid playlist ID.");
                 return RedirectToAction(nameof(Index));
             }
             
+            // Remove coverImage validation errors since it's not part of the model
+            // Check for different possible keys that might be causing validation issues
+            var keysToRemove = new[] { "coverImage", "CoverImage", "CoverImageUrl" };
+            foreach (var key in keysToRemove)
+            {
+                if (ModelState.ContainsKey(key))
+                {
+                    ModelState.Remove(key);
+                    _logger.LogInformation("Removed ModelState key: {Key}", key);
+                }            }
+            
+            // Debug: Log all ModelState keys before validation
+            _logger.LogInformation("ModelState keys before validation: {Keys}", 
+                string.Join(", ", ModelState.Keys));
+            
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("ModelState is invalid: {@ModelStateErrors}", 
+                    ModelState.Where(x => x.Value.Errors.Count > 0)
+                    .ToDictionary(x => x.Key, x => x.Value.Errors.Select(e => e.ErrorMessage)));
                 return View(model);
             }
 
             return await SafeApiAction(
                 async () =>
-                {
-                    var result = await _apiService.PutAsync<PlaylistDto>($"api/Playlists/{id}", model);
+                {                    // Create the update DTO with only the necessary fields
+                    var updateDto = new
+                    {
+                        Name = model.Name,
+                        Description = model.Description,
+                        IsPublic = model.IsPublic
+                    };                    _logger.LogInformation("Attempting to update playlist {Id} with data: {@UpdateDto}", id, updateDto);
+                    var result = await _apiService.PutAsync<PlaylistDto>($"api/Playlists/{id}", updateDto);
+                    _logger.LogInformation("API call result: {@Result}", result);
                     if (result != null)
                     {
                         // Handle cover image upload if file is provided
@@ -201,7 +258,12 @@ namespace MusicApp.Controllers
                             if (uploadResult.Success)
                             {
                                 result.CoverImageUrl = $"https://localhost:5117/api/files/playlists/{fileName}";
-                                await _apiService.PutAsync<PlaylistDto>($"api/Playlists/{id}", result);
+                                await _apiService.PutAsync<PlaylistDto>($"api/Playlists/{id}", new
+                                {
+                                    Name = result.Name,
+                                    Description = result.Description,
+                                    IsPublic = result.IsPublic
+                                });
                             }
                         }
                         SetSuccessMessage("Playlist updated successfully.");
@@ -217,7 +279,7 @@ namespace MusicApp.Controllers
                 GetStandardErrorMessage("update", "playlist"),
                 $"PlaylistsController.Edit POST for ID {id}"
             );
-        }        // GET: Playlists/Delete/5
+        }// GET: Playlists/Delete/5
         public async Task<IActionResult> Delete(int id)
         {
             return await SafeApiAction(
@@ -253,6 +315,25 @@ namespace MusicApp.Controllers
                 false,
                 GetStandardErrorMessage("delete", "playlist"),
                 $"PlaylistsController.DeleteConfirmed for ID {id}"
+            );
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: Playlists/Copy/5
+        [HttpPost]
+        public async Task<IActionResult> CopyPlaylist(int id)
+        {
+            await SafeApiCall(
+                async () =>
+                {
+                    var result = await _apiService.PostAsync<object>($"api/Playlists/{id}/copy", null);
+                    SetSuccessMessage("Playlist copied to your library successfully.");
+                    return true;
+                },
+                false,
+                "Failed to copy playlist. You may not have permission to copy this playlist.",
+                $"PlaylistsController.CopyPlaylist for ID {id}"
             );
 
             return RedirectToAction(nameof(Index));

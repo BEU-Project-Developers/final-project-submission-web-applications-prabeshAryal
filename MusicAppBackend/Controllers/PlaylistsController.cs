@@ -23,24 +23,27 @@ namespace MusicAppBackend.Controllers
             : base(context, logger)
         {
             _fileStorage = fileStorage;
-        }
-
-        // GET: api/Playlists
+        }        // GET: api/Playlists
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetPlaylists(
             [FromQuery] string? search,
             [FromQuery] string? sortBy,
             [FromQuery] bool desc = false,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20)
+            [FromQuery] int pageSize = 20,
+            [FromQuery] bool adminViewAll = false)
         {
-            // Get only public playlists (unless user is authenticated)
+            // Get playlists based on user authentication and admin status
             IQueryable<Playlist> query = _context.Playlists
                 .Include(p => p.User);
 
             if (!User.Identity!.IsAuthenticated)
             {
                 query = query.Where(p => p.IsPublic);
+            }
+            else if (adminViewAll && User.IsInRole("Admin"))
+            {
+                // Admin viewing all playlists - no filtering
             }
             else
             {
@@ -112,22 +115,33 @@ namespace MusicAppBackend.Controllers
                 PageSize = pageSize,
                 Data = playlists
             });
-        }
-
-        // GET: api/Playlists/user
+        }        // GET: api/Playlists/user
         [HttpGet("user")]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<object>>> GetUserPlaylists()
+        public async Task<ActionResult<object>> GetUserPlaylists(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
-            var playlists = await _context.Playlists
+            var query = _context.Playlists
                 .Where(p => p.UserId == userId)
+                .Include(p => p.User);
+
+            // Apply pagination
+            var totalCount = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            var playlists = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(p => new
                 {
                     p.Id,
                     p.Name,
                     p.Description,
+                    p.UserId,
+                    CreatorUsername = p.User.Username,
                     CoverImageUrl = !string.IsNullOrEmpty(p.CoverImageUrl) ? 
                         _fileStorage.GetFileUrl(p.CoverImageUrl) : null,
                     p.IsPublic,
@@ -138,7 +152,14 @@ namespace MusicAppBackend.Controllers
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
 
-            return playlists;
+            return Ok(new
+            {
+                TotalCount = totalCount,
+                TotalPages = totalPages,
+                CurrentPage = page,
+                PageSize = pageSize,
+                Data = playlists
+            });
         }
 
         // GET: api/Playlists/5
@@ -232,14 +253,17 @@ namespace MusicAppBackend.Controllers
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetPlaylist), new { id = playlist.Id }, playlist);
-        }
-
-        // PUT: api/Playlists/5
+        }        // PUT: api/Playlists/5
         [HttpPut("{id}")]
         [Authorize]
         public async Task<IActionResult> UpdatePlaylist(int id, [FromBody] PlaylistUpdateDTO playlistDto)
         {
-            var playlist = await _context.Playlists.FindAsync(id);
+            _logger.LogInformation("UpdatePlaylist called with id: {Id}, playlistDto: {@PlaylistDto}", id, playlistDto);
+            
+            var playlist = await _context.Playlists
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.Id == id);
+            
             if (playlist == null)
             {
                 return NotFound();
@@ -254,11 +278,11 @@ namespace MusicAppBackend.Controllers
             playlist.Name = playlistDto.Name ?? playlist.Name;
             playlist.Description = playlistDto.Description ?? playlist.Description;
             playlist.IsPublic = playlistDto.IsPublic ?? playlist.IsPublic;
-            playlist.UpdatedAt = DateTime.UtcNow;
-
-            try
+            playlist.UpdatedAt = DateTime.UtcNow;            try
             {
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("Playlist {Id} updated successfully. New name: {Name}, Description: {Description}, IsPublic: {IsPublic}", 
+                    id, playlist.Name, playlist.Description, playlist.IsPublic);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -272,7 +296,23 @@ namespace MusicAppBackend.Controllers
                 }
             }
 
-            return NoContent();
+            // Return the updated playlist data
+            var response = new
+            {
+                playlist.Id,
+                playlist.Name,
+                playlist.Description,
+                playlist.UserId,
+                Username = playlist.User.Username,
+                CoverImageUrl = !string.IsNullOrEmpty(playlist.CoverImageUrl) ? 
+                    _fileStorage.GetFileUrl(playlist.CoverImageUrl) : null,
+                playlist.IsPublic,
+                playlist.CreatedAt,
+                playlist.UpdatedAt,
+                SongCount = await _context.PlaylistSongs.CountAsync(ps => ps.PlaylistId == id)
+            };
+
+            return Ok(response);
         }
 
         // DELETE: api/Playlists/5
@@ -474,6 +514,65 @@ namespace MusicAppBackend.Controllers
             return Ok(new { coverImageUrl = _fileStorage.GetFileUrl(filePath) });
         }
 
+        // POST: api/Playlists/5/copy
+        [HttpPost("{id}/copy")]
+        [Authorize]
+        public async Task<ActionResult<object>> CopyPlaylist(int id)
+        {
+            var originalPlaylist = await _context.Playlists
+                .Include(p => p.PlaylistSongs)
+                .ThenInclude(ps => ps.Song)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (originalPlaylist == null)
+            {
+                return NotFound("Playlist not found");
+            }
+
+            // Check if the playlist is public or user is admin/owner
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            if (!originalPlaylist.IsPublic && originalPlaylist.UserId != userId && !User.IsInRole("Admin"))
+            {
+                return Forbid("This playlist is not public and you don't have permission to copy it");
+            }
+
+            // Create a copy of the playlist
+            var copiedPlaylist = new Playlist
+            {
+                Name = $"{originalPlaylist.Name} (Copy)",
+                Description = originalPlaylist.Description,
+                UserId = userId,
+                IsPublic = false, // Copied playlists default to private
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                CoverImageUrl = originalPlaylist.CoverImageUrl // Keep the same cover image
+            };
+
+            _context.Playlists.Add(copiedPlaylist);
+            await _context.SaveChangesAsync();
+
+            // Copy all songs from the original playlist
+            foreach (var originalSong in originalPlaylist.PlaylistSongs.OrderBy(ps => ps.Order))
+            {
+                _context.PlaylistSongs.Add(new PlaylistSong
+                {
+                    PlaylistId = copiedPlaylist.Id,
+                    SongId = originalSong.SongId,
+                    Order = originalSong.Order,
+                    AddedAt = DateTime.UtcNow
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                id = copiedPlaylist.Id,
+                name = copiedPlaylist.Name,
+                message = "Playlist copied successfully"
+            });
+        }
+
         private async Task<bool> PlaylistExists(int id)
         {
             return await _context.Playlists.AnyAsync(p => p.Id == id);
@@ -509,4 +608,4 @@ namespace MusicAppBackend.Controllers
         public int SongId { get; set; }
         public int Order { get; set; }
     }
-} 
+}
