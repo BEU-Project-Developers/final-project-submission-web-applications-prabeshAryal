@@ -303,16 +303,65 @@ namespace MusicAppBackend.Controllers
                 playlist.Name,
                 playlist.Description,
                 playlist.UserId,
-                Username = playlist.User.Username,
+                CreatorUsername = playlist.User.Username,
                 CoverImageUrl = !string.IsNullOrEmpty(playlist.CoverImageUrl) ? 
                     _fileStorage.GetFileUrl(playlist.CoverImageUrl) : null,
                 playlist.IsPublic,
                 playlist.CreatedAt,
-                playlist.UpdatedAt,
-                SongCount = await _context.PlaylistSongs.CountAsync(ps => ps.PlaylistId == id)
+                playlist.UpdatedAt
             };
 
             return Ok(response);
+        }        // POST: api/Playlists/{playlistId}/add-song
+        [HttpPost("{playlistId}/add-song")]
+        [Authorize]
+        public async Task<IActionResult> AddSongToPlaylist(int playlistId, [FromBody] AddSongToPlaylistDTO dto)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            // int cannot be null, so this check is unnecessary
+            
+            var playlist = await _context.Playlists
+                .Include(p => p.PlaylistSongs)
+                .FirstOrDefaultAsync(p => p.Id == playlistId);
+
+            if (playlist == null)
+            {
+                return NotFound("Playlist not found.");
+            }
+
+            if (playlist.UserId != userId && !User.IsInRole("Admin"))
+            {
+                return Forbid("You are not authorized to modify this playlist.");
+            }
+
+            var song = await _context.Songs.FindAsync(dto.SongId);
+            if (song == null)
+            {
+                return NotFound("Song not found.");
+            }
+
+            var existingPlaylistSong = await _context.PlaylistSongs
+                .FirstOrDefaultAsync(ps => ps.PlaylistId == playlistId && ps.SongId == dto.SongId);
+
+            if (existingPlaylistSong != null)
+            {
+                return Ok("Song already in playlist.");
+            }
+
+            var newOrder = playlist.PlaylistSongs.Any() ? playlist.PlaylistSongs.Max(ps => ps.Order) + 1 : 1;
+
+            var playlistSong = new PlaylistSong
+            {
+                PlaylistId = playlistId,
+                SongId = dto.SongId,
+                Order = newOrder,
+                AddedAt = DateTime.UtcNow
+            };
+
+            _context.PlaylistSongs.Add(playlistSong);
+            await _context.SaveChangesAsync();
+
+            return Ok("Song added to playlist successfully.");
         }
 
         // DELETE: api/Playlists/5
@@ -607,5 +656,10 @@ namespace MusicAppBackend.Controllers
     {
         public int SongId { get; set; }
         public int Order { get; set; }
+    }
+
+    public class AddSongToPlaylistDTO
+    {
+        public int SongId { get; set; }
     }
 }

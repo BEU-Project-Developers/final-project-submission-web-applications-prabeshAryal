@@ -264,10 +264,10 @@
                         }))'>
                     <i class="bi bi-play-fill"></i> Play
                 </button>
-                <button class="btn btn-action">
+                <button class="btn btn-action" id="likeButton" data-song-id="@Model.Id">
                     <i class="bi bi-heart"></i> Like
                 </button>
-                <button class="btn btn-action">
+                <button class="btn btn-action" id="addToPlaylistButton" data-song-id="@Model.Id">
                     <i class="bi bi-plus"></i> Add to Playlist
                 </button>
                 <button class="btn btn-action">
@@ -294,18 +294,28 @@
     <h2 class="section-title">Similar Songs</h2>
     
     <div class="related-tracks">
-        @for (int i = 0; i < 5; i++)
+        @{
+            var similarSongs = ViewBag.SimilarSongs as List<MusicApp.Models.DTOs.SongDto> ?? new List<MusicApp.Models.DTOs.SongDto>();
+        }
+        
+        @if (similarSongs.Any())
         {
-            <div class="track-item">
-                <img src="@(i % 2 == 0 ? Model.CoverImageUrl ?? GetRandomImageUrl(300, 300) : GetRandomImageUrl(300, 300))" 
-                    alt="Related track" class="track-cover"
-                    onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Song';">
-                <div class="track-info">
-                    <div class="track-title">Similar Song @(i+1)</div>
-                    <div class="track-artist">@Model.ArtistName</div>
-                </div>
-                <div class="track-duration">3:45</div>
-            </div>
+            foreach (var song in similarSongs)
+            {
+                <a asp-controller="Songs" asp-action="Details" asp-route-id="@song.Id" class="track-item">
+                    <img src="@(song.CoverImageUrl ?? GetRandomImageUrl(40, 40))" alt="@song.Title cover" class="track-cover"
+                         onerror="this.src='https://placehold.co/40x40/212121/AAAAAA?text=Song';">
+                    <div class="track-info">
+                        <div class="track-title">@song.Title</div>
+                        <div class="track-artist">@song.ArtistName</div>
+                    </div>
+                    <div class="track-duration">@(song.Duration?.ToString(@"m\:ss") ?? "--:--")</div>
+                </a>
+            }
+        }
+        else
+        {
+            <p class="text-center p-3">No similar songs found.</p>
         }
     </div>
 </div>
@@ -315,3 +325,63 @@
         <i class="bi bi-arrow-left"></i> Back to Songs
     </a>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const likeButton = document.getElementById('likeButton');
+            if (likeButton) {
+                likeButton.addEventListener('click', function () {
+                    const songId = this.dataset.songId;
+                    fetch(`/api/Songs/${songId}/like`, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': getAntiForgeryToken()
+                        }
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            alert('Song liked!');
+                            // Optionally update UI to show liked state
+                            likeButton.classList.add('liked');
+                            likeButton.innerHTML = '<i class="bi bi-heart-fill"></i> Liked';
+                        } else {
+                            response.text().then(text => alert('Failed to like song: ' + text));
+                        }
+                    })
+                    .catch(error => alert('Error liking song: ' + error));
+                });
+            }
+
+            const addToPlaylistButton = document.getElementById('addToPlaylistButton');
+            if (addToPlaylistButton) {
+                addToPlaylistButton.addEventListener('click', function() {
+                    const songId = this.dataset.songId;
+                    const playlistId = prompt('Enter Playlist ID to add this song to:');
+                    if (playlistId) {
+                        fetch(`/api/Playlists/${playlistId}/songs`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'RequestVerificationToken': getAntiForgeryToken()
+                            },
+                            body: JSON.stringify({ songId: parseInt(songId) })
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                alert('Song added to playlist!');
+                            } else {
+                                response.text().then(text => alert('Failed to add song to playlist: ' + text));
+                            }
+                        })
+                        .catch(error => alert('Error adding to playlist: ' + error));
+                    }
+                });
+            }
+        });
+        function getAntiForgeryToken() {
+            const tokenField = document.querySelector('input[name="__RequestVerificationToken"]');
+            return tokenField ? tokenField.value : '';
+        }
+    </script>
+}

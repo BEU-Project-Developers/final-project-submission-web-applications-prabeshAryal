@@ -34,9 +34,7 @@ namespace MusicApp.Controllers
             );
 
             return View(response);
-        }
-
-        public async Task<IActionResult> Details(int id)
+        }        public async Task<IActionResult> Details(int id)
         {
             return await SafeApiAction(
                 async () =>
@@ -47,6 +45,16 @@ namespace MusicApp.Controllers
                     {
                         return NotFound();
                     }
+                    
+                    // Fetch similar songs
+                    var similarSongs = await SafeApiCall(
+                        async () => await _apiService.GetAsync<List<SongDto>>($"api/Songs/{id}/similar?limit=5"),
+                        new List<SongDto>(),
+                        "Unable to load similar songs",
+                        $"SongsController.Details - Loading similar songs for ID {id}"
+                    );
+                    
+                    ViewBag.SimilarSongs = similarSongs;
                     
                     return View(song);
                 },

@@ -153,12 +153,11 @@ namespace MusicApp.Controllers
                     {
                         // Handle cover image upload if file is provided
                         if (coverImage != null && coverImage.Length > 0)
-                        {
-                            var fileName = !string.IsNullOrEmpty(result.Name) 
+                        {                            var fileName = !string.IsNullOrEmpty(result.Name) 
                                 ? $"{result.Name.Replace(" ", "-").ToLower()}.{Path.GetExtension(coverImage.FileName).TrimStart('.')}"
                                 : $"playlist-{result.Id}.{Path.GetExtension(coverImage.FileName).TrimStart('.')}";
                             
-                            var uploadResult = await _fileUploadService.UploadPlaylistCoverAsync(coverImage, fileName, result.Name);
+                            var uploadResult = await _fileUploadService.UploadPlaylistCoverAsync(coverImage, fileName, result.Name ?? "");
                             if (uploadResult.Success)
                             {
                                 result.CoverImageUrl = $"https://localhost:5117/api/files/playlists/{fileName}";
@@ -249,12 +248,11 @@ namespace MusicApp.Controllers
                     {
                         // Handle cover image upload if file is provided
                         if (coverImage != null && coverImage.Length > 0)
-                        {
-                            var fileName = !string.IsNullOrEmpty(result.Name) 
+                        {                            var fileName = !string.IsNullOrEmpty(result.Name) 
                                 ? $"{result.Name.Replace(" ", "-").ToLower()}.{Path.GetExtension(coverImage.FileName).TrimStart('.')}"
                                 : $"playlist-{id}.{Path.GetExtension(coverImage.FileName).TrimStart('.')}";
                             
-                            var uploadResult = await _fileUploadService.UploadPlaylistCoverAsync(coverImage, fileName, result.Name);
+                            var uploadResult = await _fileUploadService.UploadPlaylistCoverAsync(coverImage, fileName, result.Name ?? "");
                             if (uploadResult.Success)
                             {
                                 result.CoverImageUrl = $"https://localhost:5117/api/files/playlists/{fileName}";
@@ -324,10 +322,9 @@ namespace MusicApp.Controllers
         [HttpPost]
         public async Task<IActionResult> CopyPlaylist(int id)
         {
-            await SafeApiCall(
-                async () =>
+            await SafeApiCall(                async () =>
                 {
-                    var result = await _apiService.PostAsync<object>($"api/Playlists/{id}/copy", null);
+                    var result = await _apiService.PostAsync<object>($"api/Playlists/{id}/copy", new {});
                     SetSuccessMessage("Playlist copied to your library successfully.");
                     return true;
                 },
@@ -338,5 +335,29 @@ namespace MusicApp.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddAlbumToPlaylist(string playlistId, [FromBody] AlbumSongsDto albumSongs)
+        {
+            if (string.IsNullOrEmpty(playlistId) || albumSongs == null || albumSongs.SongIds == null || !albumSongs.SongIds.Any())
+            {
+                return BadRequest("Invalid request data.");
+            }            foreach (var songId in albumSongs.SongIds)
+            {
+                var response = await _apiService.PostAsync<object>($"Playlists/{playlistId}/add-song", new AddSongToPlaylistDto { SongId = songId });
+                if (response == null)
+                {
+                    // If the response is null, there was likely an error
+                    return BadRequest("Failed to add song to playlist");
+                }
+            }
+            return Ok("All album songs added to playlist!");
+        }
+    }
+
+    public class AlbumSongsDto
+    {
+        public List<string> SongIds { get; set; }
     }
 }

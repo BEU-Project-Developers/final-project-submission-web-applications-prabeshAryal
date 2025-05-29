@@ -246,10 +246,10 @@
                     title="Play all songs from this album">
                 <i class="bi bi-play-fill"></i> Play All
             </button>
-            <button class="btn btn-action">
+            <button class="btn btn-action" id="albumLikeButton" data-album-id="@Model.Id">
                 <i class="bi bi-heart"></i> Like
             </button>
-            <button class="btn btn-action">
+            <button class="btn btn-action" id="albumAddToPlaylistButton" data-album-id="@Model.Id">
                 <i class="bi bi-plus"></i> Add to Playlist
             </button>
         </div>
@@ -316,4 +316,141 @@
     <a asp-action="Index" class="btn btn-action">
         <i class="bi bi-arrow-left"></i> Back to Albums
     </a>
-</div> 
+</div>
+
+<!-- Playlist Selection Modal -->
+<div id="playlistModal" class="modal" tabindex="-1" style="display:none; position:fixed; z-index:1050; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); align-items:center; justify-content:center;">
+    <div class="modal-dialog" style="background:#222; border-radius:12px; max-width:400px; width:90vw; margin:auto; padding:1.5rem; box-shadow:0 2px 16px #0008;">
+        <h5 style="color:#fff; margin-bottom:1rem;">Select Playlist</h5>
+        <div id="playlistList" style="max-height:250px; overflow-y:auto; margin-bottom:1rem;"></div>
+        <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
+            <button id="playlistModalCancel" class="btn btn-action">Cancel</button>
+            <button id="playlistModalConfirm" class="btn btn-play" disabled>Add</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const backendBaseUrl = 'http://localhost:5117';
+            const albumLikeButton = document.getElementById('albumLikeButton');
+            if (albumLikeButton) {
+                albumLikeButton.addEventListener('click', function () {
+                    const albumId = this.dataset.albumId;
+                    fetch(`@Url.Action("Like", "Albums")/${albumId}`, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': getAntiForgeryToken(),
+                            // 'Content-Type': 'application/json' // Add if your controller expects JSON
+                        },
+                        // body: JSON.stringify({}) // Add if your controller expects a body
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.text();
+                        } else {
+                            return response.text().then(text => { throw new Error(text); });
+                        }
+                    })
+                    .then(message => {
+                        alert(message || 'Album liked!');
+                        this.innerHTML = '<i class="bi bi-heart-fill"></i> Liked';
+                        this.classList.add('liked');
+                    })
+                    .catch(error => {
+                        alert('Error liking album: ' + error.message);
+                    });
+                });
+            }
+            const albumAddToPlaylistButton = document.getElementById('albumAddToPlaylistButton');
+            const playlistModal = document.getElementById('playlistModal');
+            const playlistList = document.getElementById('playlistList');
+            const playlistModalCancel = document.getElementById('playlistModalCancel');
+            const playlistModalConfirm = document.getElementById('playlistModalConfirm');
+            let selectedPlaylistId = null;
+            if (albumAddToPlaylistButton) {
+                albumAddToPlaylistButton.addEventListener('click', function () {
+                    // Show modal and fetch playlists
+                    playlistModal.style.display = 'flex';
+                    playlistList.innerHTML = '<div style="color:#aaa;">Loading playlists...</div>';
+                    playlistModalConfirm.disabled = true;
+                    selectedPlaylistId = null;
+                    fetch(`${backendBaseUrl}/api/Playlists/user`)
+                        .then(res => res.json())
+                        .then(result => {
+                            const playlists = result.Data || result; // handle paged or array
+                            if (!playlists.length) {
+                                playlistList.innerHTML = '<div style="color:#aaa;">No playlists found.</div>';
+                                return;
+                            }
+                            playlistList.innerHTML = playlists.map(p =>
+                                `<div class="playlist-option" data-id="${p.id}" tabindex="0" style="padding:0.5rem 1rem; border-radius:8px; margin-bottom:0.25rem; background:#333; color:#fff; cursor:pointer; outline:none;">`
+                                + `<i class='bi bi-music-note-list'></i> ${p.name}` +
+                                `</div>`
+                            ).join('');
+                            Array.from(playlistList.children).forEach(opt => {
+                                opt.addEventListener('click', function () {
+                                    Array.from(playlistList.children).forEach(o => o.style.background = '#333');
+                                    this.style.background = '#444';
+                                    selectedPlaylistId = this.dataset.id;
+                                    playlistModalConfirm.disabled = false;
+                                });
+                                opt.addEventListener('keydown', function(e) {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        this.click();
+                                    }
+                                });
+                            });
+                        })
+                        .catch(() => {
+                            playlistList.innerHTML = '<div style="color:#faa;">Failed to load playlists.</div>';
+                        });
+                });
+            }
+            playlistModalCancel.addEventListener('click', function () {
+                playlistModal.style.display = 'none';
+            });
+            playlistModalConfirm.addEventListener('click', function () {
+                if (!selectedPlaylistId) return;
+                playlistModalConfirm.disabled = true;
+                const songIds = @Html.Raw(Json.Serialize(Model.Songs.Select(s => s.Id).ToList()));
+
+                fetch('@Url.Action("AddAlbumToPlaylist", "Playlists")?playlistId=' + selectedPlaylistId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': getAntiForgeryToken()
+                    },
+                    body: JSON.stringify({ songIds: songIds })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.text(); // Or response.json() if your controller returns JSON
+                    } else {
+                        return response.text().then(text => { throw new Error(text); });
+                    }
+                })
+                .then(message => {
+                    alert(message || 'All album songs added to playlist!');
+                    playlistModal.style.display = 'none';
+                })
+                .catch(error => {
+                    alert('Error adding album songs to playlist: ' + error.message);
+                    playlistModal.style.display = 'none';
+                })
+                .finally(() => {
+                    playlistModalConfirm.disabled = false; // Re-enable button
+                });
+            });
+            // Close modal on outside click
+            playlistModal.addEventListener('click', function(e) {
+                if (e.target === playlistModal) playlistModal.style.display = 'none';
+            });
+        });
+        function getAntiForgeryToken() {
+            const tokenField = document.querySelector('input[name="__RequestVerificationToken"]');
+            return tokenField ? tokenField.value : '';
+        }
+    </script>
+}

@@ -81,15 +81,21 @@
         position: relative;
         border-radius: 12px;
         overflow: hidden;
-        height: 100%;
-        min-height: 250px;
+        width: 100%;
+        aspect-ratio: 16 / 5;
+        min-height: 200px;
+        max-height: 320px;
         background-color: var(--ytm-bg-tertiary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .featured-artist-banner img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        object-position: center;
         display: block;
     }
 
@@ -471,7 +477,9 @@
     </div>
 
     <!-- Recently Added Songs -->
-    <h3 class="section-header">Recently Added</h3>    <div class="song-list">        @foreach (var song in Model.RecentSongs)
+    <h3 class="section-header">Recently Added</h3>
+    <div class="song-list">
+        @foreach (var song in Model.RecentSongs)
         {
             <div class="song-item">
                 <button class="play-btn" 
@@ -501,6 +509,8 @@
                     <div class="song-artist">@song.ArtistName</div>
                 </div>
                 <div class="song-duration">@song.Duration</div>
+                <button class="btn btn-action like-btn" data-song-id="@song.Id" title="Like"><i class="bi bi-heart"></i></button>
+                <button class="btn btn-action add-to-playlist-btn" data-song-id="@song.Id" title="Add to Playlist"><i class="bi bi-plus"></i></button>
             </div>
         }
     </div>
@@ -508,6 +518,54 @@
 
 @section Scripts {
     <script>
-        // Add any JavaScript for interactivity here
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.like-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const songId = this.dataset.songId;
+                    fetch(`/api/Songs/${songId}/like`, {
+                        method: 'POST',
+                        headers: { 'RequestVerificationToken': getAntiForgeryToken() }
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            alert('Song liked!');
+                            this.innerHTML = '<i class="bi bi-heart-fill"></i>';
+                            this.classList.add('liked');
+                        } else {
+                            response.text().then(text => alert('Failed to like song: ' + text));
+                        }
+                    })
+                    .catch(error => alert('Error liking song: ' + error));
+                });
+            });
+            document.querySelectorAll('.add-to-playlist-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const songId = this.dataset.songId;
+                    const playlistId = prompt('Enter Playlist ID to add this song to:');
+                    if (playlistId) {
+                        fetch(`/api/Playlists/${playlistId}/songs`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'RequestVerificationToken': getAntiForgeryToken()
+                            },
+                            body: JSON.stringify({ songId: parseInt(songId) })
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                alert('Song added to playlist!');
+                            } else {
+                                response.text().then(text => alert('Failed to add song to playlist: ' + text));
+                            }
+                        })
+                        .catch(error => alert('Error adding to playlist: ' + error));
+                    }
+                });
+            });
+        });
+        function getAntiForgeryToken() {
+            const tokenField = document.querySelector('input[name="__RequestVerificationToken"]');
+            return tokenField ? tokenField.value : '';
+        }
     </script>
 }

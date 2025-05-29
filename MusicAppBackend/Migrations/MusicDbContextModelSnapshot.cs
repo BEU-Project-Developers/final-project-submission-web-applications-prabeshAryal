@@ -74,6 +74,32 @@ namespace MusicAppBackend.Migrations
                     b.ToTable("Albums");
                 });
 
+            modelBuilder.Entity("MusicAppBackend.Models.AlbumLike", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AlbumId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LikedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AlbumId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AlbumLikes");
+                });
+
             modelBuilder.Entity("MusicAppBackend.Models.Artist", b =>
                 {
                     b.Property<int>("Id")
@@ -391,6 +417,35 @@ namespace MusicAppBackend.Migrations
                     b.ToTable("UserRoles");
                 });
 
+            modelBuilder.Entity("MusicAppBackend.Models.UserSongPlay", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<TimeSpan?>("Duration")
+                        .HasColumnType("time");
+
+                    b.Property<DateTime>("PlayedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SongId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SongId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserSongPlays");
+                });
+
             modelBuilder.Entity("MusicAppBackend.Models.Album", b =>
                 {
                     b.HasOne("MusicAppBackend.Models.Artist", "Artist")
@@ -399,6 +454,25 @@ namespace MusicAppBackend.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Artist");
+                });
+
+            modelBuilder.Entity("MusicAppBackend.Models.AlbumLike", b =>
+                {
+                    b.HasOne("MusicAppBackend.Models.Album", "Album")
+                        .WithMany()
+                        .HasForeignKey("AlbumId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MusicAppBackend.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Album");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MusicAppBackend.Models.Playlist", b =>
@@ -512,6 +586,25 @@ namespace MusicAppBackend.Migrations
                         .IsRequired();
 
                     b.Navigation("Role");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MusicAppBackend.Models.UserSongPlay", b =>
+                {
+                    b.HasOne("MusicAppBackend.Models.Song", "Song")
+                        .WithMany()
+                        .HasForeignKey("SongId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MusicAppBackend.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Song");
 
                     b.Navigation("User");
                 });

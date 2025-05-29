@@ -1,7 +1,7 @@
-@model MusicApp.Models.DTOs.PlaylistDetailDto
+@model MusicApp.Models.DTOs.P                <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, var(--ytm-bg-tertiary) 0%, var(--ytm-bg-secondary) 50%, var(--ytm-bg-primary) 100%); color: var(--ytm-text-primary); border-bottom: 3px solid var(--ytm-accent-red); box-shadow: 0 2px 8px rgba(0,0,0,0.1);">/aylistDetailDto
 
 @{
-    ViewData["Title"] = Model?.Name ?? "Playlist Details";
+    ViewData["Title"] = Model.Name;
     Random randomGen = new Random();
     string GetRandomImageUrl(int width, int height)
     {
@@ -26,20 +26,18 @@
                     @ViewBag.ErrorMessage
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-            }
-
-            <div class="card shadow" style="background-color: var(--ytm-bg-secondary); color: var(--ytm-text-primary);">
-                <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, var(--ytm-bg-tertiary) 0%, var(--ytm-bg-secondary) 50%, var(--ytm-bg-primary) 100%); color: var(--ytm-text-primary); border-bottom: 3px solid var(--ytm-accent-red); box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            }            <div class="card shadow" style="background-color: var(--ytm-bg-secondary); color: var(--ytm-text-primary);">
+                <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, var(--ytm-bg-tertiary) 0%, var(--ytm-bg-secondary) 100%); color: var(--ytm-text-primary); border-bottom: 2px solid var(--ytm-accent-red);">
                     <div class="d-flex align-items-center">
                         <img src="@(string.IsNullOrEmpty(Model.CoverImageUrl) ? GetRandomImageUrl(300, 300) : Model.CoverImageUrl)" 
                              alt="@Model.Name" class="img-thumbnail me-3" 
                              style="max-width: 100px; background: var(--ytm-bg-tertiary); border: 2px solid var(--ytm-accent-red);"
                              onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Playlist';" />
                         <div>
-                            <h3 class="mb-1" style="color: var(--ytm-text-primary); font-weight: 600;">@Model.Name</h3>
+                            <h3 class="mb-1" style="color: var(--ytm-text-primary);">@Model.Name</h3>
                             <div class="mb-1" style="color: var(--ytm-text-secondary); opacity: 0.9;">@Model.Description</div>
                             <div class="small">
-                                <span class="me-2">By <b style="color: var(--ytm-text-primary);">@Model.Username</b></span>
+                                <span class="me-2">By <b>@Model.Username</b></span>
                                 <span class="me-2">@Model.SongCount songs</span>
                                 <span class="me-2">@Model.CreatedAt.ToString("MMM d, yyyy")</span>
                                 <span class="badge @(Model.IsPublic ? "bg-success" : "bg-secondary")">
@@ -47,9 +45,7 @@
                                 </span>
                             </div>
                         </div>
-                    </div>
-
-                    <div>
+                    </div>                    <div>
                         @{
                             var currentUserId = Context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                             var isOwner = currentUserId != null && int.Parse(currentUserId) == Model.UserId;
@@ -74,37 +70,34 @@
                         }
                     </div>
                 </div>
-
                 <div class="card-body">
-                    <h5 class="mb-3" style="color: var(--ytm-text-primary);">Songs in this Playlist</h5>
+                    <h5 class="mb-3">Songs in this Playlist</h5>
                     @if (Model.Songs != null && Model.Songs.Any())
                     {
                         <div class="table-responsive">
                             <table class="table table-hover" style="background: var(--ytm-bg-primary); color: var(--ytm-text-primary);">
                                 <thead>
-                                    <tr style="border-bottom: 1px solid var(--ytm-accent-red);">
-                                        <th style="color: var(--ytm-text-secondary);"></th>
-                                        <th style="color: var(--ytm-text-secondary);">Title</th>
-                                        <th style="color: var(--ytm-text-secondary);">Artist</th>
-                                        <th style="color: var(--ytm-text-secondary);">Album</th>
-                                        <th style="color: var(--ytm-text-secondary);">Duration</th>
-                                        <th style="color: var(--ytm-text-secondary);"></th>
+                                    <tr>
+                                        <th></th>
+                                        <th>Title</th>
+                                        <th>Artist</th>
+                                        <th>Album</th>
+                                        <th>Duration</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    @foreach (var song in Model.Songs.OrderBy(s => s.Order))
+                                <tbody>                                    @foreach (var song in Model.Songs.OrderBy(s => s.Order))
                                     {
-                                        <tr style="border-bottom: 1px solid var(--ytm-bg-tertiary);">
+                                        <tr>
                                             <td><img src="@(song.CoverImageUrl ?? GetRandomImageUrl(300, 300))" 
                                                 alt="cover" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"
                                                 onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Song';" /></td>
-                                            <td style="color: var(--ytm-text-primary); font-weight: 500;">@song.Title</td>
-                                            <td style="color: var(--ytm-text-secondary);">@song.ArtistName</td>
-                                            <td style="color: var(--ytm-text-secondary);">@song.AlbumTitle</td>
-                                            <td style="color: var(--ytm-text-secondary);">@song.DurationString</td>
-                                            <td>
-                                                <button class="btn btn-sm play-btn" 
-                                                        style="background: linear-gradient(135deg, var(--ytm-accent-red) 0%, #e74c3c 100%); color: var(--ytm-text-primary); border: none; box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3); transition: all 0.2s ease;"
+                                            <td>@song.Title</td>
+                                            <td>@song.ArtistName</td>
+                                            <td>@song.AlbumTitle</td>
+                                            <td>@song.DurationString</td>
+                                            <td>                                <button class="btn btn-sm play-btn" 
+                                                        style="background: linear-gradient(135deg, var(--ytm-accent-red) 0%, #e74c3c 100%); color: var(--ytm-text-primary); border: none; box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);"
                                                         data-play-song='@Html.Raw(Json.Serialize(new { 
                                                             id = song.SongId, 
                                                             title = song.Title, 
@@ -120,9 +113,7 @@
                                                             coverImageUrl = s.CoverImageUrl 
                                                         })))'
                                                         data-index="@Model.Songs.OrderBy(s => s.Order).ToList().IndexOf(song)"
-                                                        title="Play song"
-                                                        onmouseover="this.style.transform='scale(1.05)'"
-                                                        onmouseout="this.style.transform='scale(1)'">
+                                                        title="Play song">
                                                     <i class="bi bi-play-fill"></i>
                                                 </button>
                                             </td>
@@ -134,10 +125,8 @@
                     }
                     else
                     {
-                        <div class="alert alert-info" style="background: var(--ytm-bg-tertiary); color: var(--ytm-text-primary); border-color: var(--ytm-accent-red);">No songs in this playlist yet.</div>
-                    }
-
-                    <hr class="my-4" style="border-color: var(--ytm-bg-tertiary);" />
+                        <div class="alert alert-info">No songs in this playlist yet.</div>
+                    }                    <hr class="my-4" />
                     @{
                         var currentUserIdForSongs = Context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                         var isOwnerForSongs = currentUserIdForSongs != null && int.Parse(currentUserIdForSongs) == Model.UserId;
@@ -145,25 +134,19 @@
                     }
                     @if (isOwnerForSongs || isAdminForSongs)
                     {
-                        <h5 style="color: var(--ytm-text-primary);">Add Songs to Playlist</h5>
-
-                        <form method="get" asp-action="Details" class="mb-3 d-flex">
-                            <input type="hidden" name="id" value="@Model.Id" />
-                            <input type="text" name="search" class="form-control me-2" 
+                        <h5>Add Songs to Playlist</h5>                        <form method="get" asp-action="Details" class="mb-3 d-flex">
+                            <input type="hidden" name="id" value="@Model.Id" />                            <input type="text" name="search" class="form-control me-2" 
                                    style="background-color: var(--ytm-bg-secondary); color: var(--ytm-text-primary); border-color: var(--ytm-border-color);"
                                    placeholder="Search for songs..." value="@ViewBag.SearchQuery" 
                                    onfocus="this.style.backgroundColor='var(--ytm-bg-primary)'; this.style.borderColor='var(--ytm-text-secondary)';" 
-                                   onblur="this.style.backgroundColor='var(--ytm-bg-secondary)'; this.style.borderColor='var(--ytm-border-color)';" />
-                            <button type="submit" class="btn" style="background: linear-gradient(135deg, var(--ytm-accent-red) 0%, #e74c3c 100%); color: var(--ytm-text-primary); border: none; box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3); transition: all 0.2s ease;"
-                                    onmouseover="this.style.transform='scale(1.05)'"
-                                    onmouseout="this.style.transform='scale(1)'">
+                                   onblur="this.style.backgroundColor='var(--ytm-bg-secondary)'; this.style.borderColor='var(--ytm-border-color)';" />                            <button type="submit" class="btn" style="background: linear-gradient(135deg, var(--ytm-accent-red) 0%, #e74c3c 100%); color: var(--ytm-text-primary); border: none; box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);">
                                 <i class="bi bi-search"></i> Search
                             </button>
                         </form>
 
                         @if (ViewBag.SearchError != null)
                         {
-                            <div class="alert alert-warning" style="background: var(--ytm-bg-tertiary); color: var(--ytm-text-primary); border-color: orange;">@ViewBag.SearchError</div>
+                            <div class="alert alert-warning">@ViewBag.SearchError</div>
                         }
 
                         @if (ViewBag.SearchResults != null)
@@ -174,34 +157,32 @@
                                 <div class="table-responsive mb-4">
                                     <table class="table table-sm table-hover" style="background: var(--ytm-bg-primary); color: var(--ytm-text-primary);">
                                         <thead>
-                                            <tr style="border-bottom: 1px solid var(--ytm-accent-red);">
-                                                <th style="color: var(--ytm-text-secondary);"></th>
-                                                <th style="color: var(--ytm-text-secondary);">Title</th>
-                                                <th style="color: var(--ytm-text-secondary);">Artist</th>
-                                                <th style="color: var(--ytm-text-secondary);">Album</th>
-                                                <th style="color: var(--ytm-text-secondary);">Duration</th>
-                                                <th style="color: var(--ytm-text-secondary);"></th>
+                                            <tr>
+                                                <th></th>
+                                                <th>Title</th>
+                                                <th>Artist</th>
+                                                <th>Album</th>
+                                                <th>Duration</th>
+                                                <th></th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                         @foreach (var song in results)
                                         {
-                                            <tr style="border-bottom: 1px solid var(--ytm-bg-tertiary);">
+                                            <tr>
                                                 <td>
                                                     <img src="@(song.CoverImageUrl ?? "/assets/default-album.png")" 
                                                          alt="cover" style="width:32px;height:32px;object-fit:cover;border-radius:4px;" />
                                                 </td>                                            
-                                                <td style="color: var(--ytm-text-primary); font-weight: 500;">@song.Title</td>
-                                                <td style="color: var(--ytm-text-secondary);">@song.ArtistName</td>
-                                                <td style="color: var(--ytm-text-secondary);">@song.AlbumTitle</td>
-                                                <td style="color: var(--ytm-text-secondary);">@(song.Duration?.ToString(@"m\:ss") ?? "--:--")</td>
+                                                <td>@song.Title</td>
+                                                <td>@song.ArtistName</td>
+                                                <td>@song.AlbumTitle</td>
+                                                <td>@(song.Duration?.ToString(@"m\:ss") ?? "--:--")</td>
                                                 <td>
                                                     <form method="post" asp-action="AddSongToPlaylist" style="display:inline">
                                                         <input type="hidden" name="playlistId" value="@Model.Id" />
                                                         <input type="hidden" name="songId" value="@song.Id" />
-                                                        <button type="submit" class="btn btn-sm btn-success" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: none; transition: all 0.2s ease;"
-                                                                onmouseover="this.style.transform='scale(1.05)'"
-                                                                onmouseout="this.style.transform='scale(1)'">
+                                                        <button type="submit" class="btn btn-sm btn-success">
                                                             <i class="bi bi-plus-circle"></i> Add
                                                         </button>
                                                     </form>
@@ -214,11 +195,10 @@
                             }
                             else
                             {
-                                <div class="alert alert-info" style="background: var(--ytm-bg-tertiary); color: var(--ytm-text-primary); border-color: var(--ytm-accent-red);">No songs found matching your search.</div>
+                                <div class="alert alert-info">No songs found matching your search.</div>
                             }
                         }
                     }
-                </div>
             </div>
         </div>
     </div>

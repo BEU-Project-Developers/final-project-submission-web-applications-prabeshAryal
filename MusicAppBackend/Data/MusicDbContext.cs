@@ -19,10 +19,11 @@ namespace MusicAppBackend.Data
         public DbSet<UserFavorite> UserFavorites { get; set; } = null!;
         public DbSet<Artist> Artists { get; set; } = null!;
         public DbSet<Album> Albums { get; set; } = null!;
-        public DbSet<Song> Songs { get; set; } = null!;
-        public DbSet<Playlist> Playlists { get; set; } = null!;
+        public DbSet<Song> Songs { get; set; } = null!;        public DbSet<Playlist> Playlists { get; set; } = null!;
         public DbSet<PlaylistSong> PlaylistSongs { get; set; } = null!;
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+        public DbSet<UserSongPlay> UserSongPlays { get; set; } = null!;
+        public DbSet<AlbumLike> AlbumLikes { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -133,7 +134,18 @@ namespace MusicAppBackend.Data
             modelBuilder.Entity<RefreshToken>()
                 .HasOne(rt => rt.User)
                 .WithMany()
-                .HasForeignKey(rt => rt.UserId)
+                .HasForeignKey(rt => rt.UserId)                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure UserSongPlay
+            modelBuilder.Entity<UserSongPlay>()
+                .HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<UserSongPlay>()
+                .HasOne(x => x.Song)
+                .WithMany()
+                .HasForeignKey(x => x.SongId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

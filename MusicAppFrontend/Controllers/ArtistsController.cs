@@ -118,16 +118,44 @@ namespace MusicApp.Controllers
             );
         }        [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, ArtistDto model)
+        public async Task<IActionResult> Edit(int id, ArtistDto model, IFormFile profileImage)
         {
+            _logger.LogInformation("ArtistsController.Edit POST action hit with id: {Id} and model.Id: {ModelId}", id, model.Id);
+            
+            if (id != model.Id)
+            {
+                _logger.LogWarning("ArtistsController.Edit POST: id mismatch. Expected: {ExpectedId}, Actual: {ActualId}", id, model.Id);
+                return BadRequest();
+            }
+
+            // Remove file validation errors since they're not part of the model
+            var keysToRemove = new[] { "profileImage", "ProfileImage" };
+            foreach (var key in keysToRemove)
+            {
+                if (ModelState.ContainsKey(key))
+                {
+                    ModelState.Remove(key);
+                }
+            }
+
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("ArtistsController.Edit POST: ModelState is invalid");
+                // Log ModelState errors
+                foreach (var entry in ModelState.Values)
+                {
+                    foreach (var error in entry.Errors)
+                    {
+                        _logger.LogError("ModelState Error: {ErrorMessage}", error.ErrorMessage);
+                    }
+                }
                 return View(model);
             }
 
             return await SafeApiAction(
                 async () =>
                 {
+                    _logger.LogInformation("ArtistsController.Edit POST: Attempting to update artist with id: {Id}", id);
                     var updateDto = new ArtistUpdateDTO
                     {
                         Id = id,
@@ -140,15 +168,39 @@ namespace MusicApp.Controllers
                         ImageUrl = model.ImageUrl,
                         IsActive = model.IsActive
                     };
+                    
                     await _apiService.PutAsync<object>($"api/Artists/{id}", updateDto);
+                    
+                    // Handle profile image upload if file is provided
+                    if (profileImage != null && profileImage.Length > 0)
+                    {
+                        try
+                        {
+                            // Use multipart form data for file upload
+                            var filePath = await _apiService.UploadFileAsync($"api/Artists/{id}/image", profileImage);
+                            if (!string.IsNullOrEmpty(filePath))
+                            {
+                                _logger.LogInformation("Profile image uploaded successfully for artist {Id}", id);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to upload profile image for artist {Id}", id);
+                            // Don't fail the entire operation if image upload fails
+                        }
+                    }
+                    
                     SetSuccessMessage("Artist updated successfully.");
                     return RedirectToAction("Index");
                 },
-                () => View(model),
+                () => {
+                    SetErrorMessage("Error updating artist. Please try again.");
+                    return View(model);
+                },
                 GetStandardErrorMessage("update", "artist"),
                 $"ArtistsController.Edit POST for ID {id}"
             );
-        }        [HttpGet]
+        }[HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
             return await SafeApiAction(

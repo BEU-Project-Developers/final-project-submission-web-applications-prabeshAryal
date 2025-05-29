@@ -77,6 +77,60 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+// Add proxy middleware for /uploads/* requests
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/uploads"))
+    {
+        var httpClient = context.RequestServices.GetRequiredService<IHttpClientFactory>().CreateClient();
+        var backendUrl = $"http://localhost:5117{context.Request.Path}{context.Request.QueryString}";
+        
+        try
+        {
+            var response = await httpClient.GetAsync(backendUrl);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                context.Response.StatusCode = (int)response.StatusCode;
+                context.Response.ContentType = response.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
+                
+                // Copy response headers
+                foreach (var header in response.Headers)
+                {
+                    context.Response.Headers.TryAdd(header.Key, header.Value.ToArray());
+                }
+                
+                // Copy content headers
+                foreach (var header in response.Content.Headers)
+                {
+                    if (header.Key != "Content-Type") // Already set above
+                    {
+                        context.Response.Headers.TryAdd(header.Key, header.Value.ToArray());
+                    }
+                }
+                
+                // Stream the content
+                await response.Content.CopyToAsync(context.Response.Body);
+                return;
+            }
+            else
+            {
+                context.Response.StatusCode = (int)response.StatusCode;
+                await context.Response.WriteAsync($"Backend returned: {response.StatusCode}");
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            context.Response.StatusCode = 502; // Bad Gateway
+            await context.Response.WriteAsync($"Proxy error: {ex.Message}");
+            return;
+        }
+    }
+    
+    await next();
+});
+
 app.UseRouting();
 
 app.UseAuthentication();

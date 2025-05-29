@@ -54,14 +54,14 @@ namespace MusicAppBackend.Controllers
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
-            // Get user's favorite songs and group by artist to find top artists
-            var topArtists = await _context.UserFavorites
-                .Where(uf => uf.UserId == userId)
-                .Include(uf => uf.Song)
+            // Get user's top artists based on actual play data
+            var topArtists = await _context.UserSongPlays
+                .Where(usp => usp.UserId == userId)
+                .Include(usp => usp.Song)
                 .ThenInclude(s => s.Artist)
-                .Where(uf => uf.Song.Artist != null)
-                .GroupBy(uf => uf.Song.Artist!)
-                .Select(g => new 
+                .Where(usp => usp.Song.Artist != null)
+                .GroupBy(usp => usp.Song.Artist!)
+                .Select(g => new
                 {
                     Id = g.Key.Id,
                     Name = g.Key.Name,
@@ -72,7 +72,7 @@ namespace MusicAppBackend.Controllers
                     FormedDate = g.Key.FormedDate,
                     MonthlyListeners = g.Key.MonthlyListeners ?? 0,
                     IsActive = g.Key.IsActive,
-                    PlayCount = g.Count(), // Number of favorite songs by this artist
+                    PlayCount = g.Count(), // Number of plays by this artist
                     FollowersCount = 0 // Default value for compatibility
                 })
                 .OrderByDescending(a => a.PlayCount)
@@ -80,6 +80,131 @@ namespace MusicAppBackend.Controllers
                 .ToListAsync();
 
             return Ok(topArtists);
+        }        // GET: api/Users/statistics
+        [HttpGet("statistics")]
+        public async Task<ActionResult<object>> GetCurrentUserStatistics()
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+            // Total listening time - get all durations and calculate minutes client-side
+            var userPlays = await _context.UserSongPlays
+                .Where(usp => usp.UserId == userId && usp.Duration.HasValue)
+                .Select(usp => usp.Duration!.Value)
+                .ToListAsync();
+            
+            var totalListeningTime = userPlays.Sum(duration => duration.TotalMinutes);
+
+            // Top genre
+            var topGenre = await _context.UserSongPlays
+                .Where(usp => usp.UserId == userId)
+                .Include(usp => usp.Song)
+                .Where(usp => !string.IsNullOrEmpty(usp.Song.Genre))
+                .GroupBy(usp => usp.Song.Genre)
+                .Select(g => new { Genre = g.Key, PlayCount = g.Count() })
+                .OrderByDescending(g => g.PlayCount)
+                .FirstOrDefaultAsync();
+
+            // Favorite artist (most played)
+            var favoriteArtist = await _context.UserSongPlays
+                .Where(usp => usp.UserId == userId)
+                .Include(usp => usp.Song)
+                .ThenInclude(s => s.Artist)
+                .Where(usp => usp.Song.Artist != null)
+                .GroupBy(usp => usp.Song.Artist!)
+                .Select(g => new { Artist = g.Key.Name, PlayCount = g.Count() })
+                .OrderByDescending(g => g.PlayCount)
+                .FirstOrDefaultAsync();
+
+            // Recently played songs
+            var recentlyPlayed = await _context.UserSongPlays
+                .Where(usp => usp.UserId == userId)
+                .Include(usp => usp.Song)
+                .ThenInclude(s => s.Artist)
+                .OrderByDescending(usp => usp.PlayedAt)
+                .Take(5)
+                .Select(usp => new
+                {
+                    Id = usp.Song.Id,
+                    Title = usp.Song.Title,
+                    Artist = usp.Song.Artist != null ? usp.Song.Artist.Name : "Unknown Artist",
+                    PlayedAt = usp.PlayedAt,
+                    Duration = usp.Duration
+                })
+                .ToListAsync();
+
+            // Recent activity (play history)
+            var recentActivity = await _context.UserSongPlays
+                .Where(usp => usp.UserId == userId)
+                .Include(usp => usp.Song)
+                .ThenInclude(s => s.Artist)
+                .OrderByDescending(usp => usp.PlayedAt)
+                .Take(10)
+                .Select(usp => new
+                {
+                    Id = usp.Id,
+                    Action = "Played",
+                    SongTitle = usp.Song.Title,
+                    ArtistName = usp.Song.Artist != null ? usp.Song.Artist.Name : "Unknown Artist",
+                    Timestamp = usp.PlayedAt,
+                    Duration = usp.Duration
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                TotalListeningTimeMinutes = totalListeningTime,
+                TopGenre = topGenre?.Genre ?? "No data",
+                FavoriteArtist = favoriteArtist?.Artist ?? "No data",
+                RecentlyPlayed = recentlyPlayed,
+                RecentActivity = recentActivity,
+                TotalPlays = await _context.UserSongPlays.CountAsync(usp => usp.UserId == userId)
+            });
+        }
+
+        // GET: api/Users/listening-history
+        [HttpGet("listening-history")]
+        public async Task<ActionResult<object>> GetListeningHistory(int page = 1, int pageSize = 20)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+            var totalCount = await _context.UserSongPlays
+                .CountAsync(usp => usp.UserId == userId);
+
+            var history = await _context.UserSongPlays
+                .Where(usp => usp.UserId == userId)
+                .Include(usp => usp.Song)
+                .ThenInclude(s => s.Artist)
+                .Include(usp => usp.Song)
+                .ThenInclude(s => s.Album)
+                .OrderByDescending(usp => usp.PlayedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(usp => new
+                {
+                    Id = usp.Id,
+                    Song = new
+                    {
+                        Id = usp.Song.Id,
+                        Title = usp.Song.Title,
+                        Artist = usp.Song.Artist != null ? usp.Song.Artist.Name : "Unknown Artist",
+                        Album = usp.Song.Album != null ? usp.Song.Album.Title : null,
+                        Duration = usp.Song.Duration,
+                        Genre = usp.Song.Genre,
+                        CoverImageUrl = usp.Song.CoverImageUrl
+                    },
+                    PlayedAt = usp.PlayedAt,
+                    ListenDuration = usp.Duration
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                Data = history,
+                CurrentPage = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling((double)totalCount / pageSize),
+                TotalCount = totalCount
+            });
         }
 
         // GET: api/Users/profile
@@ -95,7 +220,8 @@ namespace MusicAppBackend.Controllers
             if (user == null)
             {
                 return NotFound();
-            }            return new UserDTO
+            }
+            return new UserDTO
             {
                 Id = user.Id,
                 Username = user.Username,
@@ -264,7 +390,7 @@ namespace MusicAppBackend.Controllers
         public async Task<IActionResult> FollowUser(int id)
         {
             var followerId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            
+
             if (followerId == id)
             {
                 return BadRequest("Cannot follow yourself");
@@ -345,7 +471,7 @@ namespace MusicAppBackend.Controllers
 
             // Remove user (cascade delete will handle related records)
             _context.Users.Remove(user);
-            await _context.SaveChangesAsync();            return NoContent();
+            await _context.SaveChangesAsync(); return NoContent();
         }
 
         private async Task<bool> UserExists(int id)

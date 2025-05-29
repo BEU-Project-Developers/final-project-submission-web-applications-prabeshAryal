@@ -303,36 +303,34 @@ namespace MusicAppBackend.Controllers
                 return NotFound();
             }
 
+            // Update properties from DTO
+            song.Title = songDto.Title ?? song.Title;
+            song.ArtistId = songDto.ArtistId ?? song.ArtistId;
+            song.AlbumId = songDto.AlbumId ?? song.AlbumId;
+            song.Duration = songDto.Duration ?? song.Duration;
+            song.TrackNumber = songDto.TrackNumber ?? song.TrackNumber;
+            song.Genre = songDto.Genre ?? song.Genre;
+            song.ReleaseDate = songDto.ReleaseDate ?? song.ReleaseDate;
+            song.UpdatedAt = DateTime.UtcNow;
+
             // Validate artist and album if provided
-            if (songDto.ArtistId.HasValue)
+            if (song.ArtistId.HasValue)
             {
-                var artist = await _context.Artists.FindAsync(songDto.ArtistId.Value);
+                var artist = await _context.Artists.FindAsync(song.ArtistId.Value);
                 if (artist == null)
                 {
                     return BadRequest("Artist not found");
                 }
-                song.ArtistId = songDto.ArtistId.Value;
             }
 
-            if (songDto.AlbumId.HasValue)
+            if (song.AlbumId.HasValue)
             {
-                var album = await _context.Albums.FindAsync(songDto.AlbumId.Value);
+                var album = await _context.Albums.FindAsync(song.AlbumId.Value);
                 if (album == null)
                 {
                     return BadRequest("Album not found");
                 }
-                song.AlbumId = songDto.AlbumId.Value;
             }
-
-            song.Title = songDto.Title ?? song.Title;
-            song.Duration = songDto.Duration ?? song.Duration;
-            song.AudioUrl = songDto.AudioUrl ?? song.AudioUrl;
-            song.CoverImageUrl = songDto.CoverImageUrl ?? song.CoverImageUrl;
-            song.TrackNumber = songDto.TrackNumber ?? song.TrackNumber;
-            song.Genre = songDto.Genre ?? song.Genre;
-            song.ReleaseDate = songDto.ReleaseDate ?? song.ReleaseDate;
-            song.PlayCount = songDto.PlayCount ?? song.PlayCount;
-            song.UpdatedAt = DateTime.UtcNow;
 
             try
             {
@@ -444,11 +442,9 @@ namespace MusicAppBackend.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { coverImageUrl = _fileStorage.GetFileUrl(filePath) });
-        }
-
-        // POST: api/Songs/5/play
+        }        // POST: api/Songs/5/play
         [HttpPost("{id}/play")]
-        public async Task<IActionResult> PlaySong(int id)
+        public async Task<IActionResult> PlaySong(int id, [FromBody] PlaySongDTO? playData = null)
         {
             var song = await _context.Songs.FindAsync(id);
             if (song == null)
@@ -456,8 +452,27 @@ namespace MusicAppBackend.Controllers
                 return NotFound();
             }
 
-            // Increment play count
+            // Increment global play count
             song.PlayCount += 1;
+
+            // Track user-specific play if authenticated
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                if (userId > 0)
+                {
+                    var userPlay = new UserSongPlay
+                    {
+                        UserId = userId,
+                        SongId = id,
+                        PlayedAt = DateTime.UtcNow,
+                        Duration = playData?.Duration // Use duration from request if provided
+                    };
+                    
+                    _context.UserSongPlays.Add(userPlay);
+                }
+            }
+
             await _context.SaveChangesAsync();
 
             return Ok(new { playCount = song.PlayCount });
@@ -624,9 +639,7 @@ namespace MusicAppBackend.Controllers
         public int? TrackNumber { get; set; }
         public string? Genre { get; set; }
         public DateTime? ReleaseDate { get; set; }
-    }
-
-    public class SongUpdateDTO
+    }    public class SongUpdateDTO
     {
         public string? Title { get; set; }
         public int? ArtistId { get; set; }
@@ -638,5 +651,10 @@ namespace MusicAppBackend.Controllers
         public string? Genre { get; set; }
         public DateTime? ReleaseDate { get; set; }
         public int? PlayCount { get; set; }
+    }
+
+    public class PlaySongDTO
+    {
+        public TimeSpan? Duration { get; set; }
     }
 }

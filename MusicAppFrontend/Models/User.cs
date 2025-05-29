@@ -36,10 +36,10 @@ namespace MusicApp.Models
         public DateTime? LastLoginAt { get; set; }
 
         // Navigation properties
-        public ICollection<Playlist> Playlists { get; set; }
-        public ICollection<UserRole> UserRoles { get; set; }
-        public ICollection<UserFollower> Followers { get; set; }
-        public ICollection<UserFollower> Following { get; set; }
-        public ICollection<UserFavorite> Favorites { get; set; }
+        public ICollection<Playlist> Playlists { get; set; } = new List<Playlist>();
+        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+        public ICollection<UserFollower> Followers { get; set; } = new List<UserFollower>();
+        public ICollection<UserFollower> Following { get; set; } = new List<UserFollower>();
+        public ICollection<UserFavorite> Favorites { get; set; } = new List<UserFavorite>();
     }
 } 

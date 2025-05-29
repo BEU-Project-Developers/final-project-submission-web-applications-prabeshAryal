@@ -197,53 +197,104 @@ namespace MusicApp.Controllers
                         CreatedAt = userProfile.CreatedAt
                     };
                     
-                    // Get recently played tracks
-                    var recentTracks = await SafeApiCall(
-                        async () => await _apiService.GetAsync<List<SongDto>>("api/Users/recently-played"),
-                        new List<SongDto>(),
-                        "Unable to load recently played tracks",
-                        "AccountController.Dashboard - Loading recently played tracks"
+                    // Get user statistics (now dynamic!)
+                    var statisticsResponse = await SafeApiCall(
+                        async () => await _apiService.GetAsync<object>("api/Users/statistics"),
+                        (object)null,
+                        "Unable to load user statistics",
+                        "AccountController.Dashboard - Loading user statistics"
                     );
 
-                    if (recentTracks != null && recentTracks.Any())
+                    if (statisticsResponse != null)
                     {
-                        foreach (var track in recentTracks)
+                        // Convert to JsonElement for safe property access
+                        var statsJson = JsonSerializer.Serialize(statisticsResponse);
+                        var statsObj = JsonSerializer.Deserialize<JsonElement>(statsJson);
+                        
+                        // Set listening time
+                        if (statsObj.TryGetProperty("totalListeningTimeMinutes", out JsonElement listeningTime))
                         {
-                            profile.RecentlyPlayedTracks.Add(new ProfileViewModel.RecentlyPlayedTrack
+                            var minutes = listeningTime.GetInt64();
+                            var hours = minutes / 60;
+                            var remainingMinutes = minutes % 60;
+                            profile.TotalListeningTime = hours > 0 ? $"{hours}h {remainingMinutes}m" : $"{minutes}m";
+                        }
+                        
+                        // Set top genre
+                        if (statsObj.TryGetProperty("topGenre", out JsonElement topGenre))
+                        {
+                            profile.TopGenre = topGenre.GetString() ?? "No data";
+                        }
+                        
+                        // Set favorite artist
+                        if (statsObj.TryGetProperty("favoriteArtist", out JsonElement favoriteArtist))
+                        {
+                            profile.FavoriteArtist = favoriteArtist.GetString() ?? "No data";
+                        }
+                        
+                        // Populate recently played tracks
+                        if (statsObj.TryGetProperty("recentlyPlayed", out JsonElement recentlyPlayedElement) && 
+                            recentlyPlayedElement.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var track in recentlyPlayedElement.EnumerateArray())
                             {
-                                Id = track.Id,
-                                SongTitle = track.Title,
-                                ArtistName = track.ArtistName,
-                                AlbumName = track.AlbumTitle,
-                                Duration = track.Duration?.ToString(@"m\:ss") ?? "--:--",
-                                CoverImageUrl = track.CoverImageUrl
-                            });
+                                profile.RecentlyPlayedTracks.Add(new ProfileViewModel.RecentlyPlayedTrack
+                                {
+                                    Id = track.GetProperty("id").GetInt32(),
+                                    SongTitle = track.GetProperty("title").GetString() ?? "Unknown",
+                                    ArtistName = track.GetProperty("artist").GetString() ?? "Unknown Artist",
+                                    AlbumName = "Unknown Album", // Not in current response
+                                    Duration = track.TryGetProperty("duration", out var durationProp) && 
+                                              durationProp.ValueKind != JsonValueKind.Null 
+                                              ? TimeSpan.FromTicks(durationProp.GetInt64()).ToString(@"m\:ss") 
+                                              : "--:--",
+                                    CoverImageUrl = "/images/default-cover.png" // Default for now
+                                });
+                            }
+                        }
+                        
+                        // Populate activity feed
+                        if (statsObj.TryGetProperty("recentActivity", out JsonElement activityElement) && 
+                            activityElement.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var activity in activityElement.EnumerateArray())
+                            {
+                                profile.ActivityFeedItems.Add(new ProfileViewModel.ActivityFeedItem
+                                {
+                                    Id = activity.GetProperty("id").GetInt32(),
+                                    Type = "song_played",
+                                    Description = $"Played \"{activity.GetProperty("songTitle").GetString()}\" by {activity.GetProperty("artistName").GetString()}",
+                                    Timestamp = DateTime.Parse(activity.GetProperty("timestamp").GetString() ?? DateTime.UtcNow.ToString())
+                                });
+                            }
                         }
                     }
                     
-                    // Get top artists
-                    var topArtists = await SafeApiCall(
-                        async () => await _apiService.GetAsync<List<ArtistDto>>("api/Users/top-artists"),
-                        new List<ArtistDto>(),
+                    // Get top artists (now dynamic!)
+                    var topArtistsResponse = await SafeApiCall(
+                        async () => await _apiService.GetAsync<object[]>("api/Users/top-artists"),
+                        new object[0],
                         "Unable to load top artists",
                         "AccountController.Dashboard - Loading top artists"
                     );
 
-                    if (topArtists != null && topArtists.Any())
+                    if (topArtistsResponse != null && topArtistsResponse.Length > 0)
                     {
-                        foreach (var artist in topArtists)
+                        foreach (var artist in topArtistsResponse)
                         {
+                            var artistJson = JsonSerializer.Serialize(artist);
+                            var artistObj = JsonSerializer.Deserialize<JsonElement>(artistJson);
                             profile.TopArtists.Add(new ProfileViewModel.TopArtist
                             {
-                                Id = artist.Id,
-                                ArtistName = artist.Name,
-                                PlayCount = artist.MonthlyListeners,
-                                ArtistImageUrl = artist.ImageUrl
+                                Id = artistObj.GetProperty("id").GetInt32(),
+                                ArtistName = artistObj.GetProperty("name").GetString() ?? "Unknown Artist",
+                                PlayCount = artistObj.GetProperty("playCount").GetInt32(),
+                                ArtistImageUrl = artistObj.TryGetProperty("imageUrl", out JsonElement imageUrl) && 
+                                               imageUrl.ValueKind != JsonValueKind.Null 
+                                               ? imageUrl.GetString()
+                                               : "/images/default-artist.png"
                             });
                         }
-                        
-                        // Set favorite artist
-                        profile.FavoriteArtist = topArtists.FirstOrDefault()?.Name ?? "None";
                     }
                 }
                 else

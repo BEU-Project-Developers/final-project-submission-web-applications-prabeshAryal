@@ -690,30 +690,32 @@ namespace MusicApp.Services
             }
             
             return successProperty != null;
-        }
-
-        private bool GetSuccessValue<T>(T obj)
+        }        private bool GetSuccessValue<T>(T obj)
         {
             if (obj == null) return false;
             var type = obj.GetType();
             var property = type.GetProperty("Success");
             if (property != null && property.PropertyType == typeof(bool))
             {
-                var value = (bool)property.GetValue(obj);
-                _logger?.LogInformation("GetSuccessValue for {TypeName}: Success property value = {Value}", type.FullName, value);
-                return value;
+                var boxedValue = property.GetValue(obj);
+                if (boxedValue != null)
+                {
+                    var value = (bool)boxedValue;
+                    _logger?.LogInformation("GetSuccessValue for {TypeName}: Success property value = {Value}", type.FullName, value);
+                    return value;
+                }
             }
             return true; // Default to true if no Success property
         }
 
-        private string GetMessageValue<T>(T obj)
+        private string? GetMessageValue<T>(T obj)
         {
             if (obj == null) return null;
             var type = obj.GetType();
             var property = type.GetProperty("Message");
             if (property != null && property.PropertyType == typeof(string))
             {
-                return (string)property.GetValue(obj);
+                return property.GetValue(obj) as string;
             }
             return null;
         }

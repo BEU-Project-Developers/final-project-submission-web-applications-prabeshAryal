@@ -5,10 +5,14 @@ using MusicApp.Services;
 using MusicApp.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
 
 namespace MusicApp.Controllers
-{    public class AlbumsController : BaseAppController
+{
+    public class AlbumsController : BaseAppController
     {
         public AlbumsController(ApiService apiService, ILogger<AlbumsController> logger)
             : base(apiService, logger)
@@ -17,7 +21,8 @@ namespace MusicApp.Controllers
 
         public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
         {
-            var emptyResponse = new PagedResponse<AlbumDto> {
+            var emptyResponse = new PagedResponse<AlbumDto>
+            {
                 Data = new List<AlbumDto>(),
                 CurrentPage = page,
                 PageSize = pageSize,
@@ -33,28 +38,33 @@ namespace MusicApp.Controllers
             );
 
             return View(response);
-        }        public async Task<IActionResult> Details(int id)
+        }
+
+        public async Task<IActionResult> Details(int id)
         {
             return await SafeApiAction(
                 async () =>
                 {
                     var album = await _apiService.GetAsync<AlbumDto>($"api/Albums/{id}");
-                    
+
                     if (album == null)
                     {
                         return NotFound();
                     }
-                    
+
                     return View(album);
                 },
-                () => {
+                () =>
+                {
                     SetErrorMessage(GetStandardErrorMessage("load", "album details"));
                     return RedirectToAction(nameof(Index));
                 },
                 GetStandardErrorMessage("load", "album details"),
                 $"AlbumsController.Details for ID {id}"
             );
-        }        [HttpGet]
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Create()
         {
             // Load artists for dropdown with safe API call
@@ -64,10 +74,12 @@ namespace MusicApp.Controllers
                 "Unable to load artists",
                 "AlbumsController.Create - loading artists"
             );
-            
+
             ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
             return View();
-        }        [HttpPost]
+        }
+
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Title,ArtistId,ReleaseDate")] AlbumCreateViewModel model)
         {
@@ -88,20 +100,21 @@ namespace MusicApp.Controllers
                 async () =>
                 {
                     // Map to backend DTO
-                    var albumCreateDto = new {
+                    var albumCreateDto = new
+                    {
                         Title = model.Title,
                         ArtistId = model.ArtistId,
                         ReleaseDate = model.ReleaseDate
                     };
-                    
+
                     var result = await _apiService.PostAsync<object>("api/Albums", albumCreateDto);
-                    
+
                     if (result != null)
                     {
                         SetSuccessMessage("Album added successfully.");
                         return RedirectToAction("Index");
                     }
-                    
+
                     ViewBag.ErrorMessage = "Failed to add album.";
                     return await LoadArtistsAndReturnView(model);
                 },
@@ -118,10 +131,13 @@ namespace MusicApp.Controllers
                 async () => await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists"),
                 new PagedResponse<ArtistDto> { Data = new List<ArtistDto>() },
                 "Unable to load artists",
-                "AlbumsController - loading artists on error"            );
+                "AlbumsController - loading artists on error"
+            );
             ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
             return View(model);
-        }        [HttpGet]
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
             return await SafeApiAction(
@@ -148,12 +164,14 @@ namespace MusicApp.Controllers
                 GetStandardErrorMessage("load", "album"),
                 $"AlbumsController.Edit GET for ID {id}"
             );
-        }        [HttpPost]
+        }
+
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, AlbumDto model, IFormFile coverImage)
         {
             _logger.LogInformation("AlbumsController.Edit POST action hit with id: {Id} and model.Id: {ModelId}", id, model.Id);
-            
+
             if (id != model.Id)
             {
                 _logger.LogWarning("AlbumsController.Edit POST: id mismatch. Expected: {ExpectedId}, Actual: {ActualId}", id, model.Id);
@@ -209,19 +227,20 @@ namespace MusicApp.Controllers
                         Duration = model.Duration,
                         // CoverImageUrl is not part of AlbumUpdateDTO as it's handled separately
                     };
-                    
+
                     await _apiService.PutAsync<object>($"api/Albums/{id}", updateDto);
-                    
+
                     // Handle cover image upload if file is provided
                     if (coverImage != null && coverImage.Length > 0)
-                    {                        try
+                    {
+                        try
                         {
                             // Use multipart form data for file upload
                             var filePath = await _apiService.UploadFileAsync($"api/Albums/{id}/cover", coverImage);
-                        if (!string.IsNullOrEmpty(filePath))
-                        {
-                            _logger.LogInformation("Cover image uploaded successfully for album {Id}", id);
-                        }
+                            if (!string.IsNullOrEmpty(filePath))
+                            {
+                                _logger.LogInformation("Cover image uploaded successfully for album {Id}", id);
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -229,11 +248,12 @@ namespace MusicApp.Controllers
                             // Don't fail the entire operation if image upload fails
                         }
                     }
-                    
+
                     SetSuccessMessage("Album updated successfully.");
                     return RedirectToAction("Index");
                 },
-                () => {
+                () =>
+                {
                     SetErrorMessage("Error updating album. Please try again.");
                     return View(model);
                 },
@@ -278,6 +298,33 @@ namespace MusicApp.Controllers
             );
 
             return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Like(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return BadRequest("Album ID cannot be null or empty.");
+            }
+
+            try
+            {
+                var result = await _apiService.PostAsync<object>($"api/Albums/{id}/like", new { });
+                return Ok("Album liked successfully!");
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Error liking album {Id}: {Message}", id, ex.Message);
+                return StatusCode(ex.StatusCode.HasValue ? (int)ex.StatusCode.Value : 500,
+                    $"Failed to like album: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error liking album {Id}: {Message}", id, ex.Message);
+                return StatusCode(500, $"Failed to like album: {ex.Message}");
+            }
         }
     }
 }

@@ -121,6 +121,7 @@ namespace MusicAppBackend.Controllers
             var album = await _context.Albums
                 .Include(a => a.Artist)
                 .Include(a => a.Songs)
+                    .ThenInclude(s => s.Artist) // Ensure Artist is loaded for each song
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (album == null)
@@ -133,7 +134,7 @@ namespace MusicAppBackend.Controllers
                 album.Id,
                 album.Title,
                 album.ArtistId,
-                ArtistName = album.Artist.Name,
+                ArtistName = album.Artist.Name, // Artist of the album
                 CoverImageUrl = !string.IsNullOrEmpty(album.CoverImageUrl) ? 
                     _fileStorage.GetFileUrl(album.CoverImageUrl) : null,
                 album.Year,
@@ -141,10 +142,12 @@ namespace MusicAppBackend.Controllers
                 album.Genre,
                 album.ReleaseDate,
                 album.TotalTracks,
-                album.Duration,                Songs = album.Songs.Select(s => new
+                album.Duration,
+                Songs = album.Songs.Select(s => new
                 {
                     s.Id,
                     s.Title,
+                    ArtistName = s.Artist != null ? s.Artist.Name : "Unknown Artist", // Artist of the song
                     s.TrackNumber,
                     s.Duration,
                     AudioUrl = !string.IsNullOrEmpty(s.AudioUrl) ? 
@@ -309,6 +312,35 @@ namespace MusicAppBackend.Controllers
             return Ok(new { coverImageUrl = _fileStorage.GetFileUrl(filePath) });
         }
 
+        // POST: api/Albums/{id}/like
+        [HttpPost("{id}/like")]
+        [Authorize]
+        public async Task<IActionResult> LikeAlbum(int id)
+        {
+            var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var album = await _context.Albums.FindAsync(id);
+            if (album == null)
+            {
+                return NotFound();
+            }
+
+            // Check if already liked
+            var alreadyLiked = await _context.AlbumLikes.AnyAsync(al => al.AlbumId == id && al.UserId == userId);
+            if (alreadyLiked)
+            {
+                return Ok(new { message = "Album already liked." });
+            }
+
+            _context.AlbumLikes.Add(new AlbumLike
+            {
+                AlbumId = id,
+                UserId = userId,
+                LikedAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Album liked successfully." });
+        }
+
         private async Task<bool> AlbumExists(int id)
         {
             return await _context.Albums.AnyAsync(a => a.Id == id);
@@ -338,4 +370,4 @@ namespace MusicAppBackend.Controllers
         public int? TotalTracks { get; set; }
         public TimeSpan? Duration { get; set; }
     }
-} 
+}

@@ -155,9 +155,7 @@ class MusicPlayer {
         this.loadCurrentSong();
         this.showPlayer();
         this.play();
-    }
-
-    loadCurrentSong() {
+    }    loadCurrentSong() {
         if (!this.currentSong) return;
 
         // Update audio source
@@ -168,6 +166,7 @@ class MusicPlayer {
         
         // Reset progress
         this.elements.progressBar.value = 0;
+        this.elements.progressBar.style.setProperty('--progress', '0%');
         this.elements.currentTime.textContent = '0:00';
     }
 
@@ -249,11 +248,11 @@ class MusicPlayer {
         if (this.isPlaying) {
             this.play();
         }
-    }
-
-    seekTo(percentage) {
+    }    seekTo(percentage) {
         if (this.audio.duration) {
             this.audio.currentTime = (percentage / 100) * this.audio.duration;
+            // Update visual progress immediately
+            this.elements.progressBar.style.setProperty('--progress', `${percentage}%`);
         }
     }
 
@@ -293,12 +292,13 @@ class MusicPlayer {
         if (icon) {
             icon.className = this.isPlaying ? 'bi bi-pause-fill' : 'bi bi-play-fill';
         }
-    }
-
-    updateProgress() {
+    }    updateProgress() {
         if (this.audio.duration && this.elements.progressBar) {
             const percentage = (this.audio.currentTime / this.audio.duration) * 100;
             this.elements.progressBar.value = percentage;
+            
+            // Update CSS custom property for progress fill
+            this.elements.progressBar.style.setProperty('--progress', `${percentage}%`);
             
             this.elements.currentTime.textContent = this.formatTime(this.audio.currentTime);
         }
@@ -398,12 +398,28 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         const playBtn = e.target.closest('[data-play-song]');
         const playAlbumBtn = e.target.closest('[data-play-album]');
-        
-        if (playBtn) {
+          if (playBtn) {
             e.preventDefault();
             
             try {
-                const songData = JSON.parse(playBtn.getAttribute('data-play-song'));
+                const songAttr = playBtn.getAttribute('data-play-song');
+                let songData;
+                
+                // Check if it's JSON data or just an ID
+                if (songAttr.startsWith('{') || songAttr.startsWith('[')) {
+                    // It's JSON data
+                    songData = JSON.parse(songAttr);
+                } else {
+                    // It's just an ID, construct song object from data attributes
+                    songData = {
+                        id: parseInt(songAttr),
+                        title: playBtn.getAttribute('data-song-title') || 'Unknown Title',
+                        artistName: playBtn.getAttribute('data-artist-name') || 'Unknown Artist',
+                        audioUrl: playBtn.getAttribute('data-audio-url') || '',
+                        coverImageUrl: playBtn.getAttribute('data-cover-image-url') || 'https://placehold.co/300x300/212121/AAAAAA?text=Song'
+                    };
+                }
+                
                 const playlistData = playBtn.getAttribute('data-playlist');
                 const startIndex = parseInt(playBtn.getAttribute('data-index')) || 0;
                 
@@ -415,6 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.playSong(songData, playlist, startIndex);
             } catch (error) {
                 console.error('Error parsing song data:', error);
+                console.log('Song attribute:', playBtn.getAttribute('data-play-song'));
             }
         }
         

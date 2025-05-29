@@ -24,11 +24,10 @@ namespace MusicApp.Models.DTOs
         public int Id { get; set; }
         public string? Name { get; set; }
         public string? Bio { get; set; }
-        public string? ImageUrl { get; set; }
-        public string? Country { get; set; }
+        public string? ImageUrl { get; set; }        public string? Country { get; set; }
         public string? Genre { get; set; }
         public DateTime? FormedDate { get; set; }
-        public int MonthlyListeners { get; set; }
+        public int? MonthlyListeners { get; set; }
         public bool IsActive { get; set; } // Added for admin edit
         public List<AlbumDto> Albums { get; set; } = new List<AlbumDto>();
         public List<SongDto> Songs { get; set; } = new List<SongDto>();

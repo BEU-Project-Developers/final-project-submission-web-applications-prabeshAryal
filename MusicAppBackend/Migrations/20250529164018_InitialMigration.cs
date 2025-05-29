@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MusicAppBackend.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -195,6 +195,33 @@ namespace MusicAppBackend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AlbumLikes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    AlbumId = table.Column<int>(type: "int", nullable: false),
+                    LikedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AlbumLikes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AlbumLikes_Albums_AlbumId",
+                        column: x => x.AlbumId,
+                        principalTable: "Albums",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AlbumLikes_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Songs",
                 columns: table => new
                 {
@@ -281,6 +308,44 @@ namespace MusicAppBackend.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "UserSongPlays",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    SongId = table.Column<int>(type: "int", nullable: false),
+                    PlayedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Duration = table.Column<TimeSpan>(type: "time", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserSongPlays", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserSongPlays_Songs_SongId",
+                        column: x => x.SongId,
+                        principalTable: "Songs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserSongPlays_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AlbumLikes_AlbumId",
+                table: "AlbumLikes",
+                column: "AlbumId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AlbumLikes_UserId",
+                table: "AlbumLikes",
+                column: "UserId");
+
             migrationBuilder.CreateIndex(
                 name: "IX_Albums_ArtistId",
                 table: "Albums",
@@ -325,11 +390,24 @@ namespace MusicAppBackend.Migrations
                 name: "IX_UserRoles_RoleId",
                 table: "UserRoles",
                 column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserSongPlays_SongId",
+                table: "UserSongPlays",
+                column: "SongId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserSongPlays_UserId",
+                table: "UserSongPlays",
+                column: "UserId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AlbumLikes");
+
             migrationBuilder.DropTable(
                 name: "PlaylistSongs");
 
@@ -346,13 +424,16 @@ namespace MusicAppBackend.Migrations
                 name: "UserRoles");
 
             migrationBuilder.DropTable(
+                name: "UserSongPlays");
+
+            migrationBuilder.DropTable(
                 name: "Playlists");
 
             migrationBuilder.DropTable(
-                name: "Songs");
+                name: "Roles");
 
             migrationBuilder.DropTable(
-                name: "Roles");
+                name: "Songs");
 
             migrationBuilder.DropTable(
                 name: "Users");

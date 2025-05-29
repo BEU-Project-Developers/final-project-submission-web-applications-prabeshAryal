@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MusicAppBackend.Models;
-using MusicAppBackend.Services;
+using MusicAppBackend.Models; // Assuming your models are in this namespace
+using MusicAppBackend.Services; // Assuming your IAuthService is in this namespace
 
 namespace MusicAppBackend.Data
 {
@@ -17,615 +17,357 @@ namespace MusicAppBackend.Data
             using var scope = serviceProvider.CreateScope();
             var services = scope.ServiceProvider;
             var logger = services.GetRequiredService<ILogger<MusicDbContext>>();
+            var context = services.GetRequiredService<MusicDbContext>();
+            var authService = services.GetRequiredService<IAuthService>();
 
+            logger.LogInformation("Starting database initialization...");
+
+            using var transaction = await context.Database.BeginTransactionAsync();
             try
             {
-                var context = services.GetRequiredService<MusicDbContext>();
-                var authService = services.GetRequiredService<IAuthService>();
-
-                logger.LogInformation("Starting database initialization...");
-
-                // Use transactions to ensure data integrity
-                using var transaction = await context.Database.BeginTransactionAsync();
-
-                try
+                // Seed Roles: Only if roles table is empty.
+                if (!await context.Roles.AnyAsync())
                 {
-                    // Seed roles if they don't exist
-                    if (!await context.Roles.AnyAsync())
-                    {
-                        await SeedRoles(context, logger);
-                    }
-                    else
-                    {
-                        logger.LogInformation("Roles already exist, skipping seeding.");
-                    }
-
-                    // Seed users if they don't exist
-                    if (!await context.Users.AnyAsync())
-                    {
-                        await SeedUsers(context, authService, logger);
-                    }
-                    else
-                    {
-                        logger.LogInformation("Users already exist, skipping seeding.");
-                    }
-
-                    // Seed artists if they don't exist
-                    if (!await context.Artists.AnyAsync())
-                    {
-                        await SeedArtists(context, logger);
-                    }
-                    else
-                    {
-                        logger.LogInformation("Artists already exist, skipping seeding.");
-                    }
-
-                    // Seed albums if they don't exist
-                    if (!await context.Albums.AnyAsync())
-                    {
-                        await SeedAlbums(context, logger);
-                    }
-                    else
-                    {
-                        logger.LogInformation("Albums already exist, skipping seeding.");
-                    }
-
-                    // Seed songs if they don't exist
-                    if (!await context.Songs.AnyAsync())
-                    {
-                        await SeedSongs(context, logger);
-                    }
-                    else
-                    {
-                        logger.LogInformation("Songs already exist, skipping seeding.");
-                    }
-
-                    // Seed playlists if they don't exist
-                    if (!await context.Playlists.AnyAsync())
-                    {
-                        await SeedPlaylists(context, logger);
-                    }
-                    else
-                    {
-                        logger.LogInformation("Playlists already exist, skipping seeding.");
-                    }
-
-                    // Commit the transaction
-                    await transaction.CommitAsync();
-                    logger.LogInformation("Database initialization completed successfully.");
+                    await SeedRoles(context, logger);
                 }
-                catch (Exception ex)
+                else
                 {
-                    // If any seeding operation fails, roll back the entire transaction
-                    await transaction.RollbackAsync();
-                    logger.LogError(ex, "Error during database seeding. Transaction rolled back.");
-                    throw; // Re-throw to be caught by the outer try-catch
+                    logger.LogInformation("Roles already exist, skipping seeding Roles.");
                 }
+
+                // Seed Users: Only if users table is empty.
+                if (!await context.Users.AnyAsync())
+                {
+                    await SeedUsers(context, authService, logger);
+                }
+                else
+                {
+                    logger.LogInformation("Users already exist, skipping seeding Users.");
+                }
+
+                // Seed Artists, Albums, Songs:
+                // These methods are designed to be idempotent when append = true.
+                // They will add items from their predefined lists if they don't already exist.
+                logger.LogInformation("Processing Artist seeding (append mode)...");
+                await SeedArtists(context, logger, true);
+
+                logger.LogInformation("Processing Album seeding (append mode)...");
+                await SeedAlbums(context, logger, true);
+
+                logger.LogInformation("Processing Song seeding (append mode)...");
+                await SeedSongs(context, logger, true);
+
+                // Seed Playlists: Only if playlists table is empty.
+                if (!await context.Playlists.AnyAsync())
+                {
+                    await SeedPlaylists(context, logger);
+                }
+                else
+                {
+                    logger.LogInformation("Playlists already exist, skipping seeding Playlists.");
+                }
+
+                await transaction.CommitAsync();
+                logger.LogInformation("Database initialization completed successfully.");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "An error occurred while initializing the database.");
-                // We allow the application to continue running even if seeding fails
+                await transaction.RollbackAsync();
+                logger.LogError(ex, "Error during database seeding. Transaction rolled back.");
+                throw;
             }
         }
 
         private static async Task SeedRoles(MusicDbContext context, ILogger logger)
         {
-            try
+            logger.LogInformation("Seeding roles...");
+            var roles = new List<Role>
             {
-                logger.LogInformation("Seeding roles...");
-
-                var roles = new List<Role>
-                {
-                    new Role { Name = "Admin", Description = "Administrator with full access" },
-                    new Role { Name = "User", Description = "Standard user" }
-                };
-
-                await context.Roles.AddRangeAsync(roles);
-                await context.SaveChangesAsync();
-
-                logger.LogInformation("Roles seeded successfully.");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error seeding roles.");
-                throw;
-            }
+                new Role { Name = "Admin", Description = "Administrator with full access" },
+                new Role { Name = "User", Description = "Standard user" }
+            };
+            await context.Roles.AddRangeAsync(roles);
+            await context.SaveChangesAsync();
+            logger.LogInformation("Roles seeded.");
         }
 
         private static async Task SeedUsers(MusicDbContext context, IAuthService authService, ILogger logger)
         {
-            try
+            logger.LogInformation("Seeding users...");
+            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
+            var userRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "User");
+
+            if (adminRole == null || userRole == null)
             {
-                logger.LogInformation("Seeding users...");
-
-                // Create admin user
-                var adminUser = new User
-                {
-                    Username = "admin",
-                    Email = "admin@example.com",
-                    FirstName = "Admin",
-                    LastName = "User",
-                    PasswordHash = authService.HashPassword("Admin@123"),
-                    CreatedAt = DateTime.UtcNow,
-                    LastLoginAt = DateTime.UtcNow
-                };
-
-                context.Users.Add(adminUser);
-                await context.SaveChangesAsync();
-
-                // Assign admin role
-                var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
-                if (adminRole != null)
-                {
-                    context.UserRoles.Add(new UserRole
-                    {
-                        UserId = adminUser.Id,
-                        RoleId = adminRole.Id
-                    });
-                    await context.SaveChangesAsync();
-                }
-                else
-                {
-                    logger.LogWarning("Admin role not found when seeding users.");
-                }
-
-                // Create regular user
-                var regularUser = new User
-                {
-                    Username = "user",
-                    Email = "user@example.com",
-                    FirstName = "Regular",
-                    LastName = "User",
-                    PasswordHash = authService.HashPassword("User@123"),
-                    CreatedAt = DateTime.UtcNow,
-                    LastLoginAt = DateTime.UtcNow
-                };
-
-                context.Users.Add(regularUser);
-                await context.SaveChangesAsync();
-
-                // Assign user role
-                var userRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "User");
-                if (userRole != null)
-                {
-                    context.UserRoles.Add(new UserRole
-                    {
-                        UserId = regularUser.Id,
-                        RoleId = userRole.Id
-                    });
-                    await context.SaveChangesAsync();
-                }
-                else
-                {
-                    logger.LogWarning("User role not found when seeding users.");
-                }
-
-                logger.LogInformation("Users seeded successfully.");
+                logger.LogError("Admin or User role not found. Ensure roles are seeded before users.");
+                throw new InvalidOperationException("Roles not found for user seeding.");
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error seeding users.");
-                throw;
-            }
-        }
 
-        private static async Task SeedArtists(MusicDbContext context, ILogger logger)
-        {
-            try
+            var usersToSeed = new List<User>
             {
-                logger.LogInformation("Seeding artists...");
+                new User { Username = "admin", Email = "admin@example.com", FirstName = "Admin", LastName = "User", PasswordHash = authService.HashPassword("Admin@123"), CreatedAt = DateTime.UtcNow, LastLoginAt = DateTime.UtcNow },
+                new User { Username = "user", Email = "user@example.com", FirstName = "Regular", LastName = "User", PasswordHash = authService.HashPassword("User@123"), CreatedAt = DateTime.UtcNow, LastLoginAt = DateTime.UtcNow }
+            };
 
-                var artists = new List<Artist>
+            foreach (var userSeed in usersToSeed)
+            {
+                // Check if user already exists before adding
+                if (!await context.Users.AnyAsync(u => u.Username == userSeed.Username))
                 {
-                    new Artist
+                    context.Users.Add(userSeed);
+                    await context.SaveChangesAsync(); // Save user to get Id
+
+                    var roleToAssign = userSeed.Username == "admin" ? adminRole : userRole;
+                    // Check if UserRole mapping already exists (though unlikely if user is new)
+                    if (!await context.UserRoles.AnyAsync(ur => ur.UserId == userSeed.Id && ur.RoleId == roleToAssign.Id))
                     {
-                        Name = "The Beatles",
-                        Bio = "The Beatles were an English rock band formed in Liverpool in 1960.",
-                        Country = "United Kingdom",
-                        Genre = "Rock",
-                        FormedDate = new DateTime(1960, 1, 1),
-                        MonthlyListeners = 20000000,
-                        IsActive = false,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    },
-                    new Artist
-                    {
-                        Name = "Queen",
-                        Bio = "Queen are a British rock band formed in London in 1970.",
-                        Country = "United Kingdom",
-                        Genre = "Rock",
-                        FormedDate = new DateTime(1970, 1, 1),
-                        MonthlyListeners = 18000000,
-                        IsActive = false,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    },
-                    new Artist
-                    {
-                        Name = "Michael Jackson",
-                        Bio = "Michael Joseph Jackson was an American singer, songwriter, and dancer.",
-                        Country = "United States",
-                        Genre = "Pop",
-                        FormedDate = new DateTime(1964, 1, 1),
-                        MonthlyListeners = 15000000,
-                        IsActive = false,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
+                        context.UserRoles.Add(new UserRole { UserId = userSeed.Id, RoleId = roleToAssign.Id });
                     }
-                };
+                }
+            }
+            await context.SaveChangesAsync(); // Save UserRoles
+            logger.LogInformation("Users seeded.");
+        }
 
-                await context.Artists.AddRangeAsync(artists);
+        private static async Task SeedArtists(MusicDbContext context, ILogger logger, bool append = false)
+        {
+            // This check ensures that if append is false, we only seed if the table is entirely empty.
+            // If append is true, this check is bypassed, and we proceed to add missing items.
+            if (!append && await context.Artists.AnyAsync())
+            {
+                logger.LogInformation("Artists already exist and append mode is off. Skipping artist seeding.");
+                return;
+            }
+            logger.LogInformation("Seeding artists (append mode: {Append})...", append);
+
+            var artistsData = new List<Artist>
+            {
+                // From previous seeding
+                new Artist { Name = "Sajjan Raj Vaidya", Bio = "Nepali singer, songwriter, known for soulful melodies.", Country = "Nepal", Genre = "Nepali Pop, Indie", FormedDate = new DateTime(2014, 1, 1), MonthlyListeners = 550000, IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new Artist { Name = "Arijit Singh", Bio = "Indian singer and music composer.", Country = "India", Genre = "Bollywood, Indian Pop", FormedDate = new DateTime(2005, 1, 1), MonthlyListeners = 31000000, IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new Artist { Name = "Ed Sheeran", Bio = "English singer-songwriter.", Country = "United Kingdom", Genre = "Pop, Folk-Pop", FormedDate = new DateTime(2004, 1, 1), MonthlyListeners = 72000000, IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                // New artists
+                new Artist { Name = "Taylor Swift", Bio = "American singer-songwriter.", Country = "USA", Genre = "Pop, Country, Electropop", FormedDate = new DateTime(2004, 1, 1), MonthlyListeners = 80000000, IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new Artist { Name = "Mahesh Kafle", Bio = "Nepali singer.", Country = "Nepal", Genre = "Nepali Lok Pop", FormedDate = new DateTime(2015, 1, 1), MonthlyListeners = 200000, IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new Artist { Name = "Melina Rai", Bio = "Nepali singer.", Country = "Nepal", Genre = "Nepali Pop, Playback Singer", FormedDate = new DateTime(2010, 1, 1), MonthlyListeners = 300000, IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new Artist { Name = "Tribal Rain", Bio = "Nepali band known for their folk rock music.", Country = "Nepal", Genre = "Nepali Folk Rock", FormedDate = new DateTime(2013, 1, 1), MonthlyListeners = 150000, IsActive = false, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }, // Corrected IsActive based on comment.
+                new Artist { Name = "Olivia Rodrigo", Bio = "American singer-songwriter and actress.", Country = "USA", Genre = "Pop, Pop-Rock, Alternative Pop", FormedDate = new DateTime(2020, 1, 1), MonthlyListeners = 40000000, IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new Artist { Name = "Sushant Ghimire (Vyoma)", Bio = "Nepali singer-songwriter and musician.", Country = "Nepal", Genre = "Nepali Pop, Indie Folk", FormedDate = new DateTime(2018, 1, 1), MonthlyListeners = 100000, IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new Artist { Name = "Sushant KC", Bio = "Nepali singer, songwriter, and composer.", Country = "Nepal", Genre = "Nepali Pop, R&B", FormedDate = new DateTime(2016, 1, 1), MonthlyListeners = 400000, IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new Artist { Name = "Maroon 5", Bio = "American pop rock band.", Country = "USA", Genre = "Pop Rock, Pop, Funk Rock", FormedDate = new DateTime(1994, 1, 1), MonthlyListeners = 50000000, IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new Artist { Name = "The Chainsmokers", Bio = "American electronic DJ and production duo.", Country = "USA", Genre = "EDM, Pop, Electropop", FormedDate = new DateTime(2012, 1, 1), MonthlyListeners = 35000000, IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                new Artist { Name = "Halsey", Bio = "American singer and songwriter.", Country = "USA", Genre = "Pop, Electropop, Alternative Pop", FormedDate = new DateTime(2012, 1, 1), MonthlyListeners = 30000000, IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            };
+
+            int newArtistsAdded = 0;
+            foreach (var artistData in artistsData)
+            {
+                if (!await context.Artists.AnyAsync(a => a.Name == artistData.Name))
+                {
+                    context.Artists.Add(artistData);
+                    newArtistsAdded++;
+                }
+            }
+
+            if (newArtistsAdded > 0)
+            {
                 await context.SaveChangesAsync();
-
-                logger.LogInformation("Artists seeded successfully.");
+                logger.LogInformation("{Count} new artists seeded.", newArtistsAdded);
             }
-            catch (Exception ex)
+            else
             {
-                logger.LogError(ex, "Error seeding artists.");
-                throw;
+                logger.LogInformation("No new artists to seed from the predefined list. All listed artists already exist or list is empty.");
             }
         }
 
-        private static async Task SeedAlbums(MusicDbContext context, ILogger logger)
+        private static async Task SeedAlbums(MusicDbContext context, ILogger logger, bool append = false)
         {
-            try
+            if (!append && await context.Albums.AnyAsync())
             {
-                logger.LogInformation("Seeding albums...");
-
-                var beatles = await context.Artists.FirstOrDefaultAsync(a => a.Name == "The Beatles");
-                var queen = await context.Artists.FirstOrDefaultAsync(a => a.Name == "Queen");
-                var michaelJackson = await context.Artists.FirstOrDefaultAsync(a => a.Name == "Michael Jackson");
-
-                if (beatles != null)
-                {
-                    var beatlesAlbums = new List<Album>
-                    {
-                        new Album
-                        {
-                            Title = "Abbey Road",
-                            ArtistId = beatles.Id,
-                            Year = 1969,
-                            Description = "Abbey Road is the eleventh studio album by English rock band the Beatles.",
-                            Genre = "Rock",
-                            ReleaseDate = new DateTime(1969, 9, 26),
-                            TotalTracks = 17,
-                            Duration = TimeSpan.FromMinutes(47.5),
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        },
-                        new Album
-                        {
-                            Title = "Let It Be",
-                            ArtistId = beatles.Id,
-                            Year = 1970,
-                            Description = "Let It Be is the twelfth and final studio album by English rock band the Beatles.",
-                            Genre = "Rock",
-                            ReleaseDate = new DateTime(1970, 5, 8),
-                            TotalTracks = 12,
-                            Duration = TimeSpan.FromMinutes(35.1),
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        }
-                    };
-
-                    await context.Albums.AddRangeAsync(beatlesAlbums);
-                    await context.SaveChangesAsync();
-                }
-                else
-                {
-                    logger.LogWarning("The Beatles artist not found when seeding albums.");
-                }
-
-                if (queen != null)
-                {
-                    var queenAlbums = new List<Album>
-                    {
-                        new Album
-                        {
-                            Title = "A Night at the Opera",
-                            ArtistId = queen.Id,
-                            Year = 1975,
-                            Description = "A Night at the Opera is the fourth studio album by the British rock band Queen.",
-                            Genre = "Rock",
-                            ReleaseDate = new DateTime(1975, 11, 21),
-                            TotalTracks = 12,
-                            Duration = TimeSpan.FromMinutes(43.08),
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        }
-                    };
-
-                    await context.Albums.AddRangeAsync(queenAlbums);
-                    await context.SaveChangesAsync();
-                }
-                else
-                {
-                    logger.LogWarning("Queen artist not found when seeding albums.");
-                }
-
-                if (michaelJackson != null)
-                {
-                    var mjAlbums = new List<Album>
-                    {
-                        new Album
-                        {
-                            Title = "Thriller",
-                            ArtistId = michaelJackson.Id,
-                            Year = 1982,
-                            Description = "Thriller is the sixth studio album by American singer Michael Jackson.",
-                            Genre = "Pop",
-                            ReleaseDate = new DateTime(1982, 11, 30),
-                            TotalTracks = 9,
-                            Duration = TimeSpan.FromMinutes(42.19),
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        }
-                    };
-
-                    await context.Albums.AddRangeAsync(mjAlbums);
-                    await context.SaveChangesAsync();
-                }
-                else
-                {
-                    logger.LogWarning("Michael Jackson artist not found when seeding albums.");
-                }
-
-                logger.LogInformation("Albums seeded successfully.");
+                logger.LogInformation("Albums already exist and append mode is off. Skipping album seeding.");
+                return;
             }
-            catch (Exception ex)
+            logger.LogInformation("Seeding albums (append mode: {Append})...", append);
+
+            // Ensure artists are loaded to link albums correctly
+            var artists = await context.Artists.ToDictionaryAsync(a => a.Name, a => a.Id);
+            var albumsData = new List<Album>();
+
+            void AddAlbum(string artistName, string title, int year, string desc, string genre, DateTime releaseDate, int tracks, double durationMinutes, string albumArtistGenreFallback)
             {
-                logger.LogError(ex, "Error seeding albums.");
-                throw;
+                if (artists.TryGetValue(artistName, out var artistId))
+                {
+                    albumsData.Add(new Album { Title = title, ArtistId = artistId, Year = year, Description = desc, Genre = genre ?? albumArtistGenreFallback, ReleaseDate = releaseDate, TotalTracks = tracks, Duration = TimeSpan.FromMinutes(durationMinutes), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+                }
+                else { logger.LogWarning("Artist '{ArtistName}' not found for album '{Title}'. Album not added.", artistName, title); }
+            }
+
+            AddAlbum("Sajjan Raj Vaidya", "Singles Collection (Sajjan Raj Vaidya)", DateTime.UtcNow.Year, "Popular singles by Sajjan Raj Vaidya.", "Nepali Pop, Indie", new DateTime(2023, 1, 1), 5, 22, "Nepali Pop");
+            AddAlbum("Arijit Singh", "Aashiqui 2 (Soundtrack)", 2013, "Soundtrack of Bollywood movie Aashiqui 2.", "Bollywood Soundtrack", new DateTime(2013, 4, 6), 11, 58, "Bollywood");
+            AddAlbum("Ed Sheeran", "÷ (Divide)", 2017, "Third studio album by Ed Sheeran.", "Pop", new DateTime(2017, 3, 3), 16, 59, "Pop");
+            AddAlbum("Taylor Swift", "1989", 2014, "Fifth studio album by Taylor Swift.", "Synth-pop", new DateTime(2014, 10, 27), 13, 48, "Pop");
+            AddAlbum("Olivia Rodrigo", "SOUR", 2021, "Debut studio album by Olivia Rodrigo.", "Pop, Pop-Rock", new DateTime(2021, 5, 21), 11, 34, "Pop");
+            AddAlbum("Tribal Rain", "Roka Yo Samay", 2017, "Debut album by Tribal Rain.", "Nepali Folk Rock", new DateTime(2017, 4, 1), 10, 45, "Nepali Folk Rock");
+            AddAlbum("Maroon 5", "Jordi", 2021, "Seventh studio album by Maroon 5.", "Pop", new DateTime(2021, 6, 11), 14, 43, "Pop Rock");
+            AddAlbum("The Chainsmokers", "Collage (EP)", 2016, "Second EP by The Chainsmokers.", "EDM, Future Bass", new DateTime(2016, 11, 4), 5, 19, "EDM");
+
+            int newAlbumsAdded = 0;
+            foreach (var albumData in albumsData)
+            {
+                if (!await context.Albums.AnyAsync(a => a.Title == albumData.Title && a.ArtistId == albumData.ArtistId))
+                {
+                    context.Albums.Add(albumData);
+                    newAlbumsAdded++;
+                }
+            }
+            if (newAlbumsAdded > 0)
+            {
+                await context.SaveChangesAsync();
+                logger.LogInformation("{Count} new albums seeded.", newAlbumsAdded);
+            }
+            else
+            {
+                logger.LogInformation("No new albums to seed from the predefined list. All listed albums already exist or list is empty/artists not found.");
             }
         }
 
-        private static async Task SeedSongs(MusicDbContext context, ILogger logger)
+        private static async Task SeedSongs(MusicDbContext context, ILogger logger, bool append = false)
         {
-            try
+            if (!append && await context.Songs.AnyAsync())
             {
-                logger.LogInformation("Seeding songs...");
-
-                var abbeyRoad = await context.Albums.FirstOrDefaultAsync(a => a.Title == "Abbey Road");
-                var letItBe = await context.Albums.FirstOrDefaultAsync(a => a.Title == "Let It Be");
-                var nightAtTheOpera = await context.Albums.FirstOrDefaultAsync(a => a.Title == "A Night at the Opera");
-                var thriller = await context.Albums.FirstOrDefaultAsync(a => a.Title == "Thriller");
-
-                var beatles = await context.Artists.FirstOrDefaultAsync(a => a.Name == "The Beatles");
-                var queen = await context.Artists.FirstOrDefaultAsync(a => a.Name == "Queen");
-                var michaelJackson = await context.Artists.FirstOrDefaultAsync(a => a.Name == "Michael Jackson");
-
-                if (abbeyRoad != null && beatles != null)
-                {
-                    var abbeyRoadSongs = new List<Song>
-                    {
-                        new Song
-                        {
-                            Title = "Come Together",
-                            ArtistId = beatles.Id,
-                            AlbumId = abbeyRoad.Id,
-                            Duration = TimeSpan.FromMinutes(4.2),
-                            TrackNumber = 1,
-                            Genre = "Rock",
-                            ReleaseDate = abbeyRoad.ReleaseDate,
-                            PlayCount = new Random().Next(1000, 10000),
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        },
-                        new Song
-                        {
-                            Title = "Something",
-                            ArtistId = beatles.Id,
-                            AlbumId = abbeyRoad.Id,
-                            Duration = TimeSpan.FromMinutes(3.03),
-                            TrackNumber = 2,
-                            Genre = "Rock",
-                            ReleaseDate = abbeyRoad.ReleaseDate,
-                            PlayCount = new Random().Next(1000, 10000),
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        }
-                    };
-
-                    await context.Songs.AddRangeAsync(abbeyRoadSongs);
-                    await context.SaveChangesAsync();
-                }
-                else
-                {
-                    logger.LogWarning("Abbey Road album or The Beatles artist not found when seeding songs.");
-                }
-
-                if (letItBe != null && beatles != null)
-                {
-                    var letItBeSongs = new List<Song>
-                    {
-                        new Song
-                        {
-                            Title = "Let It Be",
-                            ArtistId = beatles.Id,
-                            AlbumId = letItBe.Id,
-                            Duration = TimeSpan.FromMinutes(4.03),
-                            TrackNumber = 6,
-                            Genre = "Rock",
-                            ReleaseDate = letItBe.ReleaseDate,
-                            PlayCount = new Random().Next(1000, 10000),
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        },
-                        new Song
-                        {
-                            Title = "The Long and Winding Road",
-                            ArtistId = beatles.Id,
-                            AlbumId = letItBe.Id,
-                            Duration = TimeSpan.FromMinutes(3.38),
-                            TrackNumber = 9,
-                            Genre = "Rock",
-                            ReleaseDate = letItBe.ReleaseDate,
-                            PlayCount = new Random().Next(1000, 10000),
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        }
-                    };
-
-                    await context.Songs.AddRangeAsync(letItBeSongs);
-                    await context.SaveChangesAsync();
-                }
-                else
-                {
-                    logger.LogWarning("Let It Be album or The Beatles artist not found when seeding songs.");
-                }
-
-                if (nightAtTheOpera != null && queen != null)
-                {
-                    var queenSongs = new List<Song>
-                    {
-                        new Song
-                        {
-                            Title = "Bohemian Rhapsody",
-                            ArtistId = queen.Id,
-                            AlbumId = nightAtTheOpera.Id,
-                            Duration = TimeSpan.FromMinutes(5.55),
-                            TrackNumber = 11,
-                            Genre = "Rock",
-                            ReleaseDate = nightAtTheOpera.ReleaseDate,
-                            PlayCount = new Random().Next(1000, 10000),
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        },
-                        new Song
-                        {
-                            Title = "Love of My Life",
-                            ArtistId = queen.Id,
-                            AlbumId = nightAtTheOpera.Id,
-                            Duration = TimeSpan.FromMinutes(3.38),
-                            TrackNumber = 9,
-                            Genre = "Rock",
-                            ReleaseDate = nightAtTheOpera.ReleaseDate,
-                            PlayCount = new Random().Next(1000, 10000),
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        }
-                    };
-
-                    await context.Songs.AddRangeAsync(queenSongs);
-                    await context.SaveChangesAsync();
-                }
-                else
-                {
-                    logger.LogWarning("A Night at the Opera album or Queen artist not found when seeding songs.");
-                }
-
-                if (thriller != null && michaelJackson != null)
-                {
-                    var thrillerSongs = new List<Song>
-                    {
-                        new Song
-                        {
-                            Title = "Thriller",
-                            ArtistId = michaelJackson.Id,
-                            AlbumId = thriller.Id,
-                            Duration = TimeSpan.FromMinutes(5.57),
-                            TrackNumber = 4,
-                            Genre = "Pop",
-                            ReleaseDate = thriller.ReleaseDate,
-                            PlayCount = new Random().Next(1000, 10000),
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        },
-                        new Song
-                        {
-                            Title = "Billie Jean",
-                            ArtistId = michaelJackson.Id,
-                            AlbumId = thriller.Id,
-                            Duration = TimeSpan.FromMinutes(4.54),
-                            TrackNumber = 6,
-                            Genre = "Pop",
-                            ReleaseDate = thriller.ReleaseDate,
-                            PlayCount = new Random().Next(1000, 10000),
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        }
-                    };
-
-                    await context.Songs.AddRangeAsync(thrillerSongs);
-                    await context.SaveChangesAsync();
-                }
-                else
-                {
-                    logger.LogWarning("Thriller album or Michael Jackson artist not found when seeding songs.");
-                }
-
-                logger.LogInformation("Songs seeded successfully.");
+                logger.LogInformation("Songs already exist and append mode is off. Skipping song seeding.");
+                return;
             }
-            catch (Exception ex)
+            logger.LogInformation("Seeding songs (append mode: {Append})...", append);
+            var random = new Random();
+
+            var artistDict = await context.Artists.ToDictionaryAsync(a => a.Name, a => a.Id);
+            // Load albums with their artists to correctly create the lookup key
+            var albumList = await context.Albums
+                                    .Include(al => al.Artist)
+                                    .ToListAsync();
+            var albumLookup = albumList.Where(al => al.Artist != null) // Ensure artist is not null
+                                     .ToDictionary(al => $"{al.Title} - {al.Artist.Name}", al => al.Id);
+
+            var songsData = new List<Song>();
+
+            void AddSong(string title, string artistName, string albumTitleAndArtistKey, double durationMinutes, int trackNo, string genre, DateTime releaseDate, int playCountMin = 500, int playCountMax = 50000)
             {
-                logger.LogError(ex, "Error seeding songs.");
-                throw;
+                if (artistDict.TryGetValue(artistName, out var artistId))
+                {
+                    int? albumId = null;
+                    if (!string.IsNullOrEmpty(albumTitleAndArtistKey) && albumLookup.TryGetValue(albumTitleAndArtistKey, out var foundAlbumId))
+                    {
+                        albumId = foundAlbumId;
+                    }
+                    else if (!string.IsNullOrEmpty(albumTitleAndArtistKey))
+                    {
+                        logger.LogWarning("Album key '{AlbumKey}' not found for song '{SongTitle}'. Song will be added as a single.", albumTitleAndArtistKey, title);
+                    }
+                    songsData.Add(new Song { Title = title, ArtistId = artistId, AlbumId = albumId, Duration = TimeSpan.FromMinutes(durationMinutes), TrackNumber = trackNo, Genre = genre, ReleaseDate = releaseDate, PlayCount = random.Next(playCountMin, playCountMax), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+                }
+                else { logger.LogWarning("Artist '{ArtistName}' not found for song '{SongTitle}'. Song not added.", artistName, title); }
+            }
+
+            AddSong("Hataarindai, Bataasindai", "Sajjan Raj Vaidya", "Singles Collection (Sajjan Raj Vaidya) - Sajjan Raj Vaidya", 4.5, 1, "Nepali Pop", new DateTime(2018, 1, 1), 10000, 70000);
+            AddSong("Chitthi Bhitra", "Sajjan Raj Vaidya", "Singles Collection (Sajjan Raj Vaidya) - Sajjan Raj Vaidya", 5.2, 2, "Nepali Pop", new DateTime(2019, 1, 1), 8000, 60000);
+            AddSong("Sasto Mutu", "Sajjan Raj Vaidya", "Singles Collection (Sajjan Raj Vaidya) - Sajjan Raj Vaidya", 4.1, 3, "Nepali Pop", new DateTime(2022, 1, 1), 12000, 80000);
+            AddSong("Tum Hi Ho", "Arijit Singh", "Aashiqui 2 (Soundtrack) - Arijit Singh", 4.37, 1, "Bollywood", new DateTime(2013, 4, 6), 500000, 2500000);
+            AddSong("Channa Mereya", "Arijit Singh", null, 4.82, 1, "Bollywood", new DateTime(2016, 9, 29), 400000, 2000000);
+            AddSong("Kesariya", "Arijit Singh", null, 4.47, 1, "Bollywood", new DateTime(2022, 7, 17), 300000, 1800000);
+            AddSong("Shape of You", "Ed Sheeran", "÷ (Divide) - Ed Sheeran", 3.89, 4, "Pop", new DateTime(2017, 1, 6), 1000000, 7000000);
+            AddSong("Perfect", "Ed Sheeran", "÷ (Divide) - Ed Sheeran", 4.39, 5, "Pop", new DateTime(2017, 3, 3), 800000, 6000000);
+            AddSong("Castle on the Hill", "Ed Sheeran", "÷ (Divide) - Ed Sheeran", 4.35, 2, "Pop", new DateTime(2017, 1, 6), 700000, 5000000);
+            AddSong("Blank Space", "Taylor Swift", "1989 - Taylor Swift", 3.85, 2, "Electropop", new DateTime(2014, 11, 10), 900000, 6000000);
+            AddSong("Nacha Firiri", "Mahesh Kafle", null, 4.5, 1, "Nepali Lok Pop", new DateTime(2021, 3, 1), 50000, 300000);
+            AddSong("Junna Hery", "Tribal Rain", "Roka Yo Samay - Tribal Rain", 5.08, 3, "Nepali Folk Rock", new DateTime(2017, 4, 1), 30000, 200000);
+            AddSong("Happier", "Olivia Rodrigo", "SOUR - Olivia Rodrigo", 2.92, 6, "Pop Ballad", new DateTime(2021, 5, 21), 700000, 4000000);
+            AddSong("Feri Feri", "Sushant Ghimire (Vyoma)", null, 3.5, 1, "Nepali Pop/Indie", new DateTime(2023, 5, 10), 20000, 150000);
+            AddSong("Bardali", "Sushant KC", null, 3.75, 1, "Nepali Pop/R&B", new DateTime(2023, 2, 15), 40000, 250000);
+            AddSong("Memories", "Maroon 5", "Jordi - Maroon 5", 3.15, 1, "Pop", new DateTime(2019, 9, 20), 800000, 5000000);
+            AddSong("Closer", "The Chainsmokers", "Collage (EP) - The Chainsmokers", 4.07, 1, "EDM/Pop", new DateTime(2016, 7, 29), 900000, 6000000);
+
+            int newSongsAdded = 0;
+            foreach (var songData in songsData)
+            {
+                if (!await context.Songs.AnyAsync(s => s.Title == songData.Title && s.ArtistId == songData.ArtistId))
+                {
+                    context.Songs.Add(songData);
+                    newSongsAdded++;
+                }
+            }
+
+            if (newSongsAdded > 0)
+            {
+                await context.SaveChangesAsync();
+                logger.LogInformation("{Count} new songs seeded.", newSongsAdded);
+            }
+            else
+            {
+                logger.LogInformation("No new songs to seed from the predefined list. All listed songs already exist or list is empty/artists or albums not found.");
             }
         }
 
         private static async Task SeedPlaylists(MusicDbContext context, ILogger logger)
         {
-            try
+            logger.LogInformation("Seeding playlists...");
+            var regularUser = await context.Users.FirstOrDefaultAsync(u => u.Username == "user");
+
+            if (regularUser != null)
             {
-                logger.LogInformation("Seeding playlists...");
-
-                var regularUser = await context.Users.FirstOrDefaultAsync(u => u.Username == "user");
-
-                if (regularUser != null)
+                // Check if this specific playlist already exists for this user
+                if (!await context.Playlists.AnyAsync(p => p.Name == "My Ultimate Mix" && p.UserId == regularUser.Id))
                 {
-                    var rockClassics = new Playlist
+                    var mixedPlaylist = new Playlist
                     {
-                        Name = "Rock Classics",
-                        Description = "A collection of classic rock songs",
+                        Name = "My Ultimate Mix",
+                        Description = "A collection of Nepali, Hindi, and English favorites.",
                         UserId = regularUser.Id,
                         IsPublic = true,
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
                     };
+                    context.Playlists.Add(mixedPlaylist);
+                    await context.SaveChangesAsync(); // Save playlist to get Id
 
-                    context.Playlists.Add(rockClassics);
-                    await context.SaveChangesAsync();
+                    var songsForPlaylist = await context.Songs
+                                                .OrderByDescending(s => s.PlayCount)
+                                                .Take(7)
+                                                .ToListAsync();
 
-                    // Add songs to playlist
-                    var songs = await context.Songs
-                        .Where(s => s.Genre == "Rock")
-                        .ToListAsync();
-
-                    if (songs.Any())
+                    if (songsForPlaylist.Any())
                     {
                         int order = 0;
-                        foreach (var song in songs)
+                        var playlistSongsToAdd = new List<PlaylistSong>();
+                        foreach (var song in songsForPlaylist)
                         {
-                            context.PlaylistSongs.Add(new PlaylistSong
+                            // Check if song is already in this playlist (though unlikely for a new playlist)
+                            if (!await context.PlaylistSongs.AnyAsync(ps => ps.PlaylistId == mixedPlaylist.Id && ps.SongId == song.Id))
                             {
-                                PlaylistId = rockClassics.Id,
-                                SongId = song.Id,
-                                Order = order++,
-                                AddedAt = DateTime.UtcNow
-                            });
+                                playlistSongsToAdd.Add(new PlaylistSong
+                                {
+                                    PlaylistId = mixedPlaylist.Id,
+                                    SongId = song.Id,
+                                    Order = order++,
+                                    AddedAt = DateTime.UtcNow
+                                });
+                            }
                         }
-
-                        await context.SaveChangesAsync();
+                        if (playlistSongsToAdd.Any())
+                        {
+                            await context.PlaylistSongs.AddRangeAsync(playlistSongsToAdd);
+                            await context.SaveChangesAsync();
+                        }
+                        logger.LogInformation("Playlist 'My Ultimate Mix' seeded with songs for user {UserId}.", regularUser.Id);
                     }
-                    else
-                    {
-                        logger.LogWarning("No rock songs found when seeding playlists.");
-                    }
+                    else { logger.LogWarning("No songs found to add to 'My Ultimate Mix' playlist."); }
                 }
                 else
                 {
-                    logger.LogWarning("Regular user not found when seeding playlists.");
+                    logger.LogInformation("Playlist 'My Ultimate Mix' already exists for user {UserId}.", regularUser.Id);
                 }
-
-                logger.LogInformation("Playlists seeded successfully.");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error seeding playlists.");
-                throw;
-            }
+            }            else { logger.LogWarning("Regular user not found when seeding playlists."); }
+            logger.LogInformation("Playlists seeding attempt finished.");
         }
     }
 }
