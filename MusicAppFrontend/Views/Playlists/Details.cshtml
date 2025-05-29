@@ -87,8 +87,7 @@
                                         <th></th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    @foreach (var song in Model.Songs.OrderBy(s => s.Order))
+                                <tbody>                                    @foreach (var song in Model.Songs.OrderBy(s => s.Order))
                                     {
                                         <tr>
                                             <td><img src="@(song.CoverImageUrl ?? GetRandomImageUrl(300, 300))" 
@@ -99,7 +98,26 @@
                                             <td>@song.AlbumTitle</td>
                                             <td>@song.DurationString</td>
                                             <td>
-                                                <a href="@Url.Action("Details", "Songs", new { id = song.SongId })" class="btn btn-sm" style="background: var(--ytm-accent-red); color: var(--ytm-text-primary);"><i class="bi bi-play-fill"></i></a>
+                                                <button class="btn btn-sm play-btn" 
+                                                        style="background: var(--ytm-accent-red); color: var(--ytm-text-primary);"
+                                                        data-play-song='@Html.Raw(Json.Serialize(new { 
+                                                            id = song.SongId, 
+                                                            title = song.Title, 
+                                                            artistName = song.ArtistName, 
+                                                            audioUrl = song.AudioUrl, 
+                                                            coverImageUrl = song.CoverImageUrl 
+                                                        }))'
+                                                        data-playlist='@Html.Raw(Json.Serialize(Model.Songs.OrderBy(s => s.Order).Select(s => new { 
+                                                            id = s.SongId, 
+                                                            title = s.Title, 
+                                                            artistName = s.ArtistName, 
+                                                            audioUrl = s.AudioUrl, 
+                                                            coverImageUrl = s.CoverImageUrl 
+                                                        })))'
+                                                        data-index="@Model.Songs.OrderBy(s => s.Order).ToList().IndexOf(song)"
+                                                        title="Play song">
+                                                    <i class="bi bi-play-fill"></i>
+                                                </button>
                                             </td>
                                         </tr>
                                     }

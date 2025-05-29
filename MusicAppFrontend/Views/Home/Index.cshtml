@@ -313,9 +313,7 @@
         border-radius: 12px;
         border: 1px solid var(--ytm-border-color);
         overflow: hidden;
-    }
-
-    .song-item {
+    }    .song-item {
         display: flex;
         align-items: center;
         padding: 0.75rem 1rem;
@@ -323,12 +321,20 @@
         transition: background-color 0.2s ease;
     }
 
-    .song-item:last-child {
-        border-bottom: none;
-    }
-
     .song-item:hover {
         background-color: var(--ytm-bg-tertiary);
+    }
+
+    .song-item .play-btn {
+        margin-right: 12px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }    .song-item:hover .play-btn {
+        opacity: 1;
+    }
+
+    .song-item:last-child {
+        border-bottom: none;
     }
 
     .song-image {
@@ -465,11 +471,28 @@
     </div>
 
     <!-- Recently Added Songs -->
-    <h3 class="section-header">Recently Added</h3>
-    <div class="song-list">
-        @foreach (var song in Model.RecentSongs)
+    <h3 class="section-header">Recently Added</h3>    <div class="song-list">        @foreach (var song in Model.RecentSongs)
         {
             <div class="song-item">
+                <button class="play-btn" 
+                        data-play-song='@Html.Raw(Json.Serialize(new { 
+                            id = song.Id, 
+                            title = song.Title, 
+                            artistName = song.ArtistName, 
+                            audioUrl = song.AudioUrl, 
+                            coverImageUrl = song.CoverImageUrl 
+                        }))'
+                        data-playlist='@Html.Raw(Json.Serialize(Model.RecentSongs.Select(s => new { 
+                            id = s.Id, 
+                            title = s.Title, 
+                            artistName = s.ArtistName, 
+                            audioUrl = s.AudioUrl, 
+                            coverImageUrl = s.CoverImageUrl 
+                        })))'
+                        data-index="@Model.RecentSongs.ToList().IndexOf(song)"
+                        title="Play song">
+                    <i class="bi bi-play-fill"></i>
+                </button>
                 <img src="@(song.CoverImageUrl ?? GetRandomImageUrl(300, 300))" class="song-image" 
                      alt="@song.Title"
                      onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Song';">

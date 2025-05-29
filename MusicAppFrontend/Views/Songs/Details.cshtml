@@ -253,9 +253,15 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="song-actions">
-                <button class="btn btn-play">
+              <div class="song-actions">
+                <button class="btn btn-play" 
+                        data-play-song='@Html.Raw(Json.Serialize(new { 
+                            id = Model.Id, 
+                            title = Model.Title, 
+                            artistName = Model.ArtistName, 
+                            audioUrl = Model.AudioUrl, 
+                            coverImageUrl = Model.CoverImageUrl 
+                        }))'>
                     <i class="bi bi-play-fill"></i> Play
                 </button>
                 <button class="btn btn-action">

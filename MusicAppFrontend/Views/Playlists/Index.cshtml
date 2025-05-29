@@ -35,14 +35,23 @@
             <a asp-action="Create" class="bg-[var(--ytm-accent-red)] hover:bg-[var(--ytm-accent-red-hover)] text-white px-4 py-2 rounded-lg transition-colors flex items-center">
                 <i class="bi bi-plus-circle-fill mr-2"></i> Create Playlist
             </a>
-        </div><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        </div>        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             @foreach (var playlist in Model.Data)
             {
-                <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow border border-[var(--ytm-border-color)] flex flex-col h-full hover:scale-105 transition-transform duration-200">
+                <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow border border-[var(--ytm-border-color)] flex flex-col h-full hover:scale-105 transition-transform duration-200 group">
                     <a asp-action="Details" asp-route-id="@playlist.Id" class="flex flex-col h-full text-decoration-none">
-                        <img src="@(string.IsNullOrEmpty(playlist.CoverImageUrl) ? GetRandomImageUrl(300, 300) : playlist.CoverImageUrl)" 
-                             class="rounded-t-xl w-full object-cover" style="height:200px; background: var(--ytm-bg-tertiary);" alt="@playlist.Name"
-                             onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Playlist';">
+                        <div class="relative">
+                            <img src="@(string.IsNullOrEmpty(playlist.CoverImageUrl) ? GetRandomImageUrl(300, 300) : playlist.CoverImageUrl)" 
+                                 class="rounded-t-xl w-full object-cover" style="height:200px; background: var(--ytm-bg-tertiary);" alt="@playlist.Name"
+                                 onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Playlist';">
+                            <!-- Play button overlay -->
+                            <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-t-xl">
+                                <button class="w-16 h-16 bg-[var(--ytm-accent-red)] rounded-full flex items-center justify-center hover:bg-[var(--ytm-accent-red-hover)] transition-colors"
+                                        onclick="event.stopPropagation(); window.location.href='@Url.Action("Details", new { id = playlist.Id })'">
+                                    <i class="fas fa-play text-white text-xl ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
                         <div class="p-4 flex-1 flex flex-col">
                             <h5 class="font-semibold text-lg text-[var(--ytm-text-primary)] mb-1 hover:text-[var(--ytm-accent-red)] transition-colors">@playlist.Name</h5>
                             <div class="text-[var(--ytm-text-secondary)] mb-2 text-sm">@playlist.Description</div>

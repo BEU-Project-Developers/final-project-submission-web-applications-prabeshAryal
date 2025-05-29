@@ -120,6 +120,126 @@
             border-color: #ff0000;
             box-shadow: 0 0 0 0.25rem rgba(255, 0, 0, 0.25);
         }
+
+        /* Sticky Music Player */
+        .sticky-music-player {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bs-body-bg);
+            border-top: 1px solid var(--bs-border-color);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+            z-index: 1030;
+        }
+
+        .music-player-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 1rem;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .player-album-art {
+            width: 50px;
+            height: 50px;
+            border-radius: 5px;
+            object-fit: cover;
+            margin-right: 0.75rem;
+        }
+
+        .player-song-title {
+            font-weight: 500;
+            color: var(--bs-body-color);
+        }
+
+        .player-artist-name {
+            font-size: 0.875rem;
+            color: var(--bs-muted);
+        }
+
+        .player-controls {
+            display: flex;
+            align-items: center;
+        }
+
+        .control-buttons {
+            display: flex;
+            align-items: center;
+            margin-right: 1rem;
+        }
+
+        .control-btn {
+            background: transparent;
+            border: none;
+            color: var(--bs-body-color);
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .control-btn:hover {
+            color: #ff0000;
+        }
+
+        .progress-container {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        .time-display {
+            font-size: 0.875rem;
+            color: var(--bs-muted);
+            min-width: 40px;
+        }
+
+        .progress-bar-container {
+            flex-grow: 1;
+            margin: 0 0.5rem;
+        }
+
+        .progress-bar {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--bs-border-color);
+            outline: none;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        .progress-bar:hover {
+            opacity: 1;
+        }
+
+        .volume-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .volume-bar {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100px;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--bs-border-color);
+            outline: none;
+            margin-left: 0.5rem;
+        }
+
+        /* Hide audio element */
+        audio {
+            display: none;
+        }
     </style>
 
 </head>
@@ -364,10 +484,74 @@
         </main>
     </div>
 
+    @* Sticky Music Player *@
+    <div id="sticky-music-player" class="sticky-music-player d-none">
+        <div class="music-player-container">
+            @* Song Information *@
+            <div class="player-info">
+                <img id="player-album-art" src="" alt="Album Art" class="player-album-art">
+                <div class="player-song-details">
+                    <div id="player-song-title" class="player-song-title">Song Title</div>
+                    <div id="player-artist-name" class="player-artist-name">Artist Name</div>
+                </div>
+            </div>
+
+            @* Player Controls *@
+            <div class="player-controls">
+                <div class="control-buttons">
+                    <button id="player-prev" class="control-btn" title="Previous">
+                        <i class="bi bi-skip-start-fill"></i>
+                    </button>
+                    <button id="player-play-pause" class="control-btn play-pause-btn" title="Play/Pause">
+                        <i class="bi bi-play-fill"></i>
+                    </button>
+                    <button id="player-next" class="control-btn" title="Next">
+                        <i class="bi bi-skip-end-fill"></i>
+                    </button>
+                </div>
+                
+                <div class="progress-container">
+                    <span id="player-current-time" class="time-display">0:00</span>
+                    <div class="progress-bar-container">
+                        <input type="range" id="player-progress" class="progress-bar" min="0" max="100" value="0">
+                    </div>
+                    <span id="player-duration" class="time-display">0:00</span>
+                </div>
+            </div>
+
+            @* Volume and Additional Controls *@
+            <div class="player-extras">
+                <button id="player-queue" class="control-btn" title="Queue">
+                    <i class="bi bi-list-ul"></i>
+                </button>
+                <div class="volume-container">
+                    <button id="player-volume-btn" class="control-btn" title="Volume">
+                        <i class="bi bi-volume-up-fill"></i>
+                    </button>
+                    <input type="range" id="player-volume" class="volume-bar" min="0" max="100" value="70">
+                </div>
+                <button id="player-repeat" class="control-btn" title="Repeat">
+                    <i class="bi bi-arrow-repeat"></i>
+                </button>
+                <button id="player-shuffle" class="control-btn" title="Shuffle">
+                    <i class="bi bi-shuffle"></i>
+                </button>
+                <button id="player-minimize" class="control-btn" title="Hide Player">
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+
+        @* Hidden Audio Element *@
+        <audio id="music-audio" preload="metadata"></audio>
+    </div>
+
     @* Bootstrap JS Bundle *@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     @* API Utilities *@
     <script src="~/js/api-utils.js" asp-append-version="true"></script>
+    @* Music Player JS *@
+    <script src="~/js/music-player.js" asp-append-version="true"></script>
     @* Site Specific JS (Contains all script logic below) *@
     <script src="~/js/site.js" asp-append-version="true"></script>
 

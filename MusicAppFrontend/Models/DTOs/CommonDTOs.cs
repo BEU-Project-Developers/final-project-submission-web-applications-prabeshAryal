@@ -114,8 +114,7 @@ namespace MusicApp.Models.DTOs
     public class PlaylistDetailDto : PlaylistDto
     {
         public new List<PlaylistSongDto> Songs { get; set; } = new List<PlaylistSongDto>();
-    }
-      public class PlaylistSongDto
+    }      public class PlaylistSongDto
     {
         public int SongId { get; set; }
         public string? Title { get; set; }
@@ -124,6 +123,7 @@ namespace MusicApp.Models.DTOs
         public TimeSpan? Duration { get; set; }
         public string DurationString => Duration.HasValue ? $"{(int)Duration.Value.TotalMinutes}:{Duration.Value.Seconds:D2}" : "--:--";
         public string? CoverImageUrl { get; set; }
+        public string? AudioUrl { get; set; }
         public int Order { get; set; }
         public DateTime AddedAt { get; set; }
     }

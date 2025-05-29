@@ -33,14 +33,13 @@ namespace MusicApp.ViewModels
         public string Username { get; set; } = string.Empty;
         public string? CoverImageUrl { get; set; }
         public int SongCount { get; set; }
-    }
-
-    public class SongViewModel
+    }    public class SongViewModel
     {
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string ArtistName { get; set; } = string.Empty;
         public string CoverImageUrl { get; set; } = string.Empty;
         public string Duration { get; set; } = string.Empty;
+        public string? AudioUrl { get; set; }
     }
 } 

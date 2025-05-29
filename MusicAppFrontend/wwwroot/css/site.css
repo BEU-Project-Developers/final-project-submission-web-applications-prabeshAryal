@@ -556,9 +556,362 @@ footer {
     /* Ensure theme toggle behaves correctly in mobile overlay */
     .sidebar.active-mobile .theme-switch-wrapper {
         display: flex;
-    }
-
-    .sidebar.active-mobile .theme-toggle-icon-btn {
+    }    .sidebar.active-mobile .theme-toggle-icon-btn {
         display: none;
     }
 }
+
+/* --- Sticky Music Player Styles --- */
+.sticky-music-player {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: var(--ytm-bg-secondary);
+    border-top: 1px solid var(--ytm-border-color);
+    z-index: 1040;
+    height: 80px;
+    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.sticky-music-player.d-none {
+    transform: translateY(100%);
+}
+
+.music-player-container {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 16px;
+    gap: 16px;
+}
+
+/* Player Info Section */
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 0 0 300px;
+}
+
+.player-album-art {
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.player-song-details {
+    min-width: 0;
+    flex: 1;
+}
+
+.player-song-title {
+    color: var(--ytm-text-primary);
+    font-weight: 500;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.player-artist-name {
+    color: var(--ytm-text-secondary);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Player Controls Section */
+.player-controls {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    max-width: 600px;
+    min-width: 0;
+}
+
+.control-buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.control-btn {
+    background: none;
+    border: none;
+    color: var(--ytm-text-primary);
+    font-size: 1.2rem;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    width: 32px;
+    height: 32px;
+}
+
+.control-btn:hover {
+    background-color: var(--ytm-bg-tertiary);
+}
+
+.play-pause-btn {
+    background-color: var(--ytm-accent-red);
+    color: white;
+    font-size: 1.4rem;
+    width: 40px;
+    height: 40px;
+}
+
+.play-pause-btn:hover {
+    background-color: #cc0000;
+}
+
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 500px;
+}
+
+.time-display {
+    color: var(--ytm-text-secondary);
+    font-size: 0.75rem;
+    font-weight: 400;
+    min-width: 35px;
+    text-align: center;
+}
+
+.progress-bar-container {
+    flex: 1;
+    height: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--ytm-bg-tertiary);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.progress-bar::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--ytm-accent-red);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.progress-bar:hover::-webkit-slider-thumb {
+    opacity: 1;
+}
+
+.progress-bar::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--ytm-accent-red);
+    cursor: pointer;
+    border: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.progress-bar:hover::-moz-range-thumb {
+    opacity: 1;
+}
+
+/* Player Extras Section */
+.player-extras {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 300px;
+    justify-content: flex-end;
+}
+
+.volume-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.volume-bar {
+    width: 80px;
+    height: 4px;
+    background: var(--ytm-bg-tertiary);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.volume-bar::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--ytm-accent-red);
+    cursor: pointer;
+}
+
+.volume-bar::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--ytm-accent-red);
+    cursor: pointer;
+    border: none;
+}
+
+/* Active states for repeat and shuffle */
+.control-btn.active {
+    color: var(--ytm-accent-red);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .music-player-container {
+        padding: 0 12px;
+        gap: 12px;
+    }
+
+    .player-info {
+        flex: 0 0 200px;
+    }
+
+    .player-extras {
+        flex: 0 0 120px;
+    }
+
+    .volume-container {
+        display: none;
+    }
+
+    .time-display {
+        display: none;
+    }
+
+    .progress-container {
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .player-info {
+        flex: 0 0 150px;
+    }
+
+    .player-extras {
+        flex: 0 0 80px;
+    }
+
+    .player-extras .control-btn:not(#player-minimize) {
+        display: none;
+    }    .control-buttons .control-btn:not(#player-play-pause) {
+        display: none;
+    }
+}
+
+/* --- Play Button Styles for Song Lists --- */
+.play-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    width: 32px;
+    height: 32px;
+}
+
+.play-btn:hover {
+    background-color: var(--ytm-bg-tertiary);
+    transform: scale(1.1);
+}
+
+.play-btn i {
+    transition: color 0.2s ease;
+}
+
+.play-btn:hover i {
+    color: var(--ytm-accent-red) !important;
+}
+
+/* --- Sticky Music Player Styles --- */
+.sticky-music-player {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: var(--ytm-bg-secondary);
+    border-top: 1px solid var(--ytm-border-color);
+    z-index: 1040;
+    height: 80px;
+    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.sticky-music-player.d-none {
+    transform: translateY(100%);
+}
+
+.music-player-container {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 16px;
+    gap: 16px;
+}
+
+/* Player Info Section */
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 0 0 300px;
+}
+
+.player-album-art {
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.player-song-details {
+    min-width: 0;
+    flex: 1;
+}
+
+.player-song-title {
+    color: var(--ytm-text-primary);
+    font-weight: 500;
+   

@@ -234,9 +234,16 @@
                 <p class="album-description">@Model.Description</p>
             }
         </div>
-        
-        <div class="album-actions">
-            <button class="btn btn-play">
+          <div class="album-actions">
+            <button class="btn btn-play" 
+                    data-play-album='@Html.Raw(Json.Serialize(Model.Songs.Select(s => new { 
+                        id = s.Id, 
+                        title = s.Title, 
+                        artistName = s.ArtistName, 
+                        audioUrl = s.AudioUrl, 
+                        coverImageUrl = s.CoverImageUrl 
+                    })))'
+                    title="Play all songs from this album">
                 <i class="bi bi-play-fill"></i> Play All
             </button>
             <button class="btn btn-action">
@@ -256,8 +263,7 @@
     
     @if (Model.Songs != null && Model.Songs.Any())
     {
-        <ul class="track-list">
-            @for (int i = 0; i < Model.Songs.Count; i++)
+        <ul class="track-list">            @for (int i = 0; i < Model.Songs.Count; i++)
             {
                 var song = Model.Songs[i];
                 <li class="track-item">
@@ -265,11 +271,28 @@
                     <div class="track-info">
                         <div class="track-title">@song.Title</div>
                         <div class="track-artist">@song.ArtistName</div>
-                    </div>                    <div class="track-duration">
+                    </div>
+                    <div class="track-duration">
                         @(song.Duration?.ToString(@"m\:ss") ?? "--:--")
                     </div>
                     <div class="track-actions">
-                        <button class="btn" title="Play">
+                        <button class="btn play-btn" 
+                                data-play-song='@Html.Raw(Json.Serialize(new { 
+                                    id = song.Id, 
+                                    title = song.Title, 
+                                    artistName = song.ArtistName, 
+                                    audioUrl = song.AudioUrl, 
+                                    coverImageUrl = song.CoverImageUrl 
+                                }))'
+                                data-playlist='@Html.Raw(Json.Serialize(Model.Songs.Select(s => new { 
+                                    id = s.Id, 
+                                    title = s.Title, 
+                                    artistName = s.ArtistName, 
+                                    audioUrl = s.AudioUrl, 
+                                    coverImageUrl = s.CoverImageUrl 
+                                })))'
+                                data-index="@i"
+                                title="Play">
                             <i class="bi bi-play-fill"></i>
                         </button>
                         <button class="btn" title="Like">

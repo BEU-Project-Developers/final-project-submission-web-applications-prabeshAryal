@@ -330,7 +330,7 @@
                                 <span class="song-title">@song.Title</span>
                             </div>                            <div class="song-actions">
                                 <span class="song-duration">@(song.Duration?.ToString(@"m\:ss") ?? "--:--")</span>
-                                <button class="btn" title="Play Song"><i class="bi bi-play-fill"></i></button>
+                                <button class="btn" title="Play Song" data-play-song data-song-title="@song.Title" data-artist-name="@Model.Name" data-audio-url="@song.AudioUrl"><i class="bi bi-play-fill"></i></button>
                                 <button class="btn" title="Add to Playlist"><i class="bi bi-plus"></i></button>
                             </div>
                         </li>

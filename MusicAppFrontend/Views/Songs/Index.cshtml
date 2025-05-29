@@ -30,12 +30,32 @@
                             <th class="px-6 py-4 text-center text-sm font-semibold text-[var(--ytm-text-secondary)]">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[var(--ytm-border-color)]">
-                        @foreach (var song in Model.Data)
+                    <tbody class="divide-y divide-[var(--ytm-border-color)]">                        @foreach (var song in Model.Data)
                         {
-                            <tr class="hover:bg-[var(--ytm-bg-tertiary)] transition-colors">
+                            <tr class="hover:bg-[var(--ytm-bg-tertiary)] transition-colors group">
                                 <td class="px-6 py-4">
-                                    <div class="font-medium text-[var(--ytm-text-primary)]">@song.Title</div>
+                                    <div class="flex items-center gap-3">
+                                        <button class="play-btn opacity-0 group-hover:opacity-100 transition-opacity" 
+                                                data-play-song='@Html.Raw(Json.Serialize(new { 
+                                                    id = song.Id, 
+                                                    title = song.Title, 
+                                                    artistName = song.ArtistName, 
+                                                    audioUrl = song.AudioUrl, 
+                                                    coverImageUrl = song.CoverImageUrl 
+                                                }))'
+                                                data-playlist='@Html.Raw(Json.Serialize(Model.Data.Select(s => new { 
+                                                    id = s.Id, 
+                                                    title = s.Title, 
+                                                    artistName = s.ArtistName, 
+                                                    audioUrl = s.AudioUrl, 
+                                                    coverImageUrl = s.CoverImageUrl 
+                                                })))'
+                                                data-index="@Model.Data.ToList().IndexOf(song)"
+                                                title="Play song">
+                                            <i class="bi bi-play-fill text-[var(--ytm-accent-red)] text-xl"></i>
+                                        </button>
+                                        <div class="font-medium text-[var(--ytm-text-primary)]">@song.Title</div>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="text-[var(--ytm-text-secondary)]">@(song.ArtistName ?? "-")</div>
@@ -125,12 +145,35 @@ else
                             <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Genre</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[var(--ytm-border-color)]">
-                        @foreach (var song in Model.Data)
+                    <tbody class="divide-y divide-[var(--ytm-border-color)]">                        @foreach (var song in Model.Data)
                         {
-                            <tr class="hover:bg-[var(--ytm-bg-tertiary)] transition-colors" onclick="window.location.href='@Url.Action("Details", new { id = song.Id })'">
+                            <tr class="hover:bg-[var(--ytm-bg-tertiary)] transition-colors group">
                                 <td class="px-6 py-4">
-                                    <div class="font-medium text-[var(--ytm-text-primary)]">@song.Title</div>
+                                    <div class="flex items-center gap-3">
+                                        <button class="play-btn opacity-0 group-hover:opacity-100 transition-opacity" 
+                                                data-play-song='@Html.Raw(Json.Serialize(new { 
+                                                    id = song.Id, 
+                                                    title = song.Title, 
+                                                    artistName = song.ArtistName, 
+                                                    audioUrl = song.AudioUrl, 
+                                                    coverImageUrl = song.CoverImageUrl 
+                                                }))'
+                                                data-playlist='@Html.Raw(Json.Serialize(Model.Data.Select(s => new { 
+                                                    id = s.Id, 
+                                                    title = s.Title, 
+                                                    artistName = s.ArtistName, 
+                                                    audioUrl = s.AudioUrl, 
+                                                    coverImageUrl = s.CoverImageUrl 
+                                                })))'
+                                                data-index="@Model.Data.ToList().IndexOf(song)"
+                                                title="Play song">
+                                            <i class="bi bi-play-fill text-[var(--ytm-accent-red)] text-xl"></i>
+                                        </button>
+                                        <div class="font-medium text-[var(--ytm-text-primary)] cursor-pointer" 
+                                             onclick="window.location.href='@Url.Action("Details", new { id = song.Id })'">
+                                            @song.Title
+                                        </div>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="text-[var(--ytm-text-secondary)]">@(song.ArtistName ?? "-")</div>

@@ -134,12 +134,12 @@ else
                                 <img src="@(string.IsNullOrEmpty(album.CoverImageUrl) ? GetRandomImageUrl(300, 300) : album.CoverImageUrl)" 
                                      class="w-full h-full object-cover" 
                                      alt="@album.Title cover"
-                                     onerror="this.src='https://placehold.co/300x300/374151/9CA3AF?text=Album';" />
-                                <!-- Play button overlay -->
+                                     onerror="this.src='https://placehold.co/300x300/374151/9CA3AF?text=Album';" />                                <!-- Play button overlay -->
                                 <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
-                                    <div class="w-12 h-12 bg-[var(--ytm-accent-red)] rounded-full flex items-center justify-center hover:bg-[var(--ytm-accent-red-hover)] transition-colors">
+                                    <button class="w-12 h-12 bg-[var(--ytm-accent-red)] rounded-full flex items-center justify-center hover:bg-[var(--ytm-accent-red-hover)] transition-colors"
+                                            onclick="event.stopPropagation(); window.location.href='@Url.Action("Details", new { id = album.Id })'">
                                         <i class="fas fa-play text-white ml-1"></i>
-                                    </div>
+                                    </button>
                                 </div>
                             </div>
                             
