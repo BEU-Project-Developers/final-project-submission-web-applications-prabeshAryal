@@ -88,14 +88,14 @@ namespace MusicAppBackend.Controllers
 
             var albums = await query
                 .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(a => new
+                .Take(pageSize)                .Select(a => new
                 {
                     a.Id,
                     a.Title,
                     a.ArtistId,
                     ArtistName = a.Artist.Name,
-                    a.CoverImageUrl,
+                    CoverImageUrl = !string.IsNullOrEmpty(a.CoverImageUrl) ? 
+                        _fileStorage.GetFileUrl(a.CoverImageUrl) : null,
                     a.Year,
                     a.Genre,
                     a.ReleaseDate,
@@ -141,14 +141,18 @@ namespace MusicAppBackend.Controllers
                 album.Genre,
                 album.ReleaseDate,
                 album.TotalTracks,
-                album.Duration,
-                Songs = album.Songs.Select(s => new
+                album.Duration,                Songs = album.Songs.Select(s => new
                 {
                     s.Id,
                     s.Title,
                     s.TrackNumber,
                     s.Duration,
-                    s.AudioUrl,
+                    AudioUrl = !string.IsNullOrEmpty(s.AudioUrl) ? 
+                        _fileStorage.GetFileUrl(s.AudioUrl) : null,
+                    CoverImageUrl = !string.IsNullOrEmpty(s.CoverImageUrl) ? 
+                        _fileStorage.GetFileUrl(s.CoverImageUrl) : 
+                        (!string.IsNullOrEmpty(album.CoverImageUrl) ? 
+                            _fileStorage.GetFileUrl(album.CoverImageUrl) : null),
                     s.PlayCount
                 }).OrderBy(s => s.TrackNumber).ToList()
             };

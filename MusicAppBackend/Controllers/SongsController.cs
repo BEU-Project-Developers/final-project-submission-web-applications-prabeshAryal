@@ -176,8 +176,64 @@ namespace MusicAppBackend.Controllers
                 song.TrackNumber,
                 song.Genre,
                 song.ReleaseDate,
-                song.PlayCount
-            };
+                song.PlayCount            };
+        }
+
+        // GET: api/Songs/5/similar
+        [HttpGet("{id}/similar")]
+        public async Task<ActionResult<IEnumerable<object>>> GetSimilarSongs(int id, [FromQuery] int limit = 5)
+        {
+            try
+            {
+                // Get the reference song
+                var referenceSong = await _context.Songs
+                    .Include(s => s.Artist)
+                    .Include(s => s.Album)
+                    .FirstOrDefaultAsync(s => s.Id == id);
+
+                if (referenceSong == null)
+                {
+                    return NotFound();
+                }
+
+                // Find similar songs based on genre and artist
+                var similarSongs = await _context.Songs
+                    .Include(s => s.Artist)
+                    .Include(s => s.Album)
+                    .Where(s => s.Id != id && // Exclude the reference song itself
+                               (s.Genre == referenceSong.Genre || // Same genre
+                                s.ArtistId == referenceSong.ArtistId)) // Same artist
+                    .OrderBy(s => s.ArtistId == referenceSong.ArtistId ? 0 : 1) // Prioritize same artist
+                    .ThenByDescending(s => s.PlayCount) // Then by popularity
+                    .Take(limit)
+                    .Select(s => new
+                    {
+                        s.Id,
+                        s.Title,
+                        s.ArtistId,
+                        ArtistName = s.Artist != null ? s.Artist.Name : null,
+                        s.AlbumId,
+                        AlbumTitle = s.Album != null ? s.Album.Title : null,
+                        s.Duration,
+                        AudioUrl = !string.IsNullOrEmpty(s.AudioUrl) ? 
+                            _fileStorage.GetFileUrl(s.AudioUrl) : null,
+                        CoverImageUrl = !string.IsNullOrEmpty(s.CoverImageUrl) ? 
+                            _fileStorage.GetFileUrl(s.CoverImageUrl) : 
+                            (s.Album != null && !string.IsNullOrEmpty(s.Album.CoverImageUrl) ? 
+                                _fileStorage.GetFileUrl(s.Album.CoverImageUrl) : null),
+                        s.TrackNumber,
+                        s.Genre,
+                        s.ReleaseDate,
+                        s.PlayCount
+                    })
+                    .ToListAsync();
+
+                return Ok(similarSongs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while retrieving similar songs: {ex.Message}");
+            }
         }
 
         // POST: api/Songs
