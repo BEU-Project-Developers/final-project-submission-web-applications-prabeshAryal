@@ -3,80 +3,364 @@
     ViewData["Title"] = "Edit Song";
 }
 
-<h2>Edit Song</h2>
+<div class="min-h-screen bg-[var(--ytm-bg-primary)] py-8">
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header Section -->
+            <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow-xl border border-[var(--ytm-border-color)] mb-6">
+                <div class="px-8 py-6 border-b border-[var(--ytm-border-color)]">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-3xl font-bold text-[var(--ytm-text-primary)] mb-2">Edit Song</h1>
+                            <p class="text-[var(--ytm-text-secondary)]">Update song information, audio files, and metadata</p>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.CoverImageUrl))
+                        {
+                            <div class="w-24 h-24 rounded-lg overflow-hidden shadow-lg">
+                                <img src="@Model.CoverImageUrl" alt="@Model.Title" class="w-full h-full object-cover" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
 
-@* Show validation summary for better error feedback *@
+            <!-- Messages -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6" role="alert">
+                    <div class="flex items-center">
+                        <i class="bi bi-check-circle-fill mr-2"></i>
+                        <span>@TempData["SuccessMessage"]</span>
+                    </div>
+                </div>
+            }
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6" role="alert">
+                    <div class="flex items-center">
+                        <i class="bi bi-exclamation-triangle-fill mr-2"></i>
+                        <span>@ViewBag.ErrorMessage</span>
+                    </div>
+                </div>
+            }
+
+            <!-- Form -->
+            <form id="songEditForm" asp-action="Edit" method="post" enctype="multipart/form-data" class="space-y-6">
+                <input type="hidden" asp-for="Id" />
+                
+                <!-- Required Fields Section -->
+                <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow-lg border border-[var(--ytm-border-color)]">
+                    <div class="px-6 py-4 border-b border-[var(--ytm-border-color)]">
+                        <h2 class="text-xl font-semibold text-[var(--ytm-text-primary)] flex items-center">
+                            <i class="bi bi-asterisk text-[var(--ytm-accent-red)] mr-2 text-sm"></i>
+                            Required Information
+                        </h2>
+                        <p class="text-sm text-[var(--ytm-text-secondary)] mt-1">Essential song details that must be provided</p>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <!-- Title -->
+                        <div>
+                            <label asp-for="Title" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">
+                                Song Title <span class="text-[var(--ytm-accent-red)]">*</span>
+                            </label>
+                            <input asp-for="Title" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] placeholder-[var(--ytm-text-secondary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" placeholder="Enter song title" />
+                            <span asp-validation-for="Title" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
+                        </div>
+
+                        <!-- Artist and Album Row -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label asp-for="ArtistId" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Artist</label>
+                                <select asp-for="ArtistId" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition">
+                                    <option value="">Select an Artist</option>
+                                    @if (ViewBag.Artists != null)
+                                    {
+                                        @foreach (var artist in ViewBag.Artists)
+                                        {
+                                            <option value="@artist.Id" selected="@(Model.ArtistId == artist.Id)">@artist.Name</option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="ArtistId" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
+                            </div>
+                            <div>
+                                <label asp-for="AlbumId" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Album</label>
+                                <select asp-for="AlbumId" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition">
+                                    <option value="">Select an Album (Optional)</option>
+                                    @if (ViewBag.Albums != null)
+                                    {
+                                        @foreach (var album in ViewBag.Albums)
+                                        {
+                                            <option value="@album.Id" selected="@(Model.AlbumId == album.Id)">@album.Title</option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="AlbumId" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
+                            </div>
+                        </div>
+
+                        <!-- Duration -->
+                        <div>
+                            <label asp-for="Duration" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">
+                                Duration <span class="text-[var(--ytm-accent-red)]">*</span>
+                            </label>
+                            <input asp-for="Duration" type="text" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] placeholder-[var(--ytm-text-secondary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" placeholder="HH:MM:SS or MM:SS" />
+                            <span asp-validation-for="Duration" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
+                            <p class="text-xs text-[var(--ytm-text-secondary)] mt-1">Format: HH:MM:SS (e.g., 00:03:45) or MM:SS (e.g., 3:45)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Optional Fields Toggle -->
+                <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow-lg border border-[var(--ytm-border-color)]">
+                    <div class="px-6 py-4 border-b border-[var(--ytm-border-color)]">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-xl font-semibold text-[var(--ytm-text-primary)] flex items-center">
+                                    <i class="bi bi-gear text-[var(--ytm-text-secondary)] mr-2"></i>
+                                    Additional Details
+                                </h2>
+                                <p class="text-sm text-[var(--ytm-text-secondary)] mt-1">Optional fields for enhanced song information</p>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span class="text-sm text-[var(--ytm-text-secondary)]" id="toggleLabel">Show Advanced Options</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="optionalFieldsToggle" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--ytm-accent-red)]"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Optional Fields Content -->
+                    <div id="optionalFields" class="hidden p-6 space-y-4">
+                        <!-- Audio and Cover File Uploads Row -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Audio File Upload -->
+                            <div>
+                                <label class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Audio File</label>
+                                @if (!string.IsNullOrEmpty(Model.AudioUrl))
+                                {
+                                    <div class="mb-3 p-3 bg-[var(--ytm-bg-tertiary)] rounded-lg">
+                                        <div class="flex items-center space-x-2">
+                                            <i class="bi bi-music-note-beamed text-[var(--ytm-accent-red)]"></i>
+                                            <span class="text-xs text-[var(--ytm-text-secondary)]">Current audio file available</span>
+                                        </div>
+                                        <audio controls class="w-full mt-2" style="height: 32px;">
+                                            <source src="@Model.AudioUrl" type="audio/mpeg">
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    </div>
+                                }
+                                <input type="file" id="audioFile" name="audioFile" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" accept="audio/*" />
+                                <p class="text-xs text-[var(--ytm-text-secondary)] mt-1">Upload a new audio file (MP3, WAV, etc.) or leave empty to keep current</p>
+                                <input type="hidden" asp-for="AudioUrl" />
+                            </div>
+
+                            <!-- Cover Image Upload -->
+                            <div>
+                                <label class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Cover Image</label>
+                                @if (!string.IsNullOrEmpty(Model.CoverImageUrl))
+                                {
+                                    <div class="mb-3">
+                                        <img src="@Model.CoverImageUrl" alt="Current cover" class="w-32 h-32 object-cover rounded-lg shadow-md" />
+                                        <p class="text-xs text-[var(--ytm-text-secondary)] mt-1">Current cover image</p>
+                                    </div>
+                                }
+                                <input type="file" id="coverImage" name="coverImage" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" accept="image/*" />
+                                <p class="text-xs text-[var(--ytm-text-secondary)] mt-1">Upload a new cover image (JPG, PNG) or leave empty to keep current</p>
+                                <input type="hidden" asp-for="CoverImageUrl" />
+                            </div>
+                        </div>
+
+                        <!-- Track Number and Genre Row -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label asp-for="TrackNumber" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Track Number</label>
+                                <input asp-for="TrackNumber" type="number" min="1" max="100" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] placeholder-[var(--ytm-text-secondary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" placeholder="Track position in album" />
+                                <span asp-validation-for="TrackNumber" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
+                            </div>
+                            <div>
+                                <label asp-for="Genre" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Genre</label>
+                                <input asp-for="Genre" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] placeholder-[var(--ytm-text-secondary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" placeholder="e.g., Rock, Pop, Jazz" />
+                                <span asp-validation-for="Genre" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
+                            </div>
+                        </div>
+
+                        <!-- Release Date and Play Count Row -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label asp-for="ReleaseDate" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Release Date</label>
+                                <input asp-for="ReleaseDate" type="date" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" />
+                                <span asp-validation-for="ReleaseDate" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
+                            </div>
+                            <div>
+                                <label asp-for="PlayCount" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Play Count</label>
+                                <input asp-for="PlayCount" type="number" min="0" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] placeholder-[var(--ytm-text-secondary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" placeholder="Number of times played" />
+                                <span asp-validation-for="PlayCount" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex items-center justify-between pt-6">
+                    <div class="flex space-x-3">
+                        <a asp-action="Index" class="px-6 py-3 rounded-lg bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-primary)] font-medium hover:bg-gray-600 transition flex items-center">
+                            <i class="bi bi-arrow-left mr-2"></i>
+                            Back to Songs
+                        </a>
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="px-6 py-3 rounded-lg bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-primary)] font-medium hover:bg-gray-600 transition flex items-center">
+                            <i class="bi bi-eye mr-2"></i>
+                            View Details
+                        </a>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button type="button" id="resetForm" class="px-6 py-3 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 transition flex items-center">
+                            <i class="bi bi-arrow-clockwise mr-2"></i>
+                            Reset Changes
+                        </button>
+                        <button type="submit" class="px-8 py-3 rounded-lg bg-[var(--ytm-accent-red)] text-white font-medium hover:bg-[var(--ytm-accent-red-hover)] transition flex items-center shadow-lg">
+                            <i class="bi bi-check2 mr-2"></i>
+                            Save Song
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.getElementById('optionalFieldsToggle');
+        const optionalFields = document.getElementById('optionalFields');
+        const toggleLabel = document.getElementById('toggleLabel');
+        const resetButton = document.getElementById('resetForm');
+
+        // Optional fields toggle functionality
+        toggle.addEventListener('change', function() {
+            if (this.checked) {
+                optionalFields.classList.remove('hidden');
+                optionalFields.classList.add('animate-fadeIn');
+                toggleLabel.textContent = 'Hide Advanced Options';
+            } else {
+                optionalFields.classList.add('hidden');
+                optionalFields.classList.remove('animate-fadeIn');
+                toggleLabel.textContent = 'Show Advanced Options';
+            }
+        });
+
+        // Reset form functionality
+        resetButton.addEventListener('click', function() {
+            if (confirm('Are you sure you want to reset all changes? This will revert all fields to their original values.')) {
+                document.getElementById('songEditForm').reset();
+                // Close optional fields if open
+                if (toggle.checked) {
+                    toggle.checked = false;
+                    optionalFields.classList.add('hidden');
+                    toggleLabel.textContent = 'Show Advanced Options';
+                }
+            }
+        });
+
+        // Form validation and submission
+        document.getElementById('songEditForm').addEventListener('submit', function(e) {
+            const title = document.querySelector('input[name="Title"]').value.trim();
+            const duration = document.querySelector('input[name="Duration"]').value.trim();
+
+            if (!title) {
+                e.preventDefault();
+                alert('Song title is required.');
+                return false;
+            }
+
+            if (!duration) {
+                e.preventDefault();
+                alert('Song duration is required.');
+                return false;
+            }
+
+            // Show loading state
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            submitButton.innerHTML = '<i class="bi bi-hourglass-split mr-2 animate-spin"></i>Saving...';
+            submitButton.disabled = true;
+
+            // Re-enable button after a delay (in case of validation errors)
+            setTimeout(() => {
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
+            }, 3000);
+        });
+
+        // Auto-expand optional fields if any have values
+        const optionalInputs = optionalFields.querySelectorAll('input, textarea, select');
+        let hasOptionalValues = false;
+        
+        optionalInputs.forEach(input => {
+            if (input.type !== 'file' && input.value && input.value.trim() !== '') {
+                hasOptionalValues = true;
+            }
+        });
+
+        if (hasOptionalValues) {
+            toggle.checked = true;
+            optionalFields.classList.remove('hidden');
+            toggleLabel.textContent = 'Hide Advanced Options';
+        }
+
+        // File upload preview functionality
+        const coverImageInput = document.getElementById('coverImage');
+        const audioFileInput = document.getElementById('audioFile');
+
+        if (coverImageInput) {
+            coverImageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // Find or create preview image
+                        let preview = document.querySelector('#coverImagePreview');
+                        if (!preview) {
+                            preview = document.createElement('img');
+                            preview.id = 'coverImagePreview';
+                            preview.className = 'w-32 h-32 object-cover rounded-lg shadow-md mt-2';
+                            coverImageInput.parentNode.insertBefore(preview, coverImageInput.nextSibling);
+                        }
+                        preview.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+    });
+
+    // Add CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @@keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        @@keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+}
+
+@* Include validation scripts *@
 <partial name="_ValidationScriptsPartial" />
-@Html.ValidationSummary(true, "", new { @class = "text-danger" })
-
-<form asp-action="Edit" method="post">
-    <input type="hidden" asp-for="Id" />
-    <div class="mb-3">
-        <label asp-for="Title" class="form-label"></label>
-        <input asp-for="Title" class="form-control" />
-        <span asp-validation-for="Title" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="ArtistId" class="form-label">Artist</label>        <select asp-for="ArtistId" class="form-select">
-            <option value="">-- Select Artist --</option>
-            @if (ViewBag.Artists != null)
-            {
-                foreach (var artist in ViewBag.Artists)
-                {
-                    <option value="@artist.Id" selected="@(Model.ArtistId == artist.Id)">@artist.Name</option>
-                }
-            }
-        </select>
-        <span asp-validation-for="ArtistId" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="AlbumId" class="form-label">Album</label>        <select asp-for="AlbumId" class="form-select">
-            <option value="">-- Select Album --</option>
-            @if (ViewBag.Albums != null)
-            {
-                foreach (var album in ViewBag.Albums)
-                {
-                    <option value="@album.Id" selected="@(Model.AlbumId == album.Id)">@album.Title</option>
-                }
-            }
-        </select>
-        <span asp-validation-for="AlbumId" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Duration" class="form-label"></label>
-        <input asp-for="Duration" class="form-control" />
-        <span asp-validation-for="Duration" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Genre" class="form-label"></label>
-        <input asp-for="Genre" class="form-control" />
-        <span asp-validation-for="Genre" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="ReleaseDate" class="form-label"></label>
-        <input asp-for="ReleaseDate" class="form-control" type="date" />
-        <span asp-validation-for="ReleaseDate" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="AudioUrl" class="form-label">Audio URL</label>
-        <input asp-for="AudioUrl" class="form-control" />
-        <span asp-validation-for="AudioUrl" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="CoverImageUrl" class="form-label">Cover Image URL</label>
-        <input asp-for="CoverImageUrl" class="form-control" />
-        <span asp-validation-for="CoverImageUrl" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="TrackNumber" class="form-label">Track Number</label>
-        <input asp-for="TrackNumber" class="form-control" type="number" />
-        <span asp-validation-for="TrackNumber" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="PlayCount" class="form-label">Play Count</label>
-        <input asp-for="PlayCount" class="form-control" type="number" />
-        <span asp-validation-for="PlayCount" class="text-danger"></span>
-    </div>
-    <button type="submit" class="btn btn-primary">Save Changes</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-</form>

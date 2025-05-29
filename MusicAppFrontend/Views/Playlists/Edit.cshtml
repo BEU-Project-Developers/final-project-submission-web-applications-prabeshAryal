@@ -1,75 +1,334 @@
 @model MusicApp.Models.DTOs.PlaylistDto
-
 @{
     ViewData["Title"] = "Edit Playlist";
 }
 
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            @if (ViewBag.ErrorMessage != null)
-            {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    @ViewBag.ErrorMessage
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            }
-            <div class="card shadow" style="background-color: var(--ytm-bg-secondary); color: var(--ytm-text-primary);">
-                <div class="card-header" style="background-color: var(--ytm-accent-red); color: var(--ytm-text-primary);">
-                    <h4 class="mb-0">Edit Playlist</h4>
-                </div>
-                <div class="card-body">
-                    <form asp-action="Edit" method="post" enctype="multipart/form-data">
-                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                        <input type="hidden" asp-for="Id" />
-
-                        <div class="mb-3">
-                            <label asp-for="Name" class="form-label">Playlist Name</label>
-                            <input asp-for="Name" class="form-control bg-dark text-light" />
-                            <span asp-validation-for="Name" class="text-danger"></span>
+<div class="min-h-screen bg-[var(--ytm-bg-primary)] py-8">
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header Section -->
+            <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow-xl border border-[var(--ytm-border-color)] mb-6">
+                <div class="px-8 py-6 border-b border-[var(--ytm-border-color)]">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-3xl font-bold text-[var(--ytm-text-primary)] mb-2">Edit Playlist</h1>
+                            <p class="text-[var(--ytm-text-secondary)]">Update playlist information, cover image, and privacy settings</p>
                         </div>
-
-                        <div class="mb-3">
-                            <label asp-for="Description" class="form-label">Description</label>
-                            <textarea asp-for="Description" class="form-control bg-dark text-light" rows="3"></textarea>
-                            <span asp-validation-for="Description" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="coverImage" class="form-label">Cover Image</label>
-                            @if (!string.IsNullOrEmpty(Model.CoverImageUrl))
-                            {
-                                <div class="mb-2">
-                                    <img src="@Model.CoverImageUrl" alt="Current cover" class="img-thumbnail" style="max-width: 200px;" />
-                                </div>
-                            }
-                            <input type="file" id="coverImage" name="coverImage" class="form-control bg-dark text-light" accept="image/*" />
-                            <small class="form-text text-muted">Leave empty to keep current image</small>
-                        </div>
-
-                        <!-- Hidden field to preserve the current cover image URL -->
-                        <input type="hidden" asp-for="CoverImageUrl" />
-
-                        <div class="mb-3 form-check">
-                            <input asp-for="IsPublic" class="form-check-input" />
-                            <label asp-for="IsPublic" class="form-check-label">Make this playlist public</label>
-                        </div>
-
-                        <div class="d-flex justify-content-between">
-                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Back to Details
-                            </a>
-                            <button type="submit" class="btn" style="background-color: var(--ytm-accent-red); color: var(--ytm-text-primary);">
-                                <i class="bi bi-check2"></i> Save Changes
-                            </button>
-                        </div>
-                    </form>
+                        @if (!string.IsNullOrEmpty(Model.CoverImageUrl))
+                        {
+                            <div class="w-24 h-24 rounded-lg overflow-hidden shadow-lg">
+                                <img src="@Model.CoverImageUrl" alt="@Model.Name" class="w-full h-full object-cover" />
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
+
+            <!-- Messages -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6" role="alert">
+                    <div class="flex items-center">
+                        <i class="bi bi-check-circle-fill mr-2"></i>
+                        <span>@TempData["SuccessMessage"]</span>
+                    </div>
+                </div>
+            }
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6" role="alert">
+                    <div class="flex items-center">
+                        <i class="bi bi-exclamation-triangle-fill mr-2"></i>
+                        <span>@ViewBag.ErrorMessage</span>
+                    </div>
+                </div>
+            }
+
+            <!-- Form -->
+            <form id="playlistEditForm" asp-action="Edit" method="post" enctype="multipart/form-data" class="space-y-6">
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="UserId" />
+                <input type="hidden" asp-for="Username" />
+                <input type="hidden" asp-for="CreatedAt" />
+                <input type="hidden" asp-for="UpdatedAt" />
+                <input type="hidden" asp-for="SongCount" />
+                
+                <!-- Required Fields Section -->
+                <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow-lg border border-[var(--ytm-border-color)]">
+                    <div class="px-6 py-4 border-b border-[var(--ytm-border-color)]">
+                        <h2 class="text-xl font-semibold text-[var(--ytm-text-primary)] flex items-center">
+                            <i class="bi bi-asterisk text-[var(--ytm-accent-red)] mr-2 text-sm"></i>
+                            Required Information
+                        </h2>
+                        <p class="text-sm text-[var(--ytm-text-secondary)] mt-1">Essential playlist details that must be provided</p>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <!-- Playlist Name -->
+                        <div>
+                            <label asp-for="Name" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">
+                                Playlist Name <span class="text-[var(--ytm-accent-red)]">*</span>
+                            </label>
+                            <input asp-for="Name" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] placeholder-[var(--ytm-text-secondary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" placeholder="Enter playlist name" />
+                            <span asp-validation-for="Name" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Optional Fields Toggle -->
+                <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow-lg border border-[var(--ytm-border-color)]">
+                    <div class="px-6 py-4 border-b border-[var(--ytm-border-color)]">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-xl font-semibold text-[var(--ytm-text-primary)] flex items-center">
+                                    <i class="bi bi-gear text-[var(--ytm-text-secondary)] mr-2"></i>
+                                    Additional Details
+                                </h2>
+                                <p class="text-sm text-[var(--ytm-text-secondary)] mt-1">Optional fields for enhanced playlist information</p>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span class="text-sm text-[var(--ytm-text-secondary)]" id="toggleLabel">Show Advanced Options</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="optionalFieldsToggle" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--ytm-accent-red)]"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Optional Fields Content -->
+                    <div id="optionalFields" class="hidden p-6 space-y-4">
+                        <!-- Description -->
+                        <div>
+                            <label asp-for="Description" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Description</label>
+                            <textarea asp-for="Description" rows="4" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] placeholder-[var(--ytm-text-secondary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition resize-none" placeholder="Describe your playlist, its theme, or the mood it represents..."></textarea>
+                            <span asp-validation-for="Description" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
+                        </div>
+
+                        <!-- Cover Image Upload -->
+                        <div>
+                            <label class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Cover Image</label>
+                            @if (!string.IsNullOrEmpty(Model.CoverImageUrl))
+                            {
+                                <div class="mb-3">
+                                    <img src="@Model.CoverImageUrl" alt="Current cover" class="w-32 h-32 object-cover rounded-lg shadow-md" />
+                                    <p class="text-xs text-[var(--ytm-text-secondary)] mt-1">Current cover image</p>
+                                </div>
+                            }
+                            <input type="file" id="coverImage" name="coverImage" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" accept="image/*" />
+                            <p class="text-xs text-[var(--ytm-text-secondary)] mt-1">Upload a new cover image (JPG, PNG) or leave empty to keep current</p>
+                            <input type="hidden" asp-for="CoverImageUrl" />
+                        </div>
+
+                        <!-- Privacy Settings -->
+                        <div class="bg-[var(--ytm-bg-tertiary)] p-4 rounded-lg border border-[var(--ytm-border-color)]">
+                            <h3 class="text-lg font-medium text-[var(--ytm-text-primary)] mb-3 flex items-center">
+                                <i class="bi bi-shield-lock mr-2 text-[var(--ytm-accent-red)]"></i>
+                                Privacy Settings
+                            </h3>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label asp-for="IsPublic" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-1">Public Playlist</label>
+                                    <p class="text-xs text-[var(--ytm-text-secondary)]">Allow others to discover and view this playlist</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input asp-for="IsPublic" type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                </label>
+                            </div>
+                            <div class="mt-3 text-xs text-[var(--ytm-text-secondary)]">
+                                <div class="flex items-center space-x-4">
+                                    <div class="flex items-center">
+                                        <i class="bi bi-eye mr-1 text-green-500"></i>
+                                        <span>Public: Visible to everyone</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <i class="bi bi-eye-slash mr-1 text-gray-500"></i>
+                                        <span>Private: Only visible to you</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Playlist Stats (Read-only) -->
+                        <div class="bg-[var(--ytm-bg-tertiary)] p-4 rounded-lg border border-[var(--ytm-border-color)]">
+                            <h3 class="text-lg font-medium text-[var(--ytm-text-primary)] mb-3 flex items-center">
+                                <i class="bi bi-bar-chart mr-2 text-[var(--ytm-accent-red)]"></i>
+                                Playlist Statistics
+                            </h3>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span class="text-[var(--ytm-text-secondary)]">Total Songs:</span>
+                                    <span class="text-[var(--ytm-text-primary)] font-medium ml-2">@(Model.SongCount)</span>
+                                </div>
+                                <div>
+                                    <span class="text-[var(--ytm-text-secondary)]">Created:</span>
+                                    <span class="text-[var(--ytm-text-primary)] font-medium ml-2">@Model.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex items-center justify-between pt-6">
+                    <div class="flex space-x-3">
+                        <a asp-action="Index" class="px-6 py-3 rounded-lg bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-primary)] font-medium hover:bg-gray-600 transition flex items-center">
+                            <i class="bi bi-arrow-left mr-2"></i>
+                            Back to Playlists
+                        </a>
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="px-6 py-3 rounded-lg bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-primary)] font-medium hover:bg-gray-600 transition flex items-center">
+                            <i class="bi bi-eye mr-2"></i>
+                            View Details
+                        </a>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button type="button" id="resetForm" class="px-6 py-3 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 transition flex items-center">
+                            <i class="bi bi-arrow-clockwise mr-2"></i>
+                            Reset Changes
+                        </button>
+                        <button type="submit" class="px-8 py-3 rounded-lg bg-[var(--ytm-accent-red)] text-white font-medium hover:bg-[var(--ytm-accent-red-hover)] transition flex items-center shadow-lg">
+                            <i class="bi bi-check2 mr-2"></i>
+                            Save Playlist
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.getElementById('optionalFieldsToggle');
+        const optionalFields = document.getElementById('optionalFields');
+        const toggleLabel = document.getElementById('toggleLabel');
+        const resetButton = document.getElementById('resetForm');
+
+        // Optional fields toggle functionality
+        toggle.addEventListener('change', function() {
+            if (this.checked) {
+                optionalFields.classList.remove('hidden');
+                optionalFields.classList.add('animate-fadeIn');
+                toggleLabel.textContent = 'Hide Advanced Options';
+            } else {
+                optionalFields.classList.add('hidden');
+                optionalFields.classList.remove('animate-fadeIn');
+                toggleLabel.textContent = 'Show Advanced Options';
+            }
+        });
+
+        // Reset form functionality
+        resetButton.addEventListener('click', function() {
+            if (confirm('Are you sure you want to reset all changes? This will revert all fields to their original values.')) {
+                document.getElementById('playlistEditForm').reset();
+                // Close optional fields if open
+                if (toggle.checked) {
+                    toggle.checked = false;
+                    optionalFields.classList.add('hidden');
+                    toggleLabel.textContent = 'Show Advanced Options';
+                }
+            }
+        });
+
+        // Form validation and submission
+        document.getElementById('playlistEditForm').addEventListener('submit', function(e) {
+            const name = document.querySelector('input[name="Name"]').value.trim();
+
+            if (!name) {
+                e.preventDefault();
+                alert('Playlist name is required.');
+                return false;
+            }
+
+            // Show loading state
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            submitButton.innerHTML = '<i class="bi bi-hourglass-split mr-2 animate-spin"></i>Saving...';
+            submitButton.disabled = true;
+
+            // Re-enable button after a delay (in case of validation errors)
+            setTimeout(() => {
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
+            }, 3000);
+        });
+
+        // Auto-expand optional fields if any have values
+        const optionalInputs = optionalFields.querySelectorAll('input, textarea, select');
+        let hasOptionalValues = false;
+        
+        optionalInputs.forEach(input => {
+            if (input.type !== 'file' && input.type !== 'checkbox' && input.value && input.value.trim() !== '') {
+                hasOptionalValues = true;
+            }
+            // Check for checkboxes that are checked and not default
+            if (input.type === 'checkbox' && input.checked !== input.defaultChecked) {
+                hasOptionalValues = true;
+            }
+        });
+
+        // Check if description has content
+        const description = document.querySelector('textarea[name="Description"]');
+        if (description && description.value && description.value.trim() !== '') {
+            hasOptionalValues = true;
+        }
+
+        if (hasOptionalValues) {
+            toggle.checked = true;
+            optionalFields.classList.remove('hidden');
+            toggleLabel.textContent = 'Hide Advanced Options';
+        }
+
+        // File upload preview functionality
+        const coverImageInput = document.getElementById('coverImage');
+
+        if (coverImageInput) {
+            coverImageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // Find or create preview image
+                        let preview = document.querySelector('#coverImagePreview');
+                        if (!preview) {
+                            preview = document.createElement('img');
+                            preview.id = 'coverImagePreview';
+                            preview.className = 'w-32 h-32 object-cover rounded-lg shadow-md mt-2';
+                            coverImageInput.parentNode.insertBefore(preview, coverImageInput.nextSibling);
+                        }
+                        preview.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+    });
+
+    // Add CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @@keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        @@keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
 }
+
+@* Include validation scripts *@
+<partial name="_ValidationScriptsPartial" />

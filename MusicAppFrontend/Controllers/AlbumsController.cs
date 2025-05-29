@@ -121,9 +121,7 @@ namespace MusicApp.Controllers
                 "AlbumsController - loading artists on error"            );
             ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
             return View(model);
-        }
-
-        [HttpGet]
+        }        [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
             return await SafeApiAction(
@@ -134,16 +132,25 @@ namespace MusicApp.Controllers
                     {
                         return NotFound();
                     }
+
+                    // Load artists for dropdown
+                    var artists = await SafeApiCall(
+                        async () => await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists"),
+                        new PagedResponse<ArtistDto> { Data = new List<ArtistDto>() },
+                        "Unable to load artists",
+                        $"AlbumsController.Edit GET - Loading artists for ID {id}"
+                    );
+                    ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
+
                     return View(album);
                 },
                 () => NotFound(),
-                GetStandardErrorMessage("load", "album"),                $"AlbumsController.Edit GET for ID {id}"
+                GetStandardErrorMessage("load", "album"),
+                $"AlbumsController.Edit GET for ID {id}"
             );
-        }
-
-        [HttpPost]
+        }        [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, AlbumDto model)
+        public async Task<IActionResult> Edit(int id, AlbumDto model, IFormFile coverImage)
         {
             _logger.LogInformation("AlbumsController.Edit POST action hit with id: {Id} and model.Id: {ModelId}", id, model.Id);
             
@@ -151,6 +158,16 @@ namespace MusicApp.Controllers
             {
                 _logger.LogWarning("AlbumsController.Edit POST: id mismatch. Expected: {ExpectedId}, Actual: {ActualId}", id, model.Id);
                 return BadRequest();
+            }
+
+            // Remove coverImage validation errors since it's not part of the model
+            var keysToRemove = new[] { "coverImage", "CoverImage" };
+            foreach (var key in keysToRemove)
+            {
+                if (ModelState.ContainsKey(key))
+                {
+                    ModelState.Remove(key);
+                }
             }
 
             if (!ModelState.IsValid)
@@ -164,6 +181,15 @@ namespace MusicApp.Controllers
                         _logger.LogError("ModelState Error: {ErrorMessage}", error.ErrorMessage);
                     }
                 }
+
+                // Reload artists for dropdown on validation error
+                var artists = await SafeApiCall(
+                    async () => await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists"),
+                    new PagedResponse<ArtistDto> { Data = new List<ArtistDto>() },
+                    "Unable to load artists",
+                    "AlbumsController.Edit POST - Loading artists on validation error"
+                );
+                ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
                 return View(model);
             }
 
@@ -185,12 +211,35 @@ namespace MusicApp.Controllers
                     };
                     
                     await _apiService.PutAsync<object>($"api/Albums/{id}", updateDto);
+                    
+                    // Handle cover image upload if file is provided
+                    if (coverImage != null && coverImage.Length > 0)
+                    {                        try
+                        {
+                            // Use multipart form data for file upload
+                            var filePath = await _apiService.UploadFileAsync($"api/Albums/{id}/cover", coverImage);
+                        if (!string.IsNullOrEmpty(filePath))
+                        {
+                            _logger.LogInformation("Cover image uploaded successfully for album {Id}", id);
+                        }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to upload cover image for album {Id}", id);
+                            // Don't fail the entire operation if image upload fails
+                        }
+                    }
+                    
                     SetSuccessMessage("Album updated successfully.");
                     return RedirectToAction("Index");
                 },
-                () => View(model),
+                () => {
+                    SetErrorMessage("Error updating album. Please try again.");
+                    return View(model);
+                },
                 GetStandardErrorMessage("update", "album"),
-                $"AlbumsController.Edit POST for ID {id}"            );
+                $"AlbumsController.Edit POST for ID {id}"
+            );
         }
 
         [HttpGet]

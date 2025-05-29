@@ -914,4 +914,9 @@ footer {
 .player-song-title {
     color: var(--ytm-text-primary);
     font-weight: 500;
-   
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}

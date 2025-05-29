@@ -184,19 +184,61 @@ namespace MusicApp.Controllers
             },
             "Unable to load song details. Please try again later.",
             $"SongsController.Edit GET for ID {id}");
-        }
-
-        [HttpPost]
+        }        [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, SongDto model)
+        public async Task<IActionResult> Edit(int id, SongDto model, IFormFile audioFile, IFormFile coverImage)
         {
+            _logger.LogInformation("SongsController.Edit POST action hit with id: {Id} and model.Id: {ModelId}", id, model.Id);
+            
+            if (id != model.Id)
+            {
+                _logger.LogWarning("SongsController.Edit POST: id mismatch. Expected: {ExpectedId}, Actual: {ActualId}", id, model.Id);
+                return BadRequest();
+            }
+
+            // Remove file validation errors since they're not part of the model
+            var keysToRemove = new[] { "audioFile", "AudioFile", "coverImage", "CoverImage" };
+            foreach (var key in keysToRemove)
+            {
+                if (ModelState.ContainsKey(key))
+                {
+                    ModelState.Remove(key);
+                }
+            }
+
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("SongsController.Edit POST: ModelState is invalid");
+                // Log ModelState errors
+                foreach (var entry in ModelState.Values)
+                {
+                    foreach (var error in entry.Errors)
+                    {
+                        _logger.LogError("ModelState Error: {ErrorMessage}", error.ErrorMessage);
+                    }
+                }
+
+                // Reload dropdowns for validation error
+                var artists = await SafeApiCall(
+                    async () => await _apiService.GetAsync<PagedResponse<ArtistDto>>("api/Artists"),
+                    new PagedResponse<ArtistDto> { Data = new List<ArtistDto>() },
+                    "Unable to load artists",
+                    "SongsController.Edit POST - Loading artists on validation error"
+                );
+                var albums = await SafeApiCall(
+                    async () => await _apiService.GetAsync<PagedResponse<AlbumDto>>("api/Albums"),
+                    new PagedResponse<AlbumDto> { Data = new List<AlbumDto>() },
+                    "Unable to load albums",
+                    "SongsController.Edit POST - Loading albums on validation error"
+                );
+                ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
+                ViewBag.Albums = albums?.Data ?? new List<AlbumDto>();
                 return View(model);
             }
 
             return await SafeApiAction(async () =>
             {
+                _logger.LogInformation("SongsController.Edit POST: Attempting to update song with id: {Id}", id);
                 var updateDto = new SongUpdateDTO
                 {
                     Title = model.Title,
@@ -212,6 +254,43 @@ namespace MusicApp.Controllers
                 };
 
                 await _apiService.PutAsync<object>($"api/Songs/{id}", updateDto);
+                
+                // Handle audio file upload if file is provided
+                if (audioFile != null && audioFile.Length > 0)
+                {                    try
+                    {
+                        // Use multipart form data for file upload
+                        var filePath = await _apiService.UploadFileAsync($"api/Songs/{id}/audio", audioFile);
+                        if (!string.IsNullOrEmpty(filePath))
+                        {
+                            _logger.LogInformation("Audio file uploaded successfully for song {Id}", id);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to upload audio file for song {Id}", id);
+                        // Don't fail the entire operation if audio upload fails
+                    }
+                }
+
+                // Handle cover image upload if file is provided
+                if (coverImage != null && coverImage.Length > 0)
+                {                    try
+                    {
+                        // Use multipart form data for file upload
+                        var filePath = await _apiService.UploadFileAsync($"api/Songs/{id}/cover", coverImage);
+                        if (!string.IsNullOrEmpty(filePath))
+                        {
+                            _logger.LogInformation("Cover image uploaded successfully for song {Id}", id);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to upload cover image for song {Id}", id);
+                        // Don't fail the entire operation if image upload fails
+                    }
+                }
+                
                 SetSuccessMessage("Song updated successfully.");
                 return RedirectToAction("Index");            },
             () => {

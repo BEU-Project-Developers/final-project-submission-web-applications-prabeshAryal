@@ -3,66 +3,310 @@
     ViewData["Title"] = "Edit Artist";
 }
 
-<h2>Edit Artist</h2>
+<div class="min-h-screen" style="background-color: var(--ytm-bg-primary);">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="mb-8">
+                <div class="flex items-center space-x-4 mb-4">
+                    <a asp-action="Index" class="text-[var(--ytm-text-secondary)] hover:text-[var(--ytm-accent-red)] transition-colors">
+                        <i class="bi bi-arrow-left text-xl"></i>
+                    </a>
+                    <h1 class="text-3xl font-bold text-[var(--ytm-text-primary)]">Edit Artist</h1>
+                </div>
+                <p class="text-[var(--ytm-text-secondary)]">Update artist information and upload profile image</p>
+            </div>
 
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
-}
-@if (ViewBag.ErrorMessage != null)
-{
-    <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
-}
+            <!-- Success/Error Messages -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6" role="alert">
+                    <div class="flex items-center">
+                        <i class="bi bi-check-circle-fill mr-2"></i>
+                        <span>@TempData["SuccessMessage"]</span>
+                    </div>
+                </div>
+            }
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6" role="alert">
+                    <div class="flex items-center">
+                        <i class="bi bi-exclamation-triangle-fill mr-2"></i>
+                        <span>@ViewBag.ErrorMessage</span>
+                    </div>
+                </div>
+            }
 
-<form id="artistEditForm" asp-action="Edit" method="post">
-    <input type="hidden" asp-for="Id" />
-    <div class="mb-3">
-        <label asp-for="Name" class="form-label"></label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
+            <!-- Form -->
+            <form id="artistEditForm" asp-action="Edit" method="post" enctype="multipart/form-data" class="space-y-6">
+                <input type="hidden" asp-for="Id" />
+                
+                <!-- Required Fields Section -->
+                <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow-lg border border-[var(--ytm-border-color)]">
+                    <div class="px-6 py-4 border-b border-[var(--ytm-border-color)]">
+                        <h2 class="text-xl font-semibold text-[var(--ytm-text-primary)] flex items-center">
+                            <i class="bi bi-asterisk text-[var(--ytm-accent-red)] mr-2 text-sm"></i>
+                            Essential Information
+                        </h2>
+                        <p class="text-sm text-[var(--ytm-text-secondary)] mt-1">Required fields for the artist</p>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <!-- Artist Name -->
+                        <div class="space-y-2">
+                            <label asp-for="Name" class="block text-sm font-medium text-[var(--ytm-text-primary)]">
+                                Artist Name <span class="text-[var(--ytm-accent-red)]">*</span>
+                            </label>
+                            <input asp-for="Name" 
+                                   class="w-full px-4 py-3 rounded-lg border border-[var(--ytm-border-color)] bg-[var(--ytm-bg-primary)] text-[var(--ytm-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-transparent transition-all" 
+                                   placeholder="Enter artist name"
+                                   required />
+                            <span asp-validation-for="Name" class="text-[var(--ytm-accent-red)] text-sm"></span>
+                        </div>
+
+                        <!-- Genre -->
+                        <div class="space-y-2">
+                            <label asp-for="Genre" class="block text-sm font-medium text-[var(--ytm-text-primary)]">
+                                Primary Genre <span class="text-[var(--ytm-accent-red)]">*</span>
+                            </label>
+                            <input asp-for="Genre" 
+                                   class="w-full px-4 py-3 rounded-lg border border-[var(--ytm-border-color)] bg-[var(--ytm-bg-primary)] text-[var(--ytm-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-transparent transition-all" 
+                                   placeholder="e.g., Pop, Rock, Hip-Hop, Electronic"
+                                   required />
+                            <span asp-validation-for="Genre" class="text-[var(--ytm-accent-red)] text-sm"></span>
+                        </div>
+
+                        <!-- Artist Image Upload -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-[var(--ytm-text-primary)]">
+                                Profile Image
+                            </label>
+                            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                            {
+                                <div class="mb-3">
+                                    <img src="@Model.ImageUrl" alt="Current profile image" class="w-32 h-32 object-cover rounded-lg border border-[var(--ytm-border-color)]" />
+                                    <p class="text-xs text-[var(--ytm-text-secondary)] mt-2">Current profile image</p>
+                                </div>
+                            }
+                            <input type="file" id="profileImage" name="profileImage" 
+                                   class="w-full px-4 py-3 rounded-lg border border-[var(--ytm-border-color)] bg-[var(--ytm-bg-primary)] text-[var(--ytm-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-transparent transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[var(--ytm-accent-red)] file:text-white hover:file:bg-red-600" 
+                                   accept="image/*" />
+                            <p class="text-xs text-[var(--ytm-text-secondary)]">Upload a new profile image (JPG, PNG, GIF - Max 5MB). Leave empty to keep current image.</p>
+                            <!-- Hidden field to preserve the current image URL -->
+                            <input type="hidden" asp-for="ImageUrl" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Optional Fields Toggle -->
+                <div class="flex items-center space-x-3">
+                    <input type="checkbox" id="showOptionalFields" class="w-5 h-5 text-[var(--ytm-accent-red)] border-[var(--ytm-border-color)] rounded focus:ring-[var(--ytm-accent-red)] bg-[var(--ytm-bg-secondary)]">
+                    <label for="showOptionalFields" id="toggleLabel" class="text-sm font-medium text-[var(--ytm-text-primary)] cursor-pointer select-none">
+                        Show Additional Details
+                    </label>
+                </div>
+
+                <!-- Optional Fields Section (Hidden by default) -->
+                <div id="optionalFields" class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow-lg border border-[var(--ytm-border-color)] hidden">
+                    <div class="px-6 py-4 border-b border-[var(--ytm-border-color)]">
+                        <h2 class="text-xl font-semibold text-[var(--ytm-text-primary)] flex items-center">
+                            <i class="bi bi-plus-circle text-[var(--ytm-text-secondary)] mr-2"></i>
+                            Additional Information
+                        </h2>
+                        <p class="text-sm text-[var(--ytm-text-secondary)] mt-1">Optional fields for enhanced artist profile</p>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <!-- Bio -->
+                        <div class="space-y-2">
+                            <label asp-for="Bio" class="block text-sm font-medium text-[var(--ytm-text-primary)]">
+                                Biography
+                            </label>
+                            <textarea asp-for="Bio" rows="4"
+                                      class="w-full px-4 py-3 rounded-lg border border-[var(--ytm-border-color)] bg-[var(--ytm-bg-primary)] text-[var(--ytm-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-transparent transition-all resize-vertical" 
+                                      placeholder="Tell us about the artist..."></textarea>
+                            <span asp-validation-for="Bio" class="text-[var(--ytm-accent-red)] text-sm"></span>
+                        </div>
+
+                        <!-- Country -->
+                        <div class="space-y-2">
+                            <label asp-for="Country" class="block text-sm font-medium text-[var(--ytm-text-primary)]">
+                                Country/Origin
+                            </label>
+                            <input asp-for="Country" 
+                                   class="w-full px-4 py-3 rounded-lg border border-[var(--ytm-border-color)] bg-[var(--ytm-bg-primary)] text-[var(--ytm-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-transparent transition-all" 
+                                   placeholder="e.g., United States, United Kingdom, Canada" />
+                            <span asp-validation-for="Country" class="text-[var(--ytm-accent-red)] text-sm"></span>
+                        </div>
+
+                        <!-- Formed Date -->
+                        <div class="space-y-2">
+                            <label asp-for="FormedDate" class="block text-sm font-medium text-[var(--ytm-text-primary)]">
+                                Formed Date
+                            </label>
+                            <input asp-for="FormedDate" type="date" 
+                                   class="w-full px-4 py-3 rounded-lg border border-[var(--ytm-border-color)] bg-[var(--ytm-bg-primary)] text-[var(--ytm-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-transparent transition-all" />
+                            <span asp-validation-for="FormedDate" class="text-[var(--ytm-accent-red)] text-sm"></span>
+                        </div>
+
+                        <!-- Monthly Listeners -->
+                        <div class="space-y-2">
+                            <label asp-for="MonthlyListeners" class="block text-sm font-medium text-[var(--ytm-text-primary)]">
+                                Monthly Listeners
+                            </label>
+                            <input asp-for="MonthlyListeners" type="number" min="0" 
+                                   class="w-full px-4 py-3 rounded-lg border border-[var(--ytm-border-color)] bg-[var(--ytm-bg-primary)] text-[var(--ytm-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-transparent transition-all" 
+                                   placeholder="0" />
+                            <span asp-validation-for="MonthlyListeners" class="text-[var(--ytm-accent-red)] text-sm"></span>
+                        </div>
+
+                        <!-- Active Status -->
+                        <div class="flex items-center space-x-3">
+                            <input asp-for="IsActive" type="checkbox" 
+                                   class="w-5 h-5 text-[var(--ytm-accent-red)] border-[var(--ytm-border-color)] rounded focus:ring-[var(--ytm-accent-red)] bg-[var(--ytm-bg-primary)]" />
+                            <label asp-for="IsActive" class="text-sm font-medium text-[var(--ytm-text-primary)]">
+                                Artist is currently active
+                            </label>
+                            <span asp-validation-for="IsActive" class="text-[var(--ytm-accent-red)] text-sm"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4 pt-6">
+                    <button type="submit" 
+                            class="flex-1 bg-[var(--ytm-accent-red)] hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:ring-offset-2 focus:ring-offset-[var(--ytm-bg-primary)]">
+                        <i class="bi bi-check2 mr-2"></i>
+                        Save Changes
+                    </button>
+                    <button type="button" id="resetButton"
+                            class="flex-1 bg-[var(--ytm-bg-tertiary)] hover:bg-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] font-semibold py-3 px-6 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--ytm-border-color)] focus:ring-offset-2 focus:ring-offset-[var(--ytm-bg-primary)]">
+                        <i class="bi bi-arrow-clockwise mr-2"></i>
+                        Reset Form
+                    </button>
+                    <a asp-action="Index" 
+                       class="flex-1 bg-[var(--ytm-bg-tertiary)] hover:bg-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] font-semibold py-3 px-6 rounded-lg transition-colors text-center focus:outline-none focus:ring-2 focus:ring-[var(--ytm-border-color)] focus:ring-offset-2 focus:ring-offset-[var(--ytm-bg-primary)]">
+                        <i class="bi bi-x-lg mr-2"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
-    <div class="mb-3">
-        <label asp-for="Genre" class="form-label"></label>
-        <input asp-for="Genre" class="form-control" />
-        <span asp-validation-for="Genre" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Bio" class="form-label"></label>
-        <input asp-for="Bio" class="form-control" />
-        <span asp-validation-for="Bio" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Country" class="form-label"></label>
-        <input asp-for="Country" class="form-control" />
-        <span asp-validation-for="Country" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="FormedDate" class="form-label"></label>
-        <input asp-for="FormedDate" class="form-control" type="date" />
-        <span asp-validation-for="FormedDate" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="MonthlyListeners" class="form-label"></label>
-        <input asp-for="MonthlyListeners" class="form-control" />
-        <span asp-validation-for="MonthlyListeners" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="ImageUrl" class="form-label"></label>
-        <input asp-for="ImageUrl" class="form-control" />
-        <span asp-validation-for="ImageUrl" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="IsActive" class="form-label"></label>
-        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
-        <span asp-validation-for="IsActive" class="text-danger"></span>
-    </div>
-    <button type="submit" class="btn btn-primary">Save Changes</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-</form>
+</div>
+
+<!-- Custom Styles -->
+<style>
+    :root {
+        --ytm-bg-primary: #0f0f0f;
+        --ytm-bg-secondary: #212121;
+        --ytm-bg-tertiary: #333333;
+        --ytm-text-primary: #ffffff;
+        --ytm-text-secondary: #aaaaaa;
+        --ytm-accent-red: #ff0000;
+        --ytm-border-color: #333333;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    .animate-fadeIn {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* File input styling improvements */
+    input[type="file"]::-webkit-file-upload-button {
+        background: var(--ytm-accent-red);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        margin-right: 16px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    input[type="file"]::-webkit-file-upload-button:hover {
+        background: #cc0000;
+    }
+</style>
 
 @section Scripts {
 <script>
-    // Remove the custom form submission handler to use normal MVC form submission
-    // The form will now submit to the ArtistsController.Edit action
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.getElementById('showOptionalFields');
+        const optionalFields = document.getElementById('optionalFields');
+        const toggleLabel = document.getElementById('toggleLabel');
+        const resetButton = document.getElementById('resetButton');
+
+        // Toggle optional fields
+        toggle.addEventListener('change', function() {
+            if (toggle.checked) {
+                optionalFields.classList.remove('hidden');
+                optionalFields.classList.add('animate-fadeIn');
+                toggleLabel.textContent = 'Hide Additional Details';
+            } else {
+                optionalFields.classList.add('hidden');
+                optionalFields.classList.remove('animate-fadeIn');
+                toggleLabel.textContent = 'Show Additional Details';
+            }
+        });
+
+        // Reset form functionality
+        resetButton.addEventListener('click', function() {
+            if (confirm('Are you sure you want to reset all changes? This will revert all fields to their original values.')) {
+                document.getElementById('artistEditForm').reset();
+                // Close optional fields if open
+                if (toggle.checked) {
+                    toggle.checked = false;
+                    optionalFields.classList.add('hidden');
+                    toggleLabel.textContent = 'Show Additional Details';
+                }
+            }
+        });
+
+        // Form validation and submission
+        document.getElementById('artistEditForm').addEventListener('submit', function(e) {
+            const name = document.querySelector('input[name="Name"]').value.trim();
+            const genre = document.querySelector('input[name="Genre"]').value.trim();
+
+            if (!name) {
+                e.preventDefault();
+                alert('Artist name is required.');
+                document.querySelector('input[name="Name"]').focus();
+                return false;
+            }
+
+            if (!genre) {
+                e.preventDefault();
+                alert('Genre is required.');
+                document.querySelector('input[name="Genre"]').focus();
+                return false;
+            }
+
+            // Show loading state
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="bi bi-spinner-border animate-spin mr-2"></i>Saving...';
+            submitBtn.disabled = true;
+
+            // Re-enable button after 10 seconds as fallback
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 10000);
+        });
+    });
 </script>
 }
