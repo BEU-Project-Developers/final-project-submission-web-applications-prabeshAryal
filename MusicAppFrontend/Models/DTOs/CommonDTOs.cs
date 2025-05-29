@@ -37,8 +37,7 @@ namespace MusicApp.Models.DTOs
     public class ArtistDetailDto : ArtistDto
     {
         public new List<AlbumDto> Albums { get; set; } = new List<AlbumDto>();
-    }
-    public class AlbumDto
+    }    public class AlbumDto
     {
         public int Id { get; set; }
         public string? Title { get; set; }
@@ -51,6 +50,7 @@ namespace MusicApp.Models.DTOs
         public int? TotalTracks { get; set; }
         public string? Description { get; set; } // Added
         public TimeSpan? Duration { get; set; } // Added
+        public bool IsLiked { get; set; } // Added to store like status
         public List<SongDto> Songs { get; set; } = new List<SongDto>();
         // Additional properties for compatibility
         public int TrackCount => TotalTracks ?? 0;

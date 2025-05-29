@@ -1,7 +1,12 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using Microsoft.AspNetCore.Html
+@using System.Text.Json
 @model MusicApp.Models.DTOs.AlbumDto
 @{
     ViewData["Title"] = $"{Model.Title} - Album";
 }
+
+@Html.AntiForgeryToken()
 
 <style>
     .album-header {
@@ -221,7 +226,15 @@
                 </span>
                 <span class="meta-item">
                     <i class="bi bi-clock"></i> 
-                    @(TimeSpan.FromSeconds(Model.TotalDuration).ToString(@"h\:mm\:ss").TrimStart('0', ':'))
+                    @{
+                        // Convert TotalDuration (in minutes) to a TimeSpan
+                        var duration = TimeSpan.FromMinutes(Model.TotalDuration);
+                        var formattedDuration = duration.ToString(@"h\:mm\:ss").TrimStart('0', ':');
+                        if (string.IsNullOrEmpty(formattedDuration)) {
+                            formattedDuration = "0:00";
+                        }
+                    }
+                    @formattedDuration
                 </span>
                 <span class="meta-item">
                     <i class="bi bi-vinyl"></i> 
@@ -236,7 +249,7 @@
         </div>
           <div class="album-actions">
             <button class="btn btn-play" 
-                    data-play-album='@Html.Raw(Json.Serialize(Model.Songs.Select(s => new { 
+                    data-play-album='@Html.Raw(JsonSerializer.Serialize(Model.Songs.Select(s => new { 
                         id = s.Id, 
                         title = s.Title, 
                         artistName = s.ArtistName, 
@@ -263,7 +276,8 @@
     
     @if (Model.Songs != null && Model.Songs.Any())
     {
-        <ul class="track-list">            @for (int i = 0; i < Model.Songs.Count; i++)
+        <ul class="track-list">
+            @for (int i = 0; i < Model.Songs.Count; i++)
             {
                 var song = Model.Songs[i];
                 <li class="track-item">
@@ -273,18 +287,18 @@
                         <div class="track-artist">@song.ArtistName</div>
                     </div>
                     <div class="track-duration">
-                        @(song.Duration?.ToString(@"m\:ss") ?? "--:--")
+                        @(song.Duration?.ToString("m':'ss") ?? "--:--")
                     </div>
                     <div class="track-actions">
                         <button class="btn play-btn" 
-                                data-play-song='@Html.Raw(Json.Serialize(new { 
+                                data-play-song='@Html.Raw(JsonSerializer.Serialize(new { 
                                     id = song.Id, 
                                     title = song.Title, 
                                     artistName = song.ArtistName, 
                                     audioUrl = song.AudioUrl, 
                                     coverImageUrl = song.CoverImageUrl 
                                 }))'
-                                data-playlist='@Html.Raw(Json.Serialize(Model.Songs.Select(s => new { 
+                                data-playlist='@Html.Raw(JsonSerializer.Serialize(Model.Songs.Select(s => new { 
                                     id = s.Id, 
                                     title = s.Title, 
                                     artistName = s.ArtistName, 
@@ -312,145 +326,197 @@
     }
 </div>
 
-<div class="mt-4">
-    <a asp-action="Index" class="btn btn-action">
-        <i class="bi bi-arrow-left"></i> Back to Albums
-    </a>
-</div>
-
-<!-- Playlist Selection Modal -->
-<div id="playlistModal" class="modal" tabindex="-1" style="display:none; position:fixed; z-index:1050; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); align-items:center; justify-content:center;">
-    <div class="modal-dialog" style="background:#222; border-radius:12px; max-width:400px; width:90vw; margin:auto; padding:1.5rem; box-shadow:0 2px 16px #0008;">
-        <h5 style="color:#fff; margin-bottom:1rem;">Select Playlist</h5>
-        <div id="playlistList" style="max-height:250px; overflow-y:auto; margin-bottom:1rem;"></div>
-        <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
-            <button id="playlistModalCancel" class="btn btn-action">Cancel</button>
-            <button id="playlistModalConfirm" class="btn btn-play" disabled>Add</button>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const backendBaseUrl = 'http://localhost:5117';
             const albumLikeButton = document.getElementById('albumLikeButton');
+            
+            // Check if album is already liked on page load using the isLiked property from the model
             if (albumLikeButton) {
+                // Always use the model's IsLiked property, no fallback to API call
+                updateLikeButtonUI(@(Model.IsLiked ? "true" : "false"));
+
                 albumLikeButton.addEventListener('click', function () {
                     const albumId = this.dataset.albumId;
-                    fetch(`@Url.Action("Like", "Albums")/${albumId}`, {
+                    // Disable button to prevent multiple clicks
+                    this.disabled = true;
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="bi bi-spinner-border"></i> Processing...';
+                    // Create form data for the request
+                    const formData = new FormData();
+                    formData.append('id', albumId);
+                    formData.append('__RequestVerificationToken', getAntiForgeryToken());
+                    fetch('/Albums/ToggleLike', {
                         method: 'POST',
-                        headers: {
-                            'RequestVerificationToken': getAntiForgeryToken(),
-                            // 'Content-Type': 'application/json' // Add if your controller expects JSON
-                        },
-                        // body: JSON.stringify({}) // Add if your controller expects a body
+                        body: formData
                     })
                     .then(response => {
                         if (response.ok) {
-                            return response.text();
+                            return response.json();
                         } else {
-                            return response.text().then(text => { throw new Error(text); });
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                         }
                     })
-                    .then(message => {
-                        alert(message || 'Album liked!');
-                        this.innerHTML = '<i class="bi bi-heart-fill"></i> Liked';
-                        this.classList.add('liked');
+                    .then(data => {
+                        // Update UI based on the response
+                        if (data && typeof data.isLiked !== 'undefined') {
+                            updateLikeButtonUI(data.isLiked);
+                            if (data.message) {
+                                console.log(data.message);
+                            }
+                        }
                     })
                     .catch(error => {
-                        alert('Error liking album: ' + error.message);
+                        console.error('Error toggling album like:', error);
+                        this.innerHTML = originalText;
+                    })
+                    .finally(() => {
+                        this.disabled = false;
                     });
                 });
             }
-            const albumAddToPlaylistButton = document.getElementById('albumAddToPlaylistButton');
-            const playlistModal = document.getElementById('playlistModal');
-            const playlistList = document.getElementById('playlistList');
-            const playlistModalCancel = document.getElementById('playlistModalCancel');
-            const playlistModalConfirm = document.getElementById('playlistModalConfirm');
-            let selectedPlaylistId = null;
-            if (albumAddToPlaylistButton) {
-                albumAddToPlaylistButton.addEventListener('click', function () {
-                    // Show modal and fetch playlists
-                    playlistModal.style.display = 'flex';
-                    playlistList.innerHTML = '<div style="color:#aaa;">Loading playlists...</div>';
-                    playlistModalConfirm.disabled = true;
-                    selectedPlaylistId = null;
-                    fetch(`${backendBaseUrl}/api/Playlists/user`)
-                        .then(res => res.json())
-                        .then(result => {
-                            const playlists = result.Data || result; // handle paged or array
-                            if (!playlists.length) {
-                                playlistList.innerHTML = '<div style="color:#aaa;">No playlists found.</div>';
-                                return;
-                            }
-                            playlistList.innerHTML = playlists.map(p =>
-                                `<div class="playlist-option" data-id="${p.id}" tabindex="0" style="padding:0.5rem 1rem; border-radius:8px; margin-bottom:0.25rem; background:#333; color:#fff; cursor:pointer; outline:none;">`
-                                + `<i class='bi bi-music-note-list'></i> ${p.name}` +
-                                `</div>`
-                            ).join('');
-                            Array.from(playlistList.children).forEach(opt => {
-                                opt.addEventListener('click', function () {
-                                    Array.from(playlistList.children).forEach(o => o.style.background = '#333');
-                                    this.style.background = '#444';
-                                    selectedPlaylistId = this.dataset.id;
-                                    playlistModalConfirm.disabled = false;
-                                });
-                                opt.addEventListener('keydown', function(e) {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        this.click();
-                                    }
-                                });
-                            });
-                        })
-                        .catch(() => {
-                            playlistList.innerHTML = '<div style="color:#faa;">Failed to load playlists.</div>';
-                        });
-                });
-            }
-            playlistModalCancel.addEventListener('click', function () {
-                playlistModal.style.display = 'none';
-            });
-            playlistModalConfirm.addEventListener('click', function () {
-                if (!selectedPlaylistId) return;
-                playlistModalConfirm.disabled = true;
-                const songIds = @Html.Raw(Json.Serialize(Model.Songs.Select(s => s.Id).ToList()));
 
-                fetch('@Url.Action("AddAlbumToPlaylist", "Playlists")?playlistId=' + selectedPlaylistId, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': getAntiForgeryToken()
-                    },
-                    body: JSON.stringify({ songIds: songIds })
-                })
-                .then(response => {
-                    if (response.ok) {
-                        return response.text(); // Or response.json() if your controller returns JSON
-                    } else {
-                        return response.text().then(text => { throw new Error(text); });
-                    }
-                })
-                .then(message => {
-                    alert(message || 'All album songs added to playlist!');
-                    playlistModal.style.display = 'none';
-                })
-                .catch(error => {
-                    alert('Error adding album songs to playlist: ' + error.message);
-                    playlistModal.style.display = 'none';
-                })
-                .finally(() => {
-                    playlistModalConfirm.disabled = false; // Re-enable button
+            const albumAddToPlaylistButton = document.getElementById('albumAddToPlaylistButton');
+            if (albumAddToPlaylistButton) {
+                albumAddToPlaylistButton.addEventListener('click', function() {
+                    const albumId = this.dataset.albumId;
+                    showPlaylistModal(albumId);
                 });
-            });
-            // Close modal on outside click
-            playlistModal.addEventListener('click', function(e) {
-                if (e.target === playlistModal) playlistModal.style.display = 'none';
-            });
+            }        
         });
+        
+        // Function to update like button UI based on like status
+        function updateLikeButtonUI(isLiked) {
+            const albumLikeButton = document.getElementById('albumLikeButton');
+            if (!albumLikeButton) return;
+            
+            if (isLiked) {
+                albumLikeButton.innerHTML = '<i class="bi bi-heart-fill"></i> Liked';
+                albumLikeButton.classList.remove('btn-action');
+                albumLikeButton.classList.add('btn-primary');
+            } else {
+                albumLikeButton.innerHTML = '<i class="bi bi-heart"></i> Like';
+                albumLikeButton.classList.remove('btn-primary');
+                albumLikeButton.classList.add('btn-action');
+            }
+        }
+
         function getAntiForgeryToken() {
             const tokenField = document.querySelector('input[name="__RequestVerificationToken"]');
             return tokenField ? tokenField.value : '';
+        }
+
+        function showPlaylistModal(albumId) {
+            // Fetch user playlists
+            fetch('/Playlists/GetUserPlaylists', {
+                method: 'GET',
+                headers: {
+                    'RequestVerificationToken': getAntiForgeryToken()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const playlists = data.data || [];
+                
+                if (playlists.length === 0) {
+                    alert('You don\'t have any playlists yet. Create a playlist first!');
+                    return;
+                }
+
+                // Create modal HTML
+                const modalHtml = `
+                    <div id="playlistModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+                        <div style="background: var(--ytm-bg-primary); border-radius: 8px; padding: 2rem; max-width: 400px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                            <h3 style="color: var(--ytm-text-primary); margin-bottom: 1rem;">Add Album to Playlist</h3>
+                            <p style="color: var(--ytm-text-secondary); margin-bottom: 1.5rem;">Select a playlist to add all songs from this album:</p>
+                            <div id="playlistList" style="max-height: 300px; overflow-y: auto; margin-bottom: 1.5rem;">
+                                ${playlists.map(playlist => `
+                                    <div class="playlist-item" data-playlist-id="${playlist.id}" style="
+                                        display: flex; align-items: center; padding: 0.75rem; margin-bottom: 0.5rem; 
+                                        border: 1px solid var(--ytm-border-color); border-radius: 4px; cursor: pointer;
+                                        background: var(--ytm-bg-secondary); transition: background-color 0.2s;
+                                    " onmouseover="this.style.backgroundColor='var(--ytm-bg-tertiary)'" onmouseout="this.style.backgroundColor='var(--ytm-bg-secondary)'">
+                                        ${playlist.coverImageUrl ? `<img src="${playlist.coverImageUrl}" alt="${playlist.name}" style="width: 40px; height: 40px; border-radius: 4px; margin-right: 0.75rem;">` : '<div style="width: 40px; height: 40px; background: var(--ytm-bg-tertiary); border-radius: 4px; margin-right: 0.75rem; display: flex; align-items: center; justify-content: center;"><i class="bi bi-music-note-list" style="color: var(--ytm-text-secondary);"></i></div>'}
+                                        <div>
+                                            <div style="color: var(--ytm-text-primary); font-weight: 500;">${playlist.name}</div>
+                                            <div style="color: var(--ytm-text-secondary); font-size: 0.9rem;">${playlist.songCount} songs</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                                <button id="cancelPlaylistModal" style="
+                                    background: transparent; border: 1px solid var(--ytm-border-color); color: var(--ytm-text-secondary); 
+                                    padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;
+                                ">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Add modal to page
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+                // Add event listeners
+                document.getElementById('cancelPlaylistModal').addEventListener('click', closePlaylistModal);
+                
+                // Add click listeners to playlist items
+                document.querySelectorAll('.playlist-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const playlistId = this.dataset.playlistId;
+                        const playlistName = this.querySelector('div div').textContent;
+                        addAlbumToPlaylist(albumId, playlistId, playlistName);
+                    });
+                });
+
+                // Close modal when clicking outside
+                document.getElementById('playlistModal').addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closePlaylistModal();
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching playlists:', error);
+                alert('Error loading playlists. Please try again.');
+            });
+        }
+
+        function closePlaylistModal() {
+            const modal = document.getElementById('playlistModal');
+            if (modal) {
+                modal.remove();
+            }
+        }        function addAlbumToPlaylist(albumId, playlistId, playlistName) {
+            // Get all song IDs from the album
+            const songIds = @Html.Raw(Json.Serialize(Model.Songs.Select(s => s.Id.ToString()).ToArray()));
+            
+            // Create form data for the request
+            const formData = new FormData();
+            formData.append('playlistId', playlistId);
+            formData.append('albumSongs.SongIds', JSON.stringify(songIds));
+            formData.append('__RequestVerificationToken', getAntiForgeryToken());
+            
+            fetch(`/Playlists/AddAlbumToPlaylist?playlistId=${playlistId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getAntiForgeryToken()
+                },
+                body: JSON.stringify({ SongIds: songIds })
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert(`All album songs added to "${playlistName}" playlist!`);
+                    closePlaylistModal();
+                } else {
+                    response.text().then(text => alert('Failed to add album to playlist: ' + text));
+                }
+            })
+            .catch(error => {
+                console.error('Error adding album to playlist:', error);
+                alert('Error adding album to playlist: ' + error);
+            });
         }
     </script>
 }

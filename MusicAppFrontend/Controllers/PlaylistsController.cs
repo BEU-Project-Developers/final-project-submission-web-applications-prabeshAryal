@@ -19,7 +19,9 @@ namespace MusicApp.Controllers
             : base(apiService, logger)
         {
             _fileUploadService = fileUploadService;
-        }        public async Task<IActionResult> Index(int page = 1, int pageSize = 20, string view = "my")
+        }
+
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 20, string view = "my")
         {
             var emptyResponse = new PagedResponse<PlaylistDto> {
                 Data = new List<PlaylistDto>(),
@@ -54,7 +56,9 @@ namespace MusicApp.Controllers
             );
 
             return View(response);
-        }public async Task<IActionResult> Details(int id, string search = null)
+        }
+
+        public async Task<IActionResult> Details(int id, string search = null)
         {
             return await SafeApiAction(
                 async () =>
@@ -93,7 +97,9 @@ namespace MusicApp.Controllers
                 GetStandardErrorMessage("load", "playlist details"),
                 $"PlaylistsController.Details for ID {id}"
             );
-        }        [HttpPost]
+        }
+
+        [HttpPost]
         public async Task<IActionResult> AddSongToPlaylist(int playlistId, int songId)
         {
             if (playlistId <= 0 || songId <= 0)
@@ -125,7 +131,9 @@ namespace MusicApp.Controllers
                 ViewBag.ErrorMessage = TempData["ErrorMessage"];
             }
             return View();
-        }        [HttpPost]
+        }
+
+        [HttpPost]
         public async Task<IActionResult> Create(PlaylistDto model, IFormFile coverImage)
         {
             // Remove coverImage validation errors since it's not part of the model
@@ -177,7 +185,9 @@ namespace MusicApp.Controllers
                 GetStandardErrorMessage("create", "playlist"),
                 "PlaylistsController.Create POST"
             );
-        }        // GET: Playlists/Edit/5
+        }
+
+        // GET: Playlists/Edit/5
         public async Task<IActionResult> Edit(int id)
         {
             return await SafeApiAction(
@@ -197,7 +207,9 @@ namespace MusicApp.Controllers
                 GetStandardErrorMessage("load", "playlist"),
                 $"PlaylistsController.Edit GET for ID {id}"
             );
-        }        // POST: Playlists/Edit/5
+        }
+
+        // POST: Playlists/Edit/5
         [HttpPost]
         public async Task<IActionResult> Edit(int id, PlaylistDto model, IFormFile coverImage)
         {
@@ -277,7 +289,9 @@ namespace MusicApp.Controllers
                 GetStandardErrorMessage("update", "playlist"),
                 $"PlaylistsController.Edit POST for ID {id}"
             );
-        }// GET: Playlists/Delete/5
+        }
+
+        // GET: Playlists/Delete/5
         public async Task<IActionResult> Delete(int id)
         {
             return await SafeApiAction(
@@ -336,23 +350,41 @@ namespace MusicApp.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetUserPlaylists()
+        {
+            var playlists = await SafeApiCall(
+                async () => await _apiService.GetAsync<PagedResponse<PlaylistDto>>("api/Playlists/user"),
+                new PagedResponse<PlaylistDto> { Data = new List<PlaylistDto>() },
+                "Unable to load your playlists",
+                "PlaylistsController.GetUserPlaylists"
+            );
+
+            return Json(playlists);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddAlbumToPlaylist(string playlistId, [FromBody] AlbumSongsDto albumSongs)
+        public async Task<IActionResult> AddAlbumToPlaylist(int playlistId, [FromBody] AlbumSongsDto albumSongs)
         {
-            if (string.IsNullOrEmpty(playlistId) || albumSongs == null || albumSongs.SongIds == null || !albumSongs.SongIds.Any())
+            if (playlistId <= 0 || albumSongs == null || albumSongs.SongIds == null || !albumSongs.SongIds.Any())
             {
                 return BadRequest("Invalid request data.");
-            }            foreach (var songId in albumSongs.SongIds)
-            {
-                var response = await _apiService.PostAsync<object>($"Playlists/{playlistId}/add-song", new AddSongToPlaylistDto { SongId = songId });
-                if (response == null)
-                {
-                    // If the response is null, there was likely an error
-                    return BadRequest("Failed to add song to playlist");
-                }
             }
-            return Ok("All album songs added to playlist!");
+
+            try
+            {
+                foreach (var songId in albumSongs.SongIds)
+                {
+                    await _apiService.PostAsync<object>($"api/Playlists/{playlistId}/songs", new { songId = int.Parse(songId) });
+                }
+                return Ok("All album songs added to playlist!");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding album songs to playlist {PlaylistId}", playlistId);
+                return BadRequest($"Error adding songs to playlist: {ex.Message}");
+            }
         }
     }
 

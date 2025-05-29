@@ -114,7 +114,7 @@ namespace MusicAppBackend.Controllers
             });
         }
 
-        // GET: api/Albums/5
+    // GET: api/Albums/5
         [HttpGet("{id}")]
         public async Task<ActionResult<object>> GetAlbum(int id)
         {
@@ -127,6 +127,14 @@ namespace MusicAppBackend.Controllers
             if (album == null)
             {
                 return NotFound();
+            }
+
+            // Check if album is liked by current user (if authenticated)
+            bool isLiked = false;
+            if (User.Identity?.IsAuthenticated ?? false)
+            {
+                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+                isLiked = await _context.AlbumLikes.AnyAsync(al => al.AlbumId == id && al.UserId == userId);
             }
 
             return new
@@ -143,6 +151,7 @@ namespace MusicAppBackend.Controllers
                 album.ReleaseDate,
                 album.TotalTracks,
                 album.Duration,
+                IsLiked = isLiked, // Add like status in the response
                 Songs = album.Songs.Select(s => new
                 {
                     s.Id,
@@ -310,12 +319,10 @@ namespace MusicAppBackend.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { coverImageUrl = _fileStorage.GetFileUrl(filePath) });
-        }
-
-        // POST: api/Albums/{id}/like
-        [HttpPost("{id}/like")]
+        }        // POST: api/Albums/{id}/toggleLike
+        [HttpPost("{id}/toggleLike")]
         [Authorize]
-        public async Task<IActionResult> LikeAlbum(int id)
+        public async Task<IActionResult> ToggleLike(int id)
         {
             var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
             var album = await _context.Albums.FindAsync(id);
@@ -325,21 +332,29 @@ namespace MusicAppBackend.Controllers
             }
 
             // Check if already liked
-            var alreadyLiked = await _context.AlbumLikes.AnyAsync(al => al.AlbumId == id && al.UserId == userId);
-            if (alreadyLiked)
+            var existingLike = await _context.AlbumLikes.FirstOrDefaultAsync(al => al.AlbumId == id && al.UserId == userId);
+            
+            if (existingLike != null)
             {
-                return Ok(new { message = "Album already liked." });
+                // Unlike: Remove the existing like
+                _context.AlbumLikes.Remove(existingLike);
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Album unliked successfully.", isLiked = false });
             }
-
-            _context.AlbumLikes.Add(new AlbumLike
+            else
             {
-                AlbumId = id,
-                UserId = userId,
-                LikedAt = DateTime.UtcNow
-            });
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Album liked successfully." });
-        }
+                // Like: Add new like
+                _context.AlbumLikes.Add(new AlbumLike
+                {
+                    AlbumId = id,
+                    UserId = userId,
+                    LikedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Album liked successfully.", isLiked = true });
+            }
+        }        // (Removed: GET: api/Albums/{id}/liked)
+        // The IsAlbumLiked endpoint is no longer needed with the new toggleLike and isLiked in album response.
 
         private async Task<bool> AlbumExists(int id)
         {

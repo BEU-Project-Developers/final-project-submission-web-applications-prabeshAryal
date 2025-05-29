@@ -295,14 +295,10 @@ namespace MusicApp.Controllers
                 false,
                 GetStandardErrorMessage("delete", "album"),
                 $"AlbumsController.DeleteConfirmed for ID {id}"
-            );
-
-            return RedirectToAction("Index");
-        }
-
-        [HttpPost]
+            );            return RedirectToAction("Index");
+        }        [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Like(string id)
+        public async Task<IActionResult> ToggleLike(string id)
         {
             if (string.IsNullOrEmpty(id))
             {
@@ -311,19 +307,45 @@ namespace MusicApp.Controllers
 
             try
             {
-                var result = await _apiService.PostAsync<object>($"api/Albums/{id}/like", new { });
-                return Ok("Album liked successfully!");
+                var result = await _apiService.PostAsync<dynamic>($"api/Albums/{id}/toggleLike", new { });
+                // Return JSON response that includes like status
+                return Json(result ?? new { message = "Album like status toggled successfully!", isLiked = true });
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogError(ex, "Error liking album {Id}: {Message}", id, ex.Message);
+                _logger.LogError(ex, "Error toggling like for album {Id}: {Message}", id, ex.Message);
                 return StatusCode(ex.StatusCode.HasValue ? (int)ex.StatusCode.Value : 500,
-                    $"Failed to like album: {ex.Message}");
+                    $"Failed to toggle album like: {ex.Message}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error liking album {Id}: {Message}", id, ex.Message);
-                return StatusCode(500, $"Failed to like album: {ex.Message}");
+                _logger.LogError(ex, "Unexpected error toggling like for album {Id}: {Message}", id, ex.Message);
+                return StatusCode(500, $"Failed to toggle album like: {ex.Message}");
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> IsLiked(int id)
+        {
+            if (!User.Identity?.IsAuthenticated ?? true)
+            {
+                return Json(new { isLiked = false });
+            }
+
+            try
+            {
+                var result = await _apiService.GetAsync<dynamic>($"api/Albums/{id}/liked");
+                return Json(result ?? new { isLiked = false });
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Error checking if album {Id} is liked: {Message}", id, ex.Message);
+                return Json(new { isLiked = false });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error checking if album {Id} is liked: {Message}", id, ex.Message);
+                return Json(new { isLiked = false });
             }
         }
     }
