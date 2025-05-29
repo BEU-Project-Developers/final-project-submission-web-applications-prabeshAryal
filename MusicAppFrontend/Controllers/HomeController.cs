@@ -103,14 +103,25 @@ namespace MusicApp.Controllers
 
             return await SafeApiAction(async () =>
             {
-                var results = await SafeApiCall(
-                    () => _apiService.GetAsync<SearchResultsDto>($"api/Search?query={Uri.EscapeDataString(q)}"),
-                    new SearchResultsDto(),
-                    "Unable to perform search at this time",
-                    "HomeController.SearchResults"
-                );
-
-                return View(results);
+                // Fetch raw JSON from backend
+                var client = await _apiService.GetHttpClientAsync();
+                var response = await client.GetAsync($"api/Search?query={Uri.EscapeDataString(q)}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    ViewBag.Error = "Unable to perform search at this time";
+                    return View(new SearchResultsDto());
+                }
+                var content = await response.Content.ReadAsStringAsync();
+                using var doc = System.Text.Json.JsonDocument.Parse(content);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("results", out var resultsElem))
+                {
+                    var resultsDto = System.Text.Json.JsonSerializer.Deserialize<SearchResultsDto>(resultsElem.GetRawText(), new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    return View(resultsDto ?? new SearchResultsDto());
+                }
+                // fallback: try to parse as direct SearchResultsDto
+                var fallbackDto = System.Text.Json.JsonSerializer.Deserialize<SearchResultsDto>(content, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return View(fallbackDto ?? new SearchResultsDto());
             }, () => {
                 ViewBag.Error = "An error occurred while searching. Please try again later.";
                 return View(new SearchResultsDto());
