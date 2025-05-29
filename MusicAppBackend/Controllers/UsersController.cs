@@ -48,6 +48,63 @@ namespace MusicAppBackend.Controllers
                 .ToListAsync();
 
             return users;
+        }        // GET: api/Users/top-artists
+        [HttpGet("top-artists")]
+        public async Task<ActionResult<IEnumerable<object>>> GetCurrentUserTopArtists()
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+            // Get user's favorite songs and group by artist to find top artists
+            var topArtists = await _context.UserFavorites
+                .Where(uf => uf.UserId == userId)
+                .Include(uf => uf.Song)
+                .ThenInclude(s => s.Artist)
+                .Where(uf => uf.Song.Artist != null)
+                .GroupBy(uf => uf.Song.Artist!)
+                .Select(g => new 
+                {
+                    Id = g.Key.Id,
+                    Name = g.Key.Name,
+                    Bio = g.Key.Bio,
+                    ImageUrl = g.Key.ImageUrl,
+                    Country = g.Key.Country,
+                    Genre = g.Key.Genre,
+                    FormedDate = g.Key.FormedDate,
+                    MonthlyListeners = g.Key.MonthlyListeners ?? 0,
+                    IsActive = g.Key.IsActive,
+                    PlayCount = g.Count(), // Number of favorite songs by this artist
+                    FollowersCount = 0 // Default value for compatibility
+                })
+                .OrderByDescending(a => a.PlayCount)
+                .Take(10) // Return top 10 artists
+                .ToListAsync();
+
+            return Ok(topArtists);
+        }
+
+        // GET: api/Users/profile
+        [HttpGet("profile")]
+        public async Task<ActionResult<UserDTO>> GetCurrentUser()
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var user = await _context.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                return NotFound();
+            }            return new UserDTO
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                ProfileImageUrl = user.ProfileImageUrl,
+                Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
+            };
         }
 
         // GET: api/Users/5
@@ -68,33 +125,6 @@ namespace MusicAppBackend.Controllers
             if (user.Id != currentUserId && !User.IsInRole("Admin"))
             {
                 return Forbid();
-            }
-
-            return new UserDTO
-            {
-                Id = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                ProfileImageUrl = user.ProfileImageUrl,
-                Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
-            };
-        }
-
-        // GET: api/Users/profile
-        [HttpGet("profile")]
-        public async Task<ActionResult<UserDTO>> GetCurrentUser()
-        {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            var user = await _context.Users
-                .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
-                .FirstOrDefaultAsync(u => u.Id == userId);
-
-            if (user == null)
-            {
-                return NotFound();
             }
 
             return new UserDTO
@@ -315,9 +345,7 @@ namespace MusicAppBackend.Controllers
 
             // Remove user (cascade delete will handle related records)
             _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            await _context.SaveChangesAsync();            return NoContent();
         }
 
         private async Task<bool> UserExists(int id)
