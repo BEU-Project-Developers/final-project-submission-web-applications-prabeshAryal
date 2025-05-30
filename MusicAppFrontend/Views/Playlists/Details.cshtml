@@ -7,13 +7,12 @@
 @section Styles {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
     <style>
-        /* General Styles */
-        .playlist-header {
+        /* General Styles */        .playlist-header {
             display: flex;
             align-items: center;
             margin-bottom: 30px;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
             border-radius: 15px;
             color: white;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
@@ -154,16 +153,14 @@
             padding: 15px 20px;
             font-size: 1rem;
             background: var(--bs-body-bg);
-        }
-
-        .search-form .form-control:focus {
+        }        .search-form .form-control:focus {
             box-shadow: none;
-            border-color: #667eea;
+            border-color: #ff0000;
         }
 
         .search-btn {
             border: none;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
             color: white;
             padding: 15px 25px;
             transition: all 0.3s ease;
@@ -171,7 +168,7 @@
 
         .search-btn:hover {
             transform: scale(1.05);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.4);
         }
 
         .search-results-container {
@@ -236,6 +233,7 @@
 }
 
 <div class="container mt-4">
+    @Html.AntiForgeryToken()
     <!-- Playlist Header -->
     <div class="playlist-header">
         <img src="@(Model.CoverImageUrl ?? "/assets/default-playlist-cover.png")" 
@@ -496,9 +494,7 @@
             } else {
                 showNotification('Playlist is empty.', 'info');
             }
-        }
-
-        async function removeSongFromPlaylist(songId, event) {
+        }        async function removeSongFromPlaylist(songId, event) {
             event.stopPropagation();
             if (!confirm('Are you sure you want to remove this song from the playlist?')) {
                 return;
@@ -506,12 +502,17 @@
 
             console.log(`Attempting to remove song ${songId} from playlist ${playlistId}`);
             try {
-                const response = await fetch(`${API_BASE_URL}/api/Playlists/${playlistId}/songs/${songId}`, {
-                    method: 'DELETE',
+                const response = await fetch(`/Playlists/RemoveSongFromPlaylist`, {
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({
+                        playlistId: playlistId,
+                        songId: songId
+                    })
                 });
                 
                 if (response.ok) {
@@ -547,21 +548,20 @@
         }
 
         // Search functionality
-        let searchTimeout;
-        async function searchSongs(query) {
+        let searchTimeout;        async function searchSongs(query) {
             if (!query || query.length < 2) {
                 document.getElementById('search-results-container').style.display = 'none';
                 return;
             }
 
             try {
-                const response = await fetch(`${API_BASE_URL}/api/Search?query=${encodeURIComponent(query)}&limit=20`);
+                const response = await fetch(`/Playlists/SearchSongs?query=${encodeURIComponent(query)}&limit=20`);
                 if (!response.ok) {
                     throw new Error(`Search failed: ${response.status}`);
                 }
                 
                 const results = await response.json();
-                displaySearchResults(results.filter(r => r.type === 'song'));
+                displaySearchResults(results.results.songs || []);
             } catch (error) {
                 console.error('Error searching songs:', error);
                 showNotification(`Search error: ${error.message}`, 'error');

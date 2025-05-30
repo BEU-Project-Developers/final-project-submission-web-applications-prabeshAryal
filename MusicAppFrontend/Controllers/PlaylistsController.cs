@@ -405,6 +405,53 @@ namespace MusicApp.Controllers
                 return BadRequest($"Error adding songs to playlist: {ex.Message}");
             }
         }
+
+        [HttpPost]
+        public async Task<IActionResult> RemoveSongFromPlaylist(int playlistId, int songId)
+        {
+            if (playlistId <= 0 || songId <= 0)
+            {
+                return BadRequest("Invalid playlist or song ID.");
+            }
+
+            var success = await SafeApiCall(
+                async () =>
+                {
+                    await _apiService.DeleteAsync($"api/Playlists/{playlistId}/songs/{songId}");
+                    return true;
+                },
+                false,
+                "Failed to remove song from playlist.",
+                $"PlaylistsController.RemoveSongFromPlaylist - playlist {playlistId}, song {songId}"
+            );
+
+            if (success)
+            {
+                return Ok(new { message = "Song removed successfully!" });
+            }
+            else
+            {
+                return BadRequest("Failed to remove song from playlist.");
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SearchSongs(string query, int limit = 20)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return Json(new { results = new { songs = new List<object>() } });
+            }
+
+            var searchResults = await SafeApiCall(
+                async () => await _apiService.GetAsync<object>($"api/Search?query={Uri.EscapeDataString(query)}&limit={limit}"),
+                new { results = new { songs = new List<object>() } },
+                "Failed to search for songs",
+                $"PlaylistsController.SearchSongs for query '{query}'"
+            );
+
+            return Json(searchResults);
+        }
     }
 
     public class AlbumSongsDto
