@@ -378,6 +378,118 @@ namespace MusicApp.Controllers
             return View();
         }
 
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> ListeningHistory(int page = 1, int pageSize = 20)
+        {
+            if (!User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Login", new { returnUrl = Url.Action("ListeningHistory") });
+            }
+
+            return await SafeApiAction(async () =>
+            {
+                // Get listening history from API
+                var historyResponse = await SafeApiCall(
+                    async () => await _apiService.GetAsync<object>($"api/Users/listening-history?page={page}&pageSize={pageSize}"),
+                    (object)null,
+                    "Unable to load listening history at this time",
+                    "AccountController.ListeningHistory - Loading history"
+                );
+
+                var viewModel = new ListeningHistoryViewModel
+                {
+                    CurrentPage = page,
+                    PageSize = pageSize
+                };
+
+                if (historyResponse != null)
+                {
+                    // Convert to JsonElement for safe property access
+                    var historyJson = JsonSerializer.Serialize(historyResponse);
+                    var historyObj = JsonSerializer.Deserialize<JsonElement>(historyJson);
+
+                    if (historyObj.TryGetProperty("data", out JsonElement dataElement) && 
+                        dataElement.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var item in dataElement.EnumerateArray())
+                        {
+                            var playItem = new ListeningHistoryViewModel.ListeningHistoryItem();
+                            
+                            if (item.TryGetProperty("song", out JsonElement songElement))
+                            {
+                                playItem.Song = new ListeningHistoryViewModel.SongInfo
+                                {
+                                    Id = songElement.GetProperty("id").GetInt32(),
+                                    Title = songElement.GetProperty("title").GetString() ?? "Unknown",
+                                    Artist = songElement.GetProperty("artist").GetString() ?? "Unknown Artist",
+                                    Album = songElement.TryGetProperty("album", out var albumProp) && 
+                                           albumProp.ValueKind != JsonValueKind.Null 
+                                           ? albumProp.GetString() : null,
+                                    Genre = songElement.TryGetProperty("genre", out var genreProp) && 
+                                           genreProp.ValueKind != JsonValueKind.Null 
+                                           ? genreProp.GetString() : null,
+                                    CoverImageUrl = songElement.TryGetProperty("coverImageUrl", out var coverProp) && 
+                                                   coverProp.ValueKind != JsonValueKind.Null 
+                                                   ? coverProp.GetString() : "/images/default-cover.png"
+                                };
+
+                                if (songElement.TryGetProperty("duration", out var durationProp) && 
+                                    durationProp.ValueKind != JsonValueKind.Null)
+                                {
+                                    var durationString = durationProp.GetString();
+                                    if (TimeSpan.TryParse(durationString, out var duration))
+                                    {
+                                        playItem.Song.Duration = duration;
+                                    }
+                                }
+                            }
+
+                            if (item.TryGetProperty("playedAt", out var playedAtProp))
+                            {
+                                playItem.PlayedAt = DateTime.Parse(playedAtProp.GetString() ?? DateTime.UtcNow.ToString());
+                            }
+
+                            if (item.TryGetProperty("listenDuration", out var listenDurationProp) && 
+                                listenDurationProp.ValueKind != JsonValueKind.Null)
+                            {
+                                var listenDurationString = listenDurationProp.GetString();
+                                if (TimeSpan.TryParse(listenDurationString, out var listenDuration))
+                                {
+                                    playItem.ListenDuration = listenDuration;
+                                }
+                            }
+
+                            viewModel.History.Add(playItem);
+                        }
+                    }
+
+                    // Set pagination info
+                    if (historyObj.TryGetProperty("totalPages", out var totalPagesElement))
+                    {
+                        viewModel.TotalPages = totalPagesElement.GetInt32();
+                    }
+                    
+                    if (historyObj.TryGetProperty("totalCount", out var totalCountElement))
+                    {
+                        viewModel.TotalCount = totalCountElement.GetInt32();
+                    }
+                }
+
+                return View(viewModel);
+            }, () => {
+                var viewModel = new ListeningHistoryViewModel 
+                { 
+                    CurrentPage = page, 
+                    PageSize = pageSize 
+                };
+                SetErrorMessage("Unable to load listening history. Please try again later.");
+                return View(viewModel);
+            },
+            "Unable to load listening history. Please try again later.",
+            "AccountController.ListeningHistory");
+        }
+
         // Diagnostic method to test database and authentication
         [HttpGet]
         public async Task<IActionResult> Debug()

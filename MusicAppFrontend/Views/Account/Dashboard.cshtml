@@ -51,6 +51,9 @@
                 <a href="@Url.Action("Profile", "Account")" class="list-group-item list-group-item-action">
                     <i class="bi bi-person me-2"></i> Profile Overview
                 </a>
+                <a href="@Url.Action("ListeningHistory", "Account")" class="list-group-item list-group-item-action">
+                    <i class="bi bi-clock-history me-2"></i> Listening History
+                </a>
                 <a href="@Url.Action("Index", "Playlists")" class="list-group-item list-group-item-action">
                     <i class="bi bi-music-note-list me-2"></i> My Playlists
                 </a>
@@ -122,8 +125,7 @@
                                     <div class="d-flex align-items-center">
                                         <img src="@(string.IsNullOrEmpty(track.CoverImageUrl) ? GetRandomImageUrl(50, 50) : track.CoverImageUrl)" 
                                              width="50" height="50" class="me-3" alt="Song Cover"
-                                             onerror="this.src='https://placehold.co/50x50/212121/AAAAAA?text=Song';">
-                                        <div>
+                                             onerror="this.src='https://placehold.co/50x50/212121/AAAAAA?text=Song';">                                        <div>
                                             <h6 class="mb-0">@track.SongTitle</h6>
                                             <small class="text-muted">@track.ArtistName • @track.AlbumName</small>
                                         </div>

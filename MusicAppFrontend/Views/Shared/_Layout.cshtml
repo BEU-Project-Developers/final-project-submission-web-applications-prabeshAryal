@@ -24,6 +24,8 @@
     @* Link to your site.css (Contains all styles below) *@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
+    @await RenderSectionAsync("Styles", required: false)
+
     @* Add custom styles for auth modal *@
     <style>
         /* Modal backdrop blur */

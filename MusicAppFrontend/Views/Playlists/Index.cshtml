@@ -13,110 +13,1072 @@
     int pageSize = Model?.PageSize ?? 20;
 }
 
-<div class="min-h-screen bg-[var(--ytm-bg-primary)] py-8">
-    <div class="max-w-7xl mx-auto px-4">        <div class="flex justify-between items-center mb-8 sticky top-0 z-10 bg-[var(--ytm-bg-primary)]">
-            <div>
-                <h1 class="text-3xl font-bold text-[var(--ytm-text-primary)] mb-2">Playlists</h1>
-                <div class="flex gap-2">
-                    <a asp-action="Index" asp-route-view="my" class="btn @(ViewBag.CurrentView == "my" ? "btn-primary" : "btn-outline-secondary")">
-                        <i class="bi bi-person"></i> My Playlists
-                    </a>
-                    <a asp-action="Index" asp-route-view="public" class="btn @(ViewBag.CurrentView == "public" ? "btn-primary" : "btn-outline-secondary")">
-                        <i class="bi bi-globe"></i> Public Playlists
-                    </a>
-                    @if (Context.User.IsInRole("Admin"))
-                    {
-                        <a asp-action="Index" asp-route-view="all" class="btn @(ViewBag.CurrentView == "all" ? "btn-primary" : "btn-outline-secondary")">
-                            <i class="bi bi-shield-check"></i> All Playlists (Admin)
+<div class="min-h-screen bg-[var(--ytm-bg-primary)]">
+    <!-- Enhanced Header Section -->
+    <div class="sticky top-0 z-50 bg-[var(--ytm-bg-primary)] backdrop-blur-xl border-b border-[var(--ytm-border-color)] shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div class="space-y-3">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-[var(--ytm-accent-red)] to-[var(--ytm-accent-red-hover)] rounded-xl flex items-center justify-center shadow-lg">
+                            <i class="bi bi-music-note-list text-white text-lg"></i>
+                        </div>
+                        <h1 class="text-4xl font-bold text-[var(--ytm-text-primary)]">Your Library</h1>
+                    </div>
+                    
+                    <!-- Enhanced Filter Pills -->
+                    <div class="flex flex-wrap gap-2">
+                        <a asp-action="Index" asp-route-view="my" 
+                           class="filter-pill @(ViewBag.CurrentView == "my" ? "active" : "")">
+                            <i class="bi bi-person-heart"></i>
+                            <span>My Playlists</span>
                         </a>
-                    }
+                        <a asp-action="Index" asp-route-view="public" 
+                           class="filter-pill @(ViewBag.CurrentView == "public" ? "active" : "")">
+                            <i class="bi bi-globe2"></i>
+                            <span>Discover</span>
+                        </a>
+                        @if (Context.User.IsInRole("Admin"))
+                        {
+                            <a asp-action="Index" asp-route-view="all" 
+                               class="filter-pill @(ViewBag.CurrentView == "all" ? "active" : "")">
+                                <i class="bi bi-shield-check"></i>
+                                <span>All Playlists</span>
+                            </a>
+                        }
+                    </div>
                 </div>
+                
+                <!-- Enhanced Create Button -->
+                <a asp-action="Create" class="create-playlist-btn group">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center group-hover:bg-opacity-30 transition-all duration-200">
+                            <i class="bi bi-plus text-lg"></i>
+                        </div>
+                        <span class="font-medium">Create Playlist</span>
+                    </div>
+                </a>
             </div>
-            <a asp-action="Create" class="bg-[var(--ytm-accent-red)] hover:bg-[var(--ytm-accent-red-hover)] text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-                <i class="bi bi-plus-circle-fill mr-2"></i> Create Playlist
-            </a>
-        </div>        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-6 py-8">        <!-- Enhanced Playlist Grid -->
+        <div class="playlist-grid">
             @foreach (var playlist in Model.Data)
             {
-                <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow border border-[var(--ytm-border-color)] flex flex-col h-full hover:scale-105 transition-transform duration-200 group">
-                    <a asp-action="Details" asp-route-id="@playlist.Id" class="flex flex-col h-full text-decoration-none">
-                        <div class="relative">
+                <div class="playlist-card group" data-playlist-id="@playlist.Id">
+                    <a asp-action="Details" asp-route-id="@playlist.Id" class="playlist-link">
+                        <!-- Playlist Cover with Enhanced Overlay -->
+                        <div class="playlist-cover-container">
                             <img src="@(string.IsNullOrEmpty(playlist.CoverImageUrl) ? GetRandomImageUrl(300, 300) : playlist.CoverImageUrl)" 
-                                 class="rounded-t-xl w-full object-cover" style="height:200px; background: var(--ytm-bg-tertiary);" alt="@playlist.Name"
+                                 class="playlist-cover" 
+                                 alt="@playlist.Name"
                                  onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Playlist';">
-                            <!-- Play button overlay -->
-                            <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-t-xl">
-                                <button class="w-16 h-16 bg-[var(--ytm-accent-red)] rounded-full flex items-center justify-center hover:bg-[var(--ytm-accent-red-hover)] transition-colors"
-                                        onclick="event.stopPropagation(); window.location.href='@Url.Action("Details", new { id = playlist.Id })'">
-                                    <i class="fas fa-play text-white text-xl ml-1"></i>
-                                </button>
+                              <!-- Play Button Overlay -->
+                            <div class="playlist-overlay">
+                                <div class="overlay-actions">
+                                    <button class="play-button primary" onclick="event.stopPropagation(); playPlaylist(@playlist.Id)">
+                                        <i class="bi bi-play-fill"></i>
+                                    </button>
+                                    <button class="shuffle-button" onclick="event.stopPropagation(); shufflePlaylist(@playlist.Id)" title="Shuffle">
+                                        <i class="bi bi-shuffle"></i>
+                                    </button>
+                                </div>
                             </div>
+                            
+                            <!-- Gradient Shadow -->
+                            <div class="playlist-shadow"></div>
                         </div>
-                        <div class="p-4 flex-1 flex flex-col">
-                            <h5 class="font-semibold text-lg text-[var(--ytm-text-primary)] mb-1 hover:text-[var(--ytm-accent-red)] transition-colors">@playlist.Name</h5>
-                            <div class="text-[var(--ytm-text-secondary)] mb-2 text-sm">@playlist.Description</div>
-                            <div class="flex flex-wrap gap-3 text-xs text-[var(--ytm-text-tertiary)] mt-auto">
-                                <span><i class="bi bi-music-note-list"></i> @playlist.SongCount songs</span>
-                                <span><i class="bi bi-person"></i> @playlist.Username</span>
-                                <span><i class="bi bi-calendar"></i> @playlist.CreatedAt.ToString("MMM d, yyyy")</span>
-                                <span class="px-2 py-0.5 rounded-full text-xs font-semibold ml-auto" style="background: @(playlist.IsPublic ? "var(--ytm-accent-green)" : "var(--ytm-bg-tertiary)"); color: @(playlist.IsPublic ? "#fff" : "var(--ytm-text-tertiary)");">
-                                    @(playlist.IsPublic ? "Public" : "Private")
-                                </span>
+                        
+                        <!-- Enhanced Playlist Info -->
+                        <div class="playlist-info">
+                            <h3 class="playlist-title">@playlist.Name</h3>
+                            
+                            @if (!string.IsNullOrEmpty(playlist.Description))
+                            {
+                                <p class="playlist-description">@playlist.Description</p>
+                            }
+                            
+                            <div class="playlist-meta">
+                                <div class="flex items-center space-x-4 text-sm">
+                                    <span class="flex items-center space-x-1">
+                                        <i class="bi bi-music-note-list text-xs"></i>
+                                        <span>@playlist.SongCount songs</span>
+                                    </span>
+                                    <span class="flex items-center space-x-1">
+                                        <i class="bi bi-person text-xs"></i>
+                                        <span>@playlist.Username</span>
+                                    </span>
+                                </div>
+                                
+                                <div class="flex items-center justify-between mt-2">
+                                    <span class="playlist-date">@playlist.CreatedAt.ToString("MMM d, yyyy")</span>
+                                    <span class="playlist-privacy-badge @(playlist.IsPublic ? "public" : "private")">
+                                        <i class="bi bi-@(playlist.IsPublic ? "globe" : "lock")"></i>
+                                        @(playlist.IsPublic ? "Public" : "Private")
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </a>
-                    <div class="px-4 pb-4">
-                        <div class="flex gap-2 justify-end">
-                            @{
-                                var currentUserId = Context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                                var isOwner = currentUserId != null && int.Parse(currentUserId) == playlist.UserId;
-                                var isAdmin = Context.User.IsInRole("Admin");
-                            }
-                            @if (isOwner || isAdmin)
-                            {
-                                <a asp-action="Edit" asp-route-id="@playlist.Id" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-pencil"></i> Edit
-                                </a>
-                                <a asp-action="Delete" asp-route-id="@playlist.Id" class="btn btn-sm btn-outline-danger">
-                                    <i class="bi bi-trash"></i> Delete
-                                </a>
-                            }
-                            else if (playlist.IsPublic)
-                            {
-                                <form asp-action="CopyPlaylist" asp-route-id="@playlist.Id" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-outline-success">
-                                        <i class="bi bi-copy"></i> Copy to Library
-                                    </button>
-                                </form>
-                            }
-                        </div>
+                    
+                    <!-- Enhanced Action Buttons -->
+                    <div class="playlist-actions">
+                        @{
+                            var currentUserId = Context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                            var isOwner = currentUserId != null && int.Parse(currentUserId) == playlist.UserId;
+                            var isAdmin = Context.User.IsInRole("Admin");
+                        }
+                        @if (isOwner || isAdmin)
+                        {
+                            <a asp-action="Edit" asp-route-id="@playlist.Id" class="action-btn edit-btn" title="Edit playlist">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button class="action-btn delete-btn" onclick="confirmDelete(@playlist.Id, '@playlist.Name')" title="Delete playlist">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        }
+                        else if (playlist.IsPublic)
+                        {
+                            <form asp-action="CopyPlaylist" asp-route-id="@playlist.Id" method="post" class="inline">
+                                <button type="submit" class="action-btn copy-btn" title="Copy to your library">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            </form>
+                        }
+                        
+                        <button class="action-btn more-btn" onclick="showPlaylistMenu(@playlist.Id)" title="More options">
+                            <i class="bi bi-three-dots"></i>
+                        </button>
                     </div>
                 </div>
             }
-        </div>
-        <!-- Pagination Controls -->        @if (totalPages > 1)
+        </div>        <!-- Enhanced Pagination -->
+        @if (totalPages > 1)
         {
-            <nav class="flex justify-center mt-10">
-                <ul class="inline-flex -space-x-px">
-                    <li>
-                        <a asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-pageSize="@pageSize" asp-route-view="@ViewBag.CurrentView" class="px-3 py-2 ml-0 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-l-lg @(currentPage == 1 ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary)]")">Prev</a>
-                    </li>
-                    @for (int i = 1; i <= totalPages; i++)
-                    {
-                        <li>
-                            <a asp-action="Index" asp-route-page="@i" asp-route-pageSize="@pageSize" asp-route-view="@ViewBag.CurrentView" class="px-3 py-2 leading-tight border border-[var(--ytm-border-color)] @(i == currentPage ? "bg-[var(--ytm-accent-red)] text-white" : "bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-secondary)] hover:bg-[var(--ytm-bg-secondary)]")">@i</a>
-                        </li>
-                    }
-                    <li>
-                        <a asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-pageSize="@pageSize" asp-route-view="@ViewBag.CurrentView" class="px-3 py-2 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-r-lg @(currentPage == totalPages ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary)]")">Next</a>
-                    </li>
-                </ul>
+            <nav class="pagination-nav">
+                <div class="pagination-container">
+                    <a asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-pageSize="@pageSize" asp-route-view="@ViewBag.CurrentView" 
+                       class="pagination-btn @(currentPage == 1 ? "disabled" : "")">
+                        <i class="bi bi-chevron-left"></i>
+                        <span>Previous</span>
+                    </a>
+                    
+                    <div class="pagination-pages">
+                        @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                        {
+                            <a asp-action="Index" asp-route-page="@i" asp-route-pageSize="@pageSize" asp-route-view="@ViewBag.CurrentView" 
+                               class="pagination-page @(i == currentPage ? "active" : "")">@i</a>
+                        }
+                    </div>
+                    
+                    <a asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-pageSize="@pageSize" asp-route-view="@ViewBag.CurrentView" 
+                       class="pagination-btn @(currentPage == totalPages ? "disabled" : "")">
+                        <span>Next</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
             </nav>
         }
+        
+        <!-- Empty State -->
         @if (!(Model.Data?.Any() ?? false))
         {
-            <div class="mt-8 px-4 py-3 rounded-lg bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-secondary)] border border-[var(--ytm-border-color)]">No playlists found. Create your first playlist!</div>
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="bi bi-music-note-list"></i>
+                </div>
+                <h3 class="empty-state-title">No playlists found</h3>
+                <p class="empty-state-description">
+                    @if (ViewBag.CurrentView == "my")
+                    {
+                        <span>Start creating your personal music collection!</span>
+                    }
+                    else if (ViewBag.CurrentView == "public")
+                    {
+                        <span>No public playlists available right now.</span>
+                    }
+                    else
+                    {
+                        <span>No playlists have been created yet.</span>
+                    }
+                </p>
+                @if (ViewBag.CurrentView == "my")
+                {
+                    <a asp-action="Create" class="empty-state-action">
+                        <i class="bi bi-plus-circle"></i>
+                        Create Your First Playlist
+                    </a>
+                }
+            </div>
         }
     </div>
 </div>
+
+@section Styles {
+<style>
+    /* Enhanced Filter Pills */
+    .filter-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        background: var(--ytm-bg-secondary);
+        color: var(--ytm-text-secondary);
+        border: 1px solid var(--ytm-border-color);
+        text-decoration: none;
+    }
+    
+    .filter-pill:hover {
+        background: var(--ytm-bg-tertiary);
+        color: var(--ytm-text-primary);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .filter-pill.active {
+        background: linear-gradient(135deg, var(--ytm-accent-red), var(--ytm-accent-red-hover));
+        color: white;
+        border-color: var(--ytm-accent-red);
+        box-shadow: 0 4px 16px rgba(255, 0, 0, 0.25);
+    }
+    
+    /* Enhanced Create Button */
+    .create-playlist-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 500;
+        color: white;
+        transition: all 0.3s ease;
+        background: linear-gradient(135deg, var(--ytm-accent-red), var(--ytm-accent-red-hover));
+        box-shadow: 0 4px 16px rgba(255, 0, 0, 0.25);
+        text-decoration: none;
+    }
+    
+    .create-playlist-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(255, 0, 0, 0.35);
+        color: white;
+    }
+    
+    /* Enhanced Playlist Grid */
+    .playlist-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    /* Enhanced Playlist Card */
+    .playlist-card {
+        position: relative;
+        background: var(--ytm-bg-secondary);
+        border-radius: 16px;
+        border: 1px solid var(--ytm-border-color);
+        overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform-origin: center;
+    }
+    
+    .playlist-card:hover {
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+        border-color: var(--ytm-accent-red);
+    }
+    
+    .playlist-link {
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    /* Enhanced Cover Container */
+    .playlist-cover-container {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1;
+        overflow: hidden;
+    }
+    
+    .playlist-cover {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .playlist-card:hover .playlist-cover {
+        transform: scale(1.1);
+    }
+      /* Enhanced Overlay */
+    .playlist-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0.7) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .playlist-card:hover .playlist-overlay {
+        opacity: 1;
+    }
+    
+    /* Overlay Actions */
+    .overlay-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+    
+    /* Enhanced Play & Shuffle Buttons */
+    .play-button,
+    .shuffle-button {
+        border: none;
+        border-radius: 50%;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(8px);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .play-button.primary {
+        width: 64px;
+        height: 64px;
+        background: var(--ytm-accent-red);
+        font-size: 24px;
+        transform: scale(0.8);
+        box-shadow: 0 8px 24px rgba(255, 0, 0, 0.4);
+        margin-left: 2px; /* Optical center adjustment */
+    }
+    
+    .playlist-card:hover .play-button.primary {
+        transform: scale(1);
+    }
+    
+    .play-button.primary:hover {
+        background: var(--ytm-accent-red-hover);
+        transform: scale(1.1);
+        box-shadow: 0 12px 32px rgba(255, 0, 0, 0.6);
+    }
+    
+    .shuffle-button {
+        width: 48px;
+        height: 48px;
+        background: rgba(255, 255, 255, 0.2);
+        font-size: 16px;
+        transform: scale(0.8);
+    }
+    
+    .playlist-card:hover .shuffle-button {
+        transform: scale(1);
+    }
+    
+    .shuffle-button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+        box-shadow: 0 8px 20px rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Gradient Shadow */
+    .playlist-shadow {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 40%;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .playlist-card:hover .playlist-shadow {
+        opacity: 1;
+    }
+    
+    /* Enhanced Playlist Info */
+    .playlist-info {
+        padding: 1.25rem;
+        background: var(--ytm-bg-secondary);
+    }
+    
+    .playlist-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--ytm-text-primary);
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        transition: color 0.2s ease;
+    }
+    
+    .playlist-card:hover .playlist-title {
+        color: var(--ytm-accent-red);
+    }
+    
+    .playlist-description {
+        color: var(--ytm-text-secondary);
+        font-size: 0.875rem;
+        line-height: 1.4;
+        margin-bottom: 0.75rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .playlist-meta {
+        color: var(--ytm-text-tertiary);
+        font-size: 0.8125rem;
+    }
+    
+    .playlist-date {
+        opacity: 0.8;
+    }
+    
+    /* Privacy Badge */
+    .playlist-privacy-badge {
+        padding: 0.25rem 0.625rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .playlist-privacy-badge.public {
+        background: rgba(34, 197, 94, 0.15);
+        color: rgb(34, 197, 94);
+    }
+    
+    .playlist-privacy-badge.private {
+        background: var(--ytm-bg-tertiary);
+        color: var(--ytm-text-tertiary);
+    }
+    
+    /* Enhanced Action Buttons */
+    .playlist-actions {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        gap: 0.5rem;
+        opacity: 0;
+        transform: translateY(-8px);
+        transition: all 0.3s ease;
+    }
+    
+    .playlist-card:hover .playlist-actions {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(8px);
+        text-decoration: none;
+    }
+    
+    .edit-btn {
+        background: rgba(59, 130, 246, 0.9);
+        color: white;
+    }
+    
+    .edit-btn:hover {
+        background: rgb(59, 130, 246);
+        transform: scale(1.1);
+    }
+    
+    .delete-btn {
+        background: rgba(239, 68, 68, 0.9);
+        color: white;
+    }
+    
+    .delete-btn:hover {
+        background: rgb(239, 68, 68);
+        transform: scale(1.1);
+    }
+    
+    .copy-btn {
+        background: rgba(34, 197, 94, 0.9);
+        color: white;
+    }
+    
+    .copy-btn:hover {
+        background: rgb(34, 197, 94);
+        transform: scale(1.1);
+    }
+    
+    .more-btn {
+        background: rgba(75, 85, 99, 0.9);
+        color: white;
+    }
+    
+    .more-btn:hover {
+        background: rgb(75, 85, 99);
+        transform: scale(1.1);
+    }
+    
+    /* Enhanced Pagination */
+    .pagination-nav {
+        margin-top: 3rem;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .pagination-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--ytm-bg-secondary);
+        padding: 0.75rem;
+        border-radius: 12px;
+        border: 1px solid var(--ytm-border-color);
+    }
+    
+    .pagination-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        background: var(--ytm-bg-tertiary);
+        color: var(--ytm-text-secondary);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .pagination-btn:hover:not(.disabled) {
+        background: var(--ytm-accent-red);
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .pagination-btn.disabled {
+        opacity: 0.4;
+        pointer-events: none;
+    }
+    
+    .pagination-pages {
+        display: flex;
+        gap: 0.25rem;
+        margin: 0 0.5rem;
+    }
+    
+    .pagination-page {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: var(--ytm-bg-tertiary);
+        color: var(--ytm-text-secondary);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-weight: 500;
+    }
+    
+    .pagination-page:hover {
+        background: var(--ytm-bg-primary);
+        color: var(--ytm-text-primary);
+    }
+    
+    .pagination-page.active {
+        background: var(--ytm-accent-red);
+        color: white;
+    }
+    
+    /* Enhanced Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        max-width: 400px;
+        margin: 2rem auto;
+    }
+    
+    .empty-state-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        background: linear-gradient(135deg, var(--ytm-bg-tertiary), var(--ytm-bg-secondary));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: var(--ytm-text-secondary);
+    }
+    
+    .empty-state-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--ytm-text-primary);
+        margin-bottom: 0.75rem;
+    }
+    
+    .empty-state-description {
+        color: var(--ytm-text-secondary);
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+    
+    .empty-state-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, var(--ytm-accent-red), var(--ytm-accent-red-hover));
+        color: white;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .empty-state-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(255, 0, 0, 0.35);
+        color: white;
+    }
+      /* Responsive Design */
+    @@media (max-width: 768px) {
+        .playlist-grid {
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1rem;
+        }
+        
+        .playlist-actions {
+            position: static;
+            opacity: 1;
+            transform: none;
+            justify-content: center;
+            padding: 0.75rem;
+            background: var(--ytm-bg-tertiary);
+            border-top: 1px solid var(--ytm-border-color);
+        }
+        
+        .pagination-container {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+    }
+    
+    /* Context Menu Styles */
+    .playlist-context-menu {
+        position: fixed;
+        background: var(--ytm-bg-secondary);
+        border: 1px solid var(--ytm-border-color);
+        border-radius: 8px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        z-index: 1000;
+        min-width: 180px;
+        padding: 8px 0;
+        backdrop-filter: blur(16px);
+    }
+    
+    .context-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        color: var(--ytm-text-primary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 14px;
+    }
+    
+    .context-menu-item:hover {
+        background: var(--ytm-bg-tertiary);
+        color: var(--ytm-accent-red);
+    }
+    
+    .context-menu-item i {
+        width: 16px;
+        text-align: center;
+    }
+    
+    .context-menu-divider {
+        margin: 8px 0;
+        border: none;
+        border-top: 1px solid var(--ytm-border-color);
+    }
+    
+    /* Notification Styles */
+    .playlist-notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--ytm-bg-secondary);
+        border: 1px solid var(--ytm-border-color);
+        border-radius: 12px;
+        padding: 16px 20px;
+        z-index: 1001;
+        transform: translateX(400px);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(16px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        max-width: 350px;
+    }
+    
+    .playlist-notification.show {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    
+    .notification-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--ytm-text-primary);
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .playlist-notification.success {
+        border-left: 4px solid #4CAF50;
+    }
+    
+    .playlist-notification.success .notification-content i {
+        color: #4CAF50;
+    }
+    
+    .playlist-notification.error {
+        border-left: 4px solid #f44336;
+    }
+    
+    .playlist-notification.error .notification-content i {
+        color: #f44336;
+    }
+    
+    .playlist-notification.warning {
+        border-left: 4px solid #ff9800;
+    }
+    
+    .playlist-notification.warning .notification-content i {
+        color: #ff9800;
+    }
+    
+    .playlist-notification.info {
+        border-left: 4px solid var(--ytm-accent-red);
+    }
+    
+    .playlist-notification.info .notification-content i {
+        color: var(--ytm-accent-red);
+    }
+    
+    /* Loading Animation */
+    .spin {
+        animation: spin 1s linear infinite;
+    }
+    
+    @@keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+}
+
+@section Scripts {
+<script>
+    // Enhanced playlist functionality
+    async function playPlaylist(playlistId) {
+        try {
+            // Show loading state
+            const playButton = event?.target?.closest('.play-button');
+            if (playButton) {
+                playButton.innerHTML = '<i class="bi bi-arrow-repeat spin"></i>';
+                playButton.disabled = true;
+            }
+
+            // Fetch playlist with songs from API
+            const response = await fetch(`/api/Playlists/${playlistId}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to load playlist: ${response.status}`);
+            }
+
+            const playlist = await response.json();
+            
+            if (!playlist.songs || playlist.songs.length === 0) {
+                showNotification('This playlist is empty', 'warning');
+                return;
+            }
+
+            // Convert playlist songs to the format expected by music player
+            const songs = playlist.songs.map(song => ({
+                id: song.songId,
+                title: song.title,
+                artistName: song.artistName,
+                audioUrl: song.audioUrl,
+                coverImageUrl: song.coverImageUrl,
+                duration: song.duration,
+                albumTitle: song.albumTitle
+            }));
+
+            // Start playing the playlist
+            if (window.musicPlayer) {
+                window.musicPlayer.playSong(songs[0], songs, 0);
+                showNotification(`Playing "${playlist.name}"`, 'success');
+            } else {
+                console.error('Music player not available');
+                showNotification('Music player is not available', 'error');
+            }
+
+        } catch (error) {
+            console.error('Error playing playlist:', error);
+            showNotification('Failed to play playlist', 'error');
+        } finally {
+            // Restore play button
+            const playButton = event?.target?.closest('.play-button');
+            if (playButton) {
+                playButton.innerHTML = '<i class="bi bi-play-fill"></i>';
+                playButton.disabled = false;
+            }
+        }
+    }    
+    function confirmDelete(playlistId, playlistName) {
+        if (confirm(`Are you sure you want to delete "${playlistName}"? This action cannot be undone.`)) {
+            window.location.href = `/Playlists/Delete/${playlistId}`;
+        }
+    }
+    
+    async function shufflePlaylist(playlistId) {
+        try {
+            // Fetch playlist with songs
+            const response = await fetch(`/api/Playlists/${playlistId}`);
+            if (!response.ok) throw new Error('Failed to load playlist');
+            
+            const playlist = await response.json();
+            if (!playlist.songs || playlist.songs.length === 0) {
+                showNotification('This playlist is empty', 'warning');
+                return;
+            }
+
+            // Convert and shuffle songs
+            const songs = playlist.songs.map(song => ({
+                id: song.songId,
+                title: song.title,
+                artistName: song.artistName,
+                audioUrl: song.audioUrl,
+                coverImageUrl: song.coverImageUrl,
+                duration: song.duration,
+                albumTitle: song.albumTitle
+            }));
+
+            // Shuffle the array
+            const shuffledSongs = [...songs].sort(() => Math.random() - 0.5);
+
+            if (window.musicPlayer) {
+                window.musicPlayer.playSong(shuffledSongs[0], shuffledSongs, 0);
+                window.musicPlayer.toggleShuffle(); // Enable shuffle mode
+                showNotification(`Shuffling "${playlist.name}"`, 'success');
+            }
+        } catch (error) {
+            console.error('Error shuffling playlist:', error);
+            showNotification('Failed to shuffle playlist', 'error');
+        }
+    }
+    
+    function showPlaylistMenu(playlistId) {
+        // Create context menu with options
+        const existingMenu = document.querySelector('.playlist-context-menu');
+        if (existingMenu) existingMenu.remove();
+
+        const menu = document.createElement('div');
+        menu.className = 'playlist-context-menu';
+        menu.innerHTML = `
+            <div class="context-menu-item" onclick="playPlaylist(${playlistId}); closeContextMenu();">
+                <i class="bi bi-play-fill"></i> Play
+            </div>
+            <div class="context-menu-item" onclick="shufflePlaylist(${playlistId}); closeContextMenu();">
+                <i class="bi bi-shuffle"></i> Shuffle
+            </div>
+            <div class="context-menu-item" onclick="addToQueue(${playlistId}); closeContextMenu();">
+                <i class="bi bi-plus-circle"></i> Add to Queue
+            </div>
+            <hr class="context-menu-divider">
+            <div class="context-menu-item" onclick="window.location.href='/Playlists/Details/${playlistId}'; closeContextMenu();">
+                <i class="bi bi-eye"></i> View Details
+            </div>
+        `;
+        
+        document.body.appendChild(menu);
+        
+        // Position menu near the clicked element
+        const rect = event.target.getBoundingClientRect();
+        menu.style.top = `${rect.bottom + 5}px`;
+        menu.style.left = `${rect.left}px`;
+        
+        // Close menu when clicking outside
+        setTimeout(() => {
+            document.addEventListener('click', closeContextMenu, { once: true });
+        }, 10);
+    }
+    
+    function closeContextMenu() {
+        const menu = document.querySelector('.playlist-context-menu');
+        if (menu) menu.remove();
+    }
+    
+    async function addToQueue(playlistId) {
+        try {
+            const response = await fetch(`/api/Playlists/${playlistId}`);
+            if (!response.ok) throw new Error('Failed to load playlist');
+            
+            const playlist = await response.json();
+            if (!playlist.songs || playlist.songs.length === 0) {
+                showNotification('This playlist is empty', 'warning');
+                return;
+            }
+
+            const songs = playlist.songs.map(song => ({
+                id: song.songId,
+                title: song.title,
+                artistName: song.artistName,
+                audioUrl: song.audioUrl,
+                coverImageUrl: song.coverImageUrl,
+                duration: song.duration,
+                albumTitle: song.albumTitle
+            }));
+
+            if (window.musicPlayer && window.musicPlayer.addToQueue) {
+                songs.forEach(song => window.musicPlayer.addToQueue(song));
+                showNotification(`Added ${songs.length} songs to queue`, 'success');
+            } else {
+                showNotification('Queue functionality not available', 'warning');
+            }
+        } catch (error) {
+            console.error('Error adding to queue:', error);
+            showNotification('Failed to add to queue', 'error');
+        }
+    }
+    
+    function showNotification(message, type = 'info') {
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.playlist-notification');
+        existingNotifications.forEach(notification => notification.remove());
+
+        const notification = document.createElement('div');
+        notification.className = `playlist-notification ${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="bi bi-${getNotificationIcon(type)}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Show notification
+        setTimeout(() => notification.classList.add('show'), 100);
+
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 4000);
+    }
+    
+    function getNotificationIcon(type) {
+        switch (type) {
+            case 'success': return 'check-circle-fill';
+            case 'error': return 'exclamation-triangle-fill';
+            case 'warning': return 'exclamation-circle-fill';
+            default: return 'info-circle-fill';
+        }
+    }
+    
+    // Enhanced hover effects and animations
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add staggered animation to playlist cards
+        const cards = document.querySelectorAll('.playlist-card');
+        cards.forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+            card.classList.add('animate-fade-in');
+        });
+        
+        // Add intersection observer for scroll animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-slide-up');
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+        
+        cards.forEach(card => observer.observe(card));
+    });
+</script>
+
+<style>
+    @@keyframes fade-in {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-fade-in {
+        animation: fade-in 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    
+    @@keyframes slide-up {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-slide-up {
+        animation: slide-up 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+</style>
+}
 

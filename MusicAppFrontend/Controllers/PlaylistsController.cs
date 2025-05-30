@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using MusicApp.Models;
 using MusicApp.Models.DTOs;
+using MusicApp.Models.ViewModels;
 using MusicApp.Services;
 using System;
 using System.Collections.Generic;
@@ -56,9 +57,7 @@ namespace MusicApp.Controllers
             );
 
             return View(response);
-        }
-
-        public async Task<IActionResult> Details(int id, string search = null)
+        }        public async Task<IActionResult> Details(int id, string search = null)
         {
             return await SafeApiAction(
                 async () =>
@@ -88,7 +87,27 @@ namespace MusicApp.Controllers
                         }
                     }
 
-                    return View(playlist);
+                    // Map PlaylistDetailDto to PlaylistDetailsViewModel
+                    var viewModel = new PlaylistDetailsViewModel
+                    {
+                        PlaylistId = playlist.Id,
+                        Name = playlist.Name ?? string.Empty,
+                        Description = playlist.Description ?? string.Empty,
+                        CoverImageUrl = playlist.CoverImageUrl,
+                        IsOwner = User.Identity?.Name == playlist.Username, // Assuming this is how we determine ownership
+                        Songs = playlist.Songs.Select(s => new SongViewModel
+                        {
+                            SongId = s.SongId,
+                            Title = s.Title ?? string.Empty,
+                            ArtistName = s.ArtistName ?? string.Empty,
+                            AlbumName = s.AlbumTitle ?? string.Empty,
+                            Duration = (int)(s.Duration?.TotalSeconds ?? 0),
+                            CoverImageUrl = s.CoverImageUrl,
+                            SongFileUrl = s.AudioUrl
+                        }).ToList()
+                    };
+
+                    return View(viewModel);
                 },
                 () => {
                     SetErrorMessage(GetStandardErrorMessage("load", "playlist details"));

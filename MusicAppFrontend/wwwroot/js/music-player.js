@@ -1,7 +1,6 @@
 // Music Player JavaScript - Advanced Sticky Player Implementation
 
-class MusicPlayer {
-    constructor() {
+class MusicPlayer {    constructor() {
         this.audio = document.getElementById('music-audio');
         this.player = document.getElementById('sticky-music-player');
         this.isPlaying = false;
@@ -12,15 +11,26 @@ class MusicPlayer {
         this.isShuffle = false;
         this.volume = 0.7;
         
+        // Queue system for playlist functionality
+        this.queue = [];
+        this.currentTrackIndex = -1;
+        this.currentTrack = null;
+        
+        // Listening history tracking
+        this.playStartTime = null;
+        this.totalListenTime = 0;
+        this.minimumListenDuration = 30; // seconds before counting as a play
+        this.currentPlaySession = null;
+        
         // Initialize player if elements exist
         if (this.audio && this.player) {
             this.initializePlayer();
             // Restore previous state if any
             this.restorePlayerState();
         }
-    }
 
-    initializePlayer() {
+        this.defaultAlbumArt = '/assets/default-album-art.png'; // Or your actual default image path
+    }    initializePlayer() {
         // Get DOM elements
         this.elements = {
             playPauseBtn: document.getElementById('player-play-pause'),
@@ -39,6 +49,14 @@ class MusicPlayer {
             queueBtn: document.getElementById('player-queue'),
             minimizeBtn: document.getElementById('player-minimize')
         };
+
+        // Set up convenience references for clearPlayerUI method
+        this.songTitleElement = this.elements.songTitle;
+        this.songArtistElement = this.elements.artistName;
+        this.albumArtElement = this.elements.albumArt;
+        this.currentTimeElement = this.elements.currentTime;
+        this.durationElement = this.elements.duration;
+        this.seekBarElement = this.elements.progressBar;
 
         this.bindEvents();
         this.setupAudioEvents();
@@ -117,6 +135,12 @@ class MusicPlayer {
             // Save state periodically during playback
             if (this.isPlaying && this.currentSong) {
                 this.savePlayerState();
+                
+                // Update listening session every 10 seconds during playback
+                if (this.currentPlaySession && this.playStartTime && 
+                    (Date.now() - this.playStartTime) > 10000) {
+                    this.updateListeningSession();
+                }
             }
         });
 
@@ -135,12 +159,20 @@ class MusicPlayer {
             this.isPlaying = true;
             this.updatePlayButton();
             this.savePlayerState();
+            
+            // Resume listening session
+            if (this.currentPlaySession && !this.playStartTime) {
+                this.playStartTime = Date.now();
+            }
         });
 
         this.audio.addEventListener('pause', () => {
             this.isPlaying = false;
             this.updatePlayButton();
             this.savePlayerState();
+            
+            // Update listening session when paused
+            this.updateListeningSession();
         });
 
         // Error handling
@@ -162,6 +194,9 @@ class MusicPlayer {
 
     // Public methods for controlling the player
     playSong(song, playlist = null, startIndex = 0) {
+        // End current listening session before starting new song
+        this.endListeningSession();
+        
         this.currentSong = song;
         
         if (playlist) {
@@ -170,7 +205,9 @@ class MusicPlayer {
         } else {
             this.playlist = [song];
             this.currentIndex = 0;
-        }        this.loadCurrentSong();
+        }
+        
+        this.loadCurrentSong();
         this.showPlayer();
         this.play();
         
@@ -213,6 +250,9 @@ class MusicPlayer {
             this.audio.play().then(() => {
                 this.isPlaying = true;
                 this.updatePlayButton();
+                
+                // Start tracking listen time
+                this.startListeningSession();
             }).catch(e => {
                 console.error('Play failed:', e);
                 this.showError('Failed to play audio');
@@ -224,6 +264,9 @@ class MusicPlayer {
         this.audio.pause();
         this.isPlaying = false;
         this.updatePlayButton();
+        
+        // Track listen time when pausing
+        this.updateListeningSession();
     }
 
     togglePlayPause() {
@@ -234,6 +277,9 @@ class MusicPlayer {
         }
     }    nextTrack() {
         if (this.playlist.length <= 1) return;
+
+        // End current listening session
+        this.endListeningSession();
 
         if (this.isShuffle) {
             this.currentIndex = Math.floor(Math.random() * this.playlist.length);
@@ -261,6 +307,9 @@ class MusicPlayer {
             this.savePlayerState();
             return;
         }
+
+        // End current listening session
+        this.endListeningSession();
 
         this.currentIndex = this.currentIndex === 0 ? 
             this.playlist.length - 1 : this.currentIndex - 1;
@@ -352,6 +401,9 @@ class MusicPlayer {
     }
 
     handleTrackEnd() {
+        // End current listening session when track ends
+        this.endListeningSession();
+        
         if (this.isRepeat) {
             this.audio.currentTime = 0;
             this.play();
@@ -374,6 +426,9 @@ class MusicPlayer {
         
         // Reset page title
         document.title = document.title.replace(/^.+ - .+ - /, '');
+        
+        // End listening session when hiding player
+        this.endListeningSession();
         
         // Clear saved state when player is hidden
         this.clearPlayerState();
@@ -612,17 +667,213 @@ class MusicPlayer {
     isPlayerVisible() {
         return !this.player?.classList.contains('d-none');
     }
+
+    // Listening History Tracking Methods
+    startListeningSession() {
+        if (!this.currentSong) return;
+        
+        this.playStartTime = Date.now();
+        this.totalListenTime = 0;
+        
+        // Create a new play session
+        this.currentPlaySession = {
+            songId: this.currentSong.id || this.currentSong.Id,
+            startTime: this.playStartTime,
+            totalListenTime: 0,
+            hasBeenLogged: false
+        };
+        
+        console.log('Started listening session for:', this.currentSong.title || this.currentSong.Title);
+    }
+    
+    updateListeningSession() {
+        if (!this.currentPlaySession || !this.playStartTime) return;
+        
+        const now = Date.now();
+        const sessionTime = Math.floor((now - this.playStartTime) / 1000);
+        this.currentPlaySession.totalListenTime += sessionTime;
+        
+        // Reset start time for next segment
+        this.playStartTime = this.isPlaying ? now : null;
+        
+        // Log play if minimum duration reached
+        if (!this.currentPlaySession.hasBeenLogged && 
+            this.currentPlaySession.totalListenTime >= this.minimumListenDuration) {
+            this.logSongPlay();
+        }
+    }
+    
+    endListeningSession() {
+        if (!this.currentPlaySession) return;
+        
+        // Update one final time
+        this.updateListeningSession();
+        
+        // Log the play if it hasn't been logged yet and meets minimum duration
+        if (!this.currentPlaySession.hasBeenLogged && 
+            this.currentPlaySession.totalListenTime >= this.minimumListenDuration) {
+            this.logSongPlay();
+        }
+        
+        console.log(`Ended listening session. Total time: ${this.currentPlaySession.totalListenTime}s`);
+        
+        // Clear session
+        this.currentPlaySession = null;
+        this.playStartTime = null;
+    }
+    
+    async logSongPlay() {
+        if (!this.currentPlaySession || this.currentPlaySession.hasBeenLogged) return;
+        
+        try {
+            const response = await fetch(`/api/Songs/${this.currentPlaySession.songId}/play`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: JSON.stringify({
+                    duration: this.formatDurationForAPI(this.currentPlaySession.totalListenTime)
+                })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                this.currentPlaySession.hasBeenLogged = true;
+                console.log(`Song play logged successfully. Total plays: ${result.playCount}`);
+                
+                // Update play count in UI if available
+                this.updatePlayCountDisplay(result.playCount);
+            } else {
+                console.warn('Failed to log song play:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Error logging song play:', error);
+        }
+    }
+    
+    formatDurationForAPI(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    updatePlayCountDisplay(playCount) {
+        // Update play count in any visible elements
+        const playCountElements = document.querySelectorAll(`[data-song-id="${this.currentPlaySession?.songId}"] .play-count`);
+        playCountElements.forEach(element => {
+            element.textContent = `${playCount} plays`;
+        });
+    }
+
+    // New methods for playlist functionality
+    playPlaylist(songsArray, playNow = true) {
+        if (!songsArray || songsArray.length === 0) {
+            console.warn("playPlaylist called with empty or invalid songsArray");
+            this.queue = [];
+            this.currentTrackIndex = -1;
+            this.clearPlayerUI();
+            if (this.showNotification) this.showNotification("Playlist is empty or could not be loaded.", "info");
+            return;
+        }
+
+        this.queue = songsArray.map(song => ({
+            id: song.id,
+            title: song.title,
+            artistName: song.artistName,
+            albumName: song.albumName,
+            coverImageUrl: song.coverImageUrl,
+            audioUrl: song.audioUrl
+        }));
+
+        this.currentTrackIndex = 0;        if (playNow && this.queue.length > 0) {
+            // Use playSong method instead of playTrack
+            this.playSong(this.queue[this.currentTrackIndex], this.queue, 0);        } else if (this.queue.length > 0) {
+            const firstTrack = this.queue[this.currentTrackIndex];
+            if (this.songTitleElement) this.songTitleElement.textContent = firstTrack.title || 'Unknown Song';
+            if (this.songArtistElement) this.songArtistElement.textContent = firstTrack.artistName || 'Unknown Artist';
+            if (this.albumArtElement) this.albumArtElement.src = firstTrack.coverImageUrl || this.defaultAlbumArt;
+            if (this.audio) this.audio.src = firstTrack.audioUrl; // Load the audio src but don't play
+            if (this.durationElement) this.durationElement.textContent = '0:00'; // Reset duration until metadata loads
+            if (this.currentTimeElement) this.currentTimeElement.textContent = '0:00';
+            if (this.seekBarElement) this.seekBarElement.value = 0;
+        } else {
+            this.clearPlayerUI();
+        }
+        this.updateQueueDisplay();
+        this.updatePlayPauseButton();
+        if (this.showNotification) this.showNotification("Playlist loaded.", "success");
+    }    clearPlayerUI() {
+        if (this.songTitleElement) this.songTitleElement.textContent = 'Music Player'; // Default text
+        if (this.songArtistElement) this.songArtistElement.textContent = 'Select a song to play';
+        if (this.albumArtElement) this.albumArtElement.src = this.defaultAlbumArt;
+        if (this.audio) {
+            this.audio.src = '';
+            this.audio.pause();
+        }
+        if (this.currentTimeElement) this.currentTimeElement.textContent = '0:00';
+        if (this.durationElement) this.durationElement.textContent = '0:00';
+        if (this.seekBarElement) this.seekBarElement.value = 0;        this.updatePlayPauseButton(); // Ensure play button shows "play" icon
+        this.currentTrack = null; // Clear current track
+    }
+
+    updatePlayPauseButton() {
+        // Alias for updatePlayButton to maintain compatibility
+        this.updatePlayButton();
+    }
+
+    updateQueueDisplay() {
+        // Placeholder: Implement if you have a UI for the queue
+        console.log("Queue updated. Current queue:", this.queue);
+        // Example: if you have a queue list element:
+        // const queueListElement = document.getElementById('player-queue-list');
+        // if (queueListElement) {
+        //     queueListElement.innerHTML = ''; // Clear existing
+        //     this.queue.forEach((track, index) => {
+        //         const item = document.createElement('li');
+        //         item.textContent = `${index + 1}. ${track.title} - ${track.artistName}`;
+        //         if (index === this.currentTrackIndex) {
+        //             item.classList.add('active');
+        //         }
+        //         item.onclick = () => {
+        //             this.currentTrackIndex = index;
+        //             this.playTrack(this.queue[this.currentTrackIndex]);
+        //         };
+        //         queueListElement.appendChild(item);
+        //     });
+        // }
+    }
+    // End of new methods
+
+    // Ensure showNotification is available or add it if it's part of this player
+    // For example, if it's a method of this class:
+    // showNotification(message, type = 'info') {
+    //     // Basic console log, replace with actual UI notification
+    //     console.log(`[${type.toUpperCase()}] ${message}`);
+    //     // If you have a global notification function, you might not need it here.
+    // }    // Make sure the constructor initializes this.currentTrack = null;
+    // ... existing code like updatePlayPauseButton, setVolume etc.
+    // Ensure playNextInQueue and playPreviousInQueue correctly use this.currentTrackIndex and this.queue
+    
+    playNextInQueue() {
+        if (this.queue.length > 0) {
+            this.currentTrackIndex = (this.currentTrackIndex + 1) % this.queue.length;
+            this.playSong(this.queue[this.currentTrackIndex], this.queue, this.currentTrackIndex);
+        }
+    }
+
+    playPreviousInQueue() {
+        if (this.queue.length > 0) {
+            this.currentTrackIndex = (this.currentTrackIndex - 1 + this.queue.length) % this.queue.length;
+            this.playSong(this.queue[this.currentTrackIndex], this.queue, this.currentTrackIndex);
+        }
+    }
 }
 
-// Global music player instance
-let musicPlayer;
-
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    musicPlayer = new MusicPlayer();
-    
-    // Make it globally accessible
-    window.musicPlayer = musicPlayer;
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize global music player instance
+    window.musicPlayer = new MusicPlayer();
     
     // Save state before page unloads (for manual navigation)
     window.addEventListener('beforeunload', function() {

@@ -1,225 +1,686 @@
-@model MusicApp.Models.DTOs.PlaylistDetailDto
-
+@model MusicApp.Models.ViewModels.PlaylistDetailsViewModel
 @{
-    ViewData["Title"] = Model?.Name ?? "Playlist Details";
-    Random randomGen = new Random();
-    string GetRandomImageUrl(int width, int height)
-    {
-        int randomId = randomGen.Next(1, 1085);
-        return $"https://picsum.photos/id/{randomId}/{width}/{height}";
-    }
+    ViewData["Title"] = "Playlist Details";
+    var playlistId = Model.PlaylistId;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <style>
+        /* General Styles */
+        .playlist-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .playlist-cover-art {
+            width: 180px;
+            height: 180px;
+            object-fit: cover;
+            margin-right: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .playlist-info h1 {
+            margin-bottom: 10px;
+            font-weight: 700;
+            font-size: 2.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .playlist-info p {
+            margin-bottom: 8px;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .action-buttons {
+            margin-top: 20px;
+        }
+
+        .action-buttons .btn {
+            margin-right: 15px;
+            padding: 12px 24px;
+            font-weight: 600;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .action-buttons .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Song Table Styles */
+        .songs-section {
+            background: var(--bs-body-bg);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .songs-section h3 {
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: var(--bs-body-color);
+        }
+
+        .song-table {
+            width: 100%;
+            margin-bottom: 0;
+        }
+
+        .song-table th {
+            background: var(--bs-secondary-bg);
+            border: none;
+            padding: 15px 12px;
+            font-weight: 600;
+            color: var(--bs-body-color);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        .song-table td {
+            vertical-align: middle;
+            padding: 15px 12px;
+            border-color: var(--bs-border-color-translucent);
+        }
+
+        .song-table .cover-art-cell img {
+            width: 55px;
+            height: 55px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .song-table .actions-cell .btn {
+            margin-right: 8px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        
+        .song-row {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .song-row:hover {
+            background-color: var(--bs-secondary-bg);
+            transform: translateX(5px);
+        }
+
+        .song-row:hover .cover-art-cell img {
+            transform: scale(1.05);
+        }
+
+        /* Add Songs Section */
+        .add-songs-section {
+            padding: 25px;
+            background: var(--bs-body-bg);
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .add-songs-section h3 {
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: var(--bs-body-color);
+        }
+
+        .search-form .input-group {
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-form .form-control {
+            border: none;
+            padding: 15px 20px;
+            font-size: 1rem;
+            background: var(--bs-body-bg);
+        }
+
+        .search-form .form-control:focus {
+            box-shadow: none;
+            border-color: #667eea;
+        }
+
+        .search-btn {
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 25px;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .search-results-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 15px;
+            margin-top: 20px;
+            background: var(--bs-body-bg);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-result-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--bs-border-color-translucent);
+            transition: all 0.2s ease;
+        }
+
+        .search-result-item:hover {
+            background-color: var(--bs-secondary-bg);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-image {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Empty state */
+        .empty-playlist {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--bs-text-muted);
+        }
+
+        .empty-playlist i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }        /* Responsive design */
+        @@media (max-width: 768px) {
+            .playlist-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .playlist-cover-art {
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+
+            .playlist-info h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
 }
 
 <div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            @if (ViewBag.SuccessMessage != null)
-            {
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    @ViewBag.SuccessMessage
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            }
-            @if (ViewBag.ErrorMessage != null)
-            {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    @ViewBag.ErrorMessage
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            }
-
-            <div class="card shadow" style="background-color: var(--ytm-bg-secondary); color: var(--ytm-text-primary);">
-                <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, var(--ytm-bg-tertiary) 0%, var(--ytm-bg-secondary) 50%, var(--ytm-bg-primary) 100%); color: var(--ytm-text-primary); border-bottom: 3px solid var(--ytm-accent-red); box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    <div class="d-flex align-items-center">
-                        <img src="@(string.IsNullOrEmpty(Model.CoverImageUrl) ? GetRandomImageUrl(300, 300) : Model.CoverImageUrl)" 
-                             alt="@Model.Name" class="img-thumbnail me-3" 
-                             style="max-width: 100px; background: var(--ytm-bg-tertiary); border: 2px solid var(--ytm-accent-red);"
-                             onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Playlist';" />
-                        <div>
-                            <h3 class="mb-1" style="color: var(--ytm-text-primary); font-weight: 600;">@Model.Name</h3>
-                            <div class="mb-1" style="color: var(--ytm-text-secondary); opacity: 0.9;">@Model.Description</div>
-                            <div class="small">
-                                <span class="me-2">By <b style="color: var(--ytm-text-primary);">@Model.Username</b></span>
-                                <span class="me-2">@Model.SongCount songs</span>
-                                <span class="me-2">@Model.CreatedAt.ToString("MMM d, yyyy")</span>
-                                <span class="badge @(Model.IsPublic ? "bg-success" : "bg-secondary")">
-                                    @(Model.IsPublic ? "Public" : "Private")
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        @{
-                            var currentUserId = Context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                            var isOwner = currentUserId != null && int.Parse(currentUserId) == Model.UserId;
-                            var isAdmin = Context.User.IsInRole("Admin");
-                        }
-                        @if (isOwner || isAdmin)
-                        {
-                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary me-2">
-                                <i class="bi bi-pencil"></i> Edit
-                            </a>
-                            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Delete
-                            </a>
-                        }
-                        else if (Model.IsPublic)
-                        {
-                            <form asp-action="CopyPlaylist" asp-route-id="@Model.Id" method="post" class="d-inline">
-                                <button type="submit" class="btn btn-success me-2">
-                                    <i class="bi bi-copy"></i> Copy to Library
-                                </button>
-                            </form>
-                        }
-                    </div>
-                </div>
-
-                <div class="card-body">
-                    <h5 class="mb-3" style="color: var(--ytm-text-primary);">Songs in this Playlist</h5>
-                    @if (Model.Songs != null && Model.Songs.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover" style="background: var(--ytm-bg-primary); color: var(--ytm-text-primary);">
-                                <thead>
-                                    <tr style="border-bottom: 1px solid var(--ytm-accent-red);">
-                                        <th style="color: var(--ytm-text-secondary);"></th>
-                                        <th style="color: var(--ytm-text-secondary);">Title</th>
-                                        <th style="color: var(--ytm-text-secondary);">Artist</th>
-                                        <th style="color: var(--ytm-text-secondary);">Album</th>
-                                        <th style="color: var(--ytm-text-secondary);">Duration</th>
-                                        <th style="color: var(--ytm-text-secondary);"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var song in Model.Songs.OrderBy(s => s.Order))
-                                    {
-                                        <tr style="border-bottom: 1px solid var(--ytm-bg-tertiary);">
-                                            <td><img src="@(song.CoverImageUrl ?? GetRandomImageUrl(300, 300))" 
-                                                alt="cover" style="width:40px;height:40px;object-fit:cover;border-radius:4px;"
-                                                onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Song';" /></td>
-                                            <td style="color: var(--ytm-text-primary); font-weight: 500;">@song.Title</td>
-                                            <td style="color: var(--ytm-text-secondary);">@song.ArtistName</td>
-                                            <td style="color: var(--ytm-text-secondary);">@song.AlbumTitle</td>
-                                            <td style="color: var(--ytm-text-secondary);">@song.DurationString</td>
-                                            <td>
-                                                <button class="btn btn-sm play-btn" 
-                                                        style="background: linear-gradient(135deg, var(--ytm-accent-red) 0%, #e74c3c 100%); color: var(--ytm-text-primary); border: none; box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3); transition: all 0.2s ease;"
-                                                        data-play-song='@Html.Raw(Json.Serialize(new { 
-                                                            id = song.SongId, 
-                                                            title = song.Title, 
-                                                            artistName = song.ArtistName, 
-                                                            audioUrl = song.AudioUrl, 
-                                                            coverImageUrl = song.CoverImageUrl 
-                                                        }))'
-                                                        data-playlist='@Html.Raw(Json.Serialize(Model.Songs.OrderBy(s => s.Order).Select(s => new { 
-                                                            id = s.SongId, 
-                                                            title = s.Title, 
-                                                            artistName = s.ArtistName, 
-                                                            audioUrl = s.AudioUrl, 
-                                                            coverImageUrl = s.CoverImageUrl 
-                                                        })))'
-                                                        data-index="@Model.Songs.OrderBy(s => s.Order).ToList().IndexOf(song)"
-                                                        title="Play song"
-                                                        onmouseover="this.style.transform='scale(1.05)'"
-                                                        onmouseout="this.style.transform='scale(1)'">
-                                                    <i class="bi bi-play-fill"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="alert alert-info" style="background: var(--ytm-bg-tertiary); color: var(--ytm-text-primary); border-color: var(--ytm-accent-red);">No songs in this playlist yet.</div>
-                    }
-
-                    <hr class="my-4" style="border-color: var(--ytm-bg-tertiary);" />
-                    @{
-                        var currentUserIdForSongs = Context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                        var isOwnerForSongs = currentUserIdForSongs != null && int.Parse(currentUserIdForSongs) == Model.UserId;
-                        var isAdminForSongs = Context.User.IsInRole("Admin");
-                    }
-                    @if (isOwnerForSongs || isAdminForSongs)
-                    {
-                        <h5 style="color: var(--ytm-text-primary);">Add Songs to Playlist</h5>
-
-                        <form method="get" asp-action="Details" class="mb-3 d-flex">
-                            <input type="hidden" name="id" value="@Model.Id" />
-                            <input type="text" name="search" class="form-control me-2" 
-                                   style="background-color: var(--ytm-bg-secondary); color: var(--ytm-text-primary); border-color: var(--ytm-border-color);"
-                                   placeholder="Search for songs..." value="@ViewBag.SearchQuery" 
-                                   onfocus="this.style.backgroundColor='var(--ytm-bg-primary)'; this.style.borderColor='var(--ytm-text-secondary)';" 
-                                   onblur="this.style.backgroundColor='var(--ytm-bg-secondary)'; this.style.borderColor='var(--ytm-border-color)';" />
-                            <button type="submit" class="btn" style="background: linear-gradient(135deg, var(--ytm-accent-red) 0%, #e74c3c 100%); color: var(--ytm-text-primary); border: none; box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3); transition: all 0.2s ease;"
-                                    onmouseover="this.style.transform='scale(1.05)'"
-                                    onmouseout="this.style.transform='scale(1)'">
-                                <i class="bi bi-search"></i> Search
-                            </button>
-                        </form>
-
-                        @if (ViewBag.SearchError != null)
-                        {
-                            <div class="alert alert-warning" style="background: var(--ytm-bg-tertiary); color: var(--ytm-text-primary); border-color: orange;">@ViewBag.SearchError</div>
-                        }
-
-                        @if (ViewBag.SearchResults != null)
-                        {
-                            var results = (List<MusicApp.Models.DTOs.SongDto>)ViewBag.SearchResults;
-                            if (results.Any())
-                            {
-                                <div class="table-responsive mb-4">
-                                    <table class="table table-sm table-hover" style="background: var(--ytm-bg-primary); color: var(--ytm-text-primary);">
-                                        <thead>
-                                            <tr style="border-bottom: 1px solid var(--ytm-accent-red);">
-                                                <th style="color: var(--ytm-text-secondary);"></th>
-                                                <th style="color: var(--ytm-text-secondary);">Title</th>
-                                                <th style="color: var(--ytm-text-secondary);">Artist</th>
-                                                <th style="color: var(--ytm-text-secondary);">Album</th>
-                                                <th style="color: var(--ytm-text-secondary);">Duration</th>
-                                                <th style="color: var(--ytm-text-secondary);"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                        @foreach (var song in results)
-                                        {
-                                            <tr style="border-bottom: 1px solid var(--ytm-bg-tertiary);">
-                                                <td>
-                                                    <img src="@(song.CoverImageUrl ?? "/assets/default-album.png")" 
-                                                         alt="cover" style="width:32px;height:32px;object-fit:cover;border-radius:4px;" />
-                                                </td>                                            
-                                                <td style="color: var(--ytm-text-primary); font-weight: 500;">@song.Title</td>
-                                                <td style="color: var(--ytm-text-secondary);">@song.ArtistName</td>
-                                                <td style="color: var(--ytm-text-secondary);">@song.AlbumTitle</td>
-                                                <td style="color: var(--ytm-text-secondary);">@(song.Duration?.ToString(@"m\:ss") ?? "--:--")</td>
-                                                <td>
-                                                    <form method="post" asp-action="AddSongToPlaylist" style="display:inline">
-                                                        <input type="hidden" name="playlistId" value="@Model.Id" />
-                                                        <input type="hidden" name="songId" value="@song.Id" />
-                                                        <button type="submit" class="btn btn-sm btn-success" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: none; transition: all 0.2s ease;"
-                                                                onmouseover="this.style.transform='scale(1.05)'"
-                                                                onmouseout="this.style.transform='scale(1)'">
-                                                            <i class="bi bi-plus-circle"></i> Add
-                                                        </button>
-                                                    </form>
-                                                </td>
-                                            </tr>
-                                        }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="alert alert-info" style="background: var(--ytm-bg-tertiary); color: var(--ytm-text-primary); border-color: var(--ytm-accent-red);">No songs found matching your search.</div>
-                            }
-                        }
-                    }
-                </div>
+    <!-- Playlist Header -->
+    <div class="playlist-header">
+        <img src="@(Model.CoverImageUrl ?? "/assets/default-playlist-cover.png")" 
+             alt="Playlist Cover Art" 
+             class="playlist-cover-art"
+             onerror="this.onerror=null; this.src='/assets/default-playlist-cover.png';" />
+        <div class="playlist-info">
+            <h1>@Model.Name</h1>
+            <p><i class="bi bi-card-text me-2"></i>@Model.Description</p>
+            <p><i class="bi bi-person me-2"></i>Created by: @(Model.IsOwner ? "You" : "Unknown")</p>
+            <p><i class="bi bi-music-note-list me-2"></i>@Model.Songs.Count song(s)</p>
+            <div class="action-buttons">
+                <button class="btn btn-success" onclick="playAllSongs()">
+                    <i class="bi bi-play-fill me-2"></i>Play All
+                </button>
+                <button class="btn btn-primary" onclick="shufflePlaylist()">
+                    <i class="bi bi-shuffle me-2"></i>Shuffle All
+                </button>
             </div>
         </div>
     </div>
+
+    <!-- Songs Section -->
+    <div class="songs-section">
+        <h3><i class="bi bi-music-note-list me-2"></i>Songs in this Playlist</h3>
+        @if (Model.Songs != null && Model.Songs.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover song-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Cover</th>
+                            <th>Title</th>
+                            <th>Artist</th>
+                            <th>Album</th>
+                            <th>Duration</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playlist-songs-tbody">
+                        @for (int i = 0; i < Model.Songs.Count; i++)
+                        {
+                            var song = Model.Songs[i];
+                            <tr class="song-row" data-song-id="@song.SongId" 
+                                data-title="@song.Title" 
+                                data-artist="@song.ArtistName" 
+                                data-album="@song.AlbumName" 
+                                data-cover="@song.CoverImageUrl" 
+                                data-audio="@song.SongFileUrl"
+                                data-duration="@song.Duration">
+                                <td class="text-muted">@(i + 1)</td>
+                                <td class="cover-art-cell">
+                                    <img src="@(song.CoverImageUrl ?? "/assets/default-album-art.png")" 
+                                         alt="Cover Art" 
+                                         onerror="this.onerror=null; this.src='/assets/default-album-art.png';" />
+                                </td>
+                                <td onclick="playSong('@song.SongId')" class="fw-semibold">@song.Title</td>
+                                <td onclick="playSong('@song.SongId')" class="text-muted">@song.ArtistName</td>
+                                <td onclick="playSong('@song.SongId')" class="text-muted">@song.AlbumName</td>
+                                <td class="text-muted">@song.Duration</td>
+                                <td class="actions-cell">
+                                    <button class="btn btn-sm btn-outline-danger" 
+                                            onclick="removeSongFromPlaylist('@song.SongId', event)"
+                                            title="Remove from playlist">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-playlist">
+                <i class="bi bi-music-note-list"></i>
+                <h5>This playlist is currently empty</h5>
+                <p>Add some songs using the search below to get started!</p>
+            </div>
+        }
+    </div>
+
+    <!-- Add Songs Section -->
+    <div class="add-songs-section">
+        <h3><i class="bi bi-plus-circle me-2"></i>Add Songs to Playlist</h3>
+        <form id="search-song-form" class="search-form mb-3">
+            <div class="input-group">
+                <input type="text" 
+                       id="search-query" 
+                       name="query" 
+                       class="form-control" 
+                       placeholder="Search for songs to add..."
+                       autocomplete="off">
+                <button type="submit" class="btn search-btn">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
+        <div id="search-results-container" class="search-results-container" style="display: none;">
+            <!-- Search results will be populated here by JavaScript -->
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/api-utils.js" asp-append-version="true"></script>
+    <script>
+        const playlistId = '@Model.PlaylistId';
+        const API_BASE_URL = 'http://localhost:5117';
+        
+        // Function to wait for music player to be available
+        function waitForMusicPlayer() {
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 50; // 5 seconds max wait
+                
+                const checkPlayer = () => {
+                    if (window.musicPlayer) {
+                        resolve(window.musicPlayer);
+                        return;
+                    }
+                    
+                    attempts++;
+                    if (attempts >= maxAttempts) {
+                        reject(new Error('Music player not available'));
+                        return;
+                    }
+                    
+                    setTimeout(checkPlayer, 100);
+                };
+                checkPlayer();
+            });
+        }
+
+        // Function to fetch full song details and play
+        async function playSong(songId) {
+            if (!songId) {
+                console.error('Song ID is undefined or null');
+                showNotification('Cannot play song: ID missing.', 'error');
+                return;
+            }
+            
+            console.log(`Attempting to play song with ID: ${songId}`);
+            
+            try {
+                // Wait for music player to be available
+                const musicPlayer = await waitForMusicPlayer();
+                
+                const response = await fetch(`${API_BASE_URL}/api/Songs/${songId}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch song details. Status: ${response.status}`);
+                }
+                const song = await response.json();
+                
+                if (musicPlayer && typeof musicPlayer.playSong === 'function') {
+                    // Ensure the song object has all necessary fields for the player
+                    const trackData = {
+                        id: song.id,
+                        title: song.title,
+                        artistName: song.artistName,
+                        albumName: song.albumName,
+                        coverImageUrl: song.coverImageUrl,
+                        audioUrl: song.audioUrl || song.songFileUrl,
+                        duration: song.duration
+                    };
+                    console.log('Playing song:', trackData);
+                    musicPlayer.playSong(trackData);
+                    showNotification(`Now playing: ${song.title}`, 'success');
+                } else {
+                    console.error('Music player is not available or playSong method is missing.');
+                    showNotification('Music player error.', 'error');
+                }
+            } catch (error) {
+                console.error('Error playing song:', error);
+                if (error.message.includes('Music player not available')) {
+                    showNotification('Music player is loading, please try again in a moment.', 'warning');
+                } else {
+                    showNotification(`Error playing song: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        function collectPlaylistSongs() {
+            const songs = [];
+            document.querySelectorAll('#playlist-songs-tbody .song-row').forEach(row => {
+                songs.push({
+                    id: row.dataset.songId,
+                    title: row.dataset.title,
+                    artistName: row.dataset.artist,
+                    albumName: row.dataset.album,
+                    coverImageUrl: row.dataset.cover,
+                    audioUrl: row.dataset.audio,
+                    duration: row.dataset.duration
+                });
+            });
+            return songs;
+        }
+
+        async function playAllSongs() {
+            const songs = collectPlaylistSongs();
+            if (songs.length > 0) {
+                try {
+                    const musicPlayer = await waitForMusicPlayer();
+                    if (musicPlayer && typeof musicPlayer.playSong === 'function') {
+                        console.log('Playing playlist with', songs.length, 'songs');
+                        musicPlayer.playSong(songs[0], songs, 0);
+                        showNotification(`Playing playlist: ${songs.length} songs`, 'success');
+                    } else {
+                        console.error('Music player is not available or playSong method is missing.');
+                        showNotification('Music player error for playlist.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error playing playlist:', error);
+                    if (error.message.includes('Music player not available')) {
+                        showNotification('Music player is loading, please try again in a moment.', 'warning');
+                    } else {
+                        showNotification('Error playing playlist.', 'error');
+                    }
+                }
+            } else {
+                showNotification('Playlist is empty.', 'info');
+            }
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        async function shufflePlaylist() {
+            let songs = collectPlaylistSongs();
+            if (songs.length > 0) {
+                songs = shuffleArray(songs);
+                try {
+                    const musicPlayer = await waitForMusicPlayer();
+                    if (musicPlayer && typeof musicPlayer.playSong === 'function') {
+                        console.log('Playing shuffled playlist with', songs.length, 'songs');
+                        musicPlayer.playSong(songs[0], songs, 0);
+                        showNotification(`Playing shuffled playlist: ${songs.length} songs`, 'success');
+                    } else {
+                        console.error('Music player is not available or playSong method is missing.');
+                        showNotification('Music player error for playlist.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error playing shuffled playlist:', error);
+                    if (error.message.includes('Music player not available')) {
+                        showNotification('Music player is loading, please try again in a moment.', 'warning');
+                    } else {
+                        showNotification('Error playing shuffled playlist.', 'error');
+                    }
+                }
+            } else {
+                showNotification('Playlist is empty.', 'info');
+            }
+        }
+
+        async function removeSongFromPlaylist(songId, event) {
+            event.stopPropagation();
+            if (!confirm('Are you sure you want to remove this song from the playlist?')) {
+                return;
+            }
+
+            console.log(`Attempting to remove song ${songId} from playlist ${playlistId}`);
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/Playlists/${playlistId}/songs/${songId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (response.ok) {
+                    showNotification('Song removed successfully!', 'success');
+                    const rowToRemove = document.querySelector(`#playlist-songs-tbody .song-row[data-song-id='${songId}']`);
+                    if (rowToRemove) {
+                        rowToRemove.remove();
+                        updateSongNumbers();
+                        updateSongCount();
+                    }
+                } else {
+                    const errorData = await response.text();
+                    throw new Error(`Failed to remove song: ${response.status} - ${errorData}`);
+                }
+            } catch (error) {
+                console.error('Error removing song from playlist:', error);
+                showNotification(`Error removing song: ${error.message}`, 'error');
+            }
+        }
+
+        function updateSongNumbers() {
+            document.querySelectorAll('#playlist-songs-tbody .song-row').forEach((row, index) => {
+                row.cells[0].textContent = index + 1;
+            });
+        }
+
+        function updateSongCount() {
+            const songCount = document.querySelectorAll('#playlist-songs-tbody .song-row').length;
+            const songCountElement = document.querySelector('.playlist-info p:last-of-type');
+            if (songCountElement) {
+                songCountElement.innerHTML = `<i class="bi bi-music-note-list me-2"></i>${songCount} song(s)`;
+            }
+        }
+
+        // Search functionality
+        let searchTimeout;
+        async function searchSongs(query) {
+            if (!query || query.length < 2) {
+                document.getElementById('search-results-container').style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/Search?query=${encodeURIComponent(query)}&limit=20`);
+                if (!response.ok) {
+                    throw new Error(`Search failed: ${response.status}`);
+                }
+                
+                const results = await response.json();
+                displaySearchResults(results.filter(r => r.type === 'song'));
+            } catch (error) {
+                console.error('Error searching songs:', error);
+                showNotification(`Search error: ${error.message}`, 'error');
+            }
+        }
+
+        function displaySearchResults(songs) {
+            const container = document.getElementById('search-results-container');
+            
+            if (!songs || songs.length === 0) {
+                container.innerHTML = '<div class="text-center p-4 text-muted"><i class="bi bi-search me-2"></i>No songs found</div>';
+                container.style.display = 'block';
+                return;
+            }
+
+            const resultsHtml = songs.map(song => `
+                <div class="search-result-item d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <img src="${song.coverImageUrl || '/assets/default-album-art.png'}" 
+                             alt="Cover Art" 
+                             class="search-result-image me-3"
+                             onerror="this.onerror=null; this.src='/assets/default-album-art.png';" />
+                        <div>
+                            <div class="fw-semibold">${song.title}</div>
+                            <div class="text-muted small">${song.artistName} - ${song.albumTitle || 'Unknown Album'}</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-primary" onclick="addSongToPlaylist(${song.id})" title="Add to playlist">
+                        <i class="bi bi-plus"></i> Add
+                    </button>
+                </div>
+            `).join('');
+            
+            container.innerHTML = resultsHtml;
+            container.style.display = 'block';
+        }
+
+        async function addSongToPlaylist(songId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/Playlists/${playlistId}/songs`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ songId: songId })
+                });
+                
+                if (response.ok) {
+                    showNotification('Song added to playlist successfully!', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    const errorData = await response.text();
+                    throw new Error(`Failed to add song: ${response.status} - ${errorData}`);
+                }
+            } catch (error) {
+                console.error('Error adding song to playlist:', error);
+                showNotification(`Error adding song: ${error.message}`, 'error');
+            }
+        }
+
+        // Event listeners and initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchForm = document.getElementById('search-song-form');
+            const searchQueryInput = document.getElementById('search-query');
+
+            if (searchForm) {
+                searchForm.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    const query = searchQueryInput.value.trim();
+                    searchSongs(query);
+                });
+            }
+
+            if (searchQueryInput) {
+                searchQueryInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    const query = this.value.trim();
+                    
+                    if (query.length === 0) {
+                        document.getElementById('search-results-container').style.display = 'none';
+                        return;
+                    }
+                    
+                    searchTimeout = setTimeout(() => {
+                        searchSongs(query);
+                    }, 300);
+                });
+            }
+        });
+
+        // Utility function to show notifications
+        function showNotification(message, type = 'info') {
+            let notification = document.getElementById('playlist-notification');
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.id = 'playlist-notification';
+                notification.className = 'alert alert-dismissible fade show position-fixed';
+                notification.style.cssText = 'top: 80px; right: 20px; z-index: 1055; min-width: 300px; max-width: 400px;';
+                document.body.appendChild(notification);
+            }
+
+            const alertClass = type === 'error' ? 'danger' : type;
+            notification.className = `alert alert-${alertClass} alert-dismissible fade show position-fixed`;
+            
+            const icon = type === 'success' ? 'check-circle' : 
+                        type === 'error' ? 'exclamation-triangle' : 
+                        type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+            
+            notification.innerHTML = `
+                <i class="bi bi-${icon} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+    </script>
+}
