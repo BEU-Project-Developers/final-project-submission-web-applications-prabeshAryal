@@ -404,11 +404,22 @@ namespace MusicApp.Controllers
                 _logger.LogError(ex, "Error adding album songs to playlist {PlaylistId}", playlistId);
                 return BadRequest($"Error adding songs to playlist: {ex.Message}");
             }
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> RemoveSongFromPlaylist(int playlistId, int songId)
+        }        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveSongFromPlaylist([FromBody] RemoveSongRequest request)
         {
+            if (request == null)
+            {
+                return BadRequest("Invalid request.");
+            }
+
+            // Convert string parameters to integers
+            if (!int.TryParse(request.PlaylistId?.ToString(), out int playlistId) || 
+                !int.TryParse(request.SongId?.ToString(), out int songId))
+            {
+                return BadRequest("Invalid playlist or song ID format.");
+            }
+
             if (playlistId <= 0 || songId <= 0)
             {
                 return BadRequest("Invalid playlist or song ID.");
@@ -448,14 +459,66 @@ namespace MusicApp.Controllers
                 new { results = new { songs = new List<object>() } },
                 "Failed to search for songs",
                 $"PlaylistsController.SearchSongs for query '{query}'"
+            );            return Json(searchResults);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddSongToPlaylistAjax([FromBody] AddSongRequest request)
+        {
+            if (request == null)
+            {
+                return BadRequest("Invalid request.");
+            }
+
+            // Convert string parameters to integers
+            if (!int.TryParse(request.PlaylistId?.ToString(), out int playlistId) || 
+                !int.TryParse(request.SongId?.ToString(), out int songId))
+            {
+                return BadRequest("Invalid playlist or song ID format.");
+            }
+
+            if (playlistId <= 0 || songId <= 0)
+            {
+                return BadRequest("Invalid playlist or song ID.");
+            }
+
+            var success = await SafeApiCall(
+                async () =>
+                {
+                    await _apiService.PostAsync<object>($"api/Playlists/{playlistId}/songs", new { songId });
+                    return true;
+                },
+                false,
+                "Failed to add song to playlist. This song may already be in the playlist.",
+                $"PlaylistsController.AddSongToPlaylistAjax - playlist {playlistId}, song {songId}"
             );
 
-            return Json(searchResults);
+            if (success)
+            {
+                return Ok(new { message = "Song successfully added to playlist." });
+            }
+            else
+            {
+                return BadRequest("Failed to add song to playlist. This song may already be in the playlist.");
+            }
         }
     }
 
     public class AlbumSongsDto
     {
         public List<string> SongIds { get; set; }
+    }
+
+    public class RemoveSongRequest
+    {
+        public object PlaylistId { get; set; }
+        public object SongId { get; set; }
+    }
+
+    public class AddSongRequest
+    {
+        public object PlaylistId { get; set; }
+        public object SongId { get; set; }
     }
 }
