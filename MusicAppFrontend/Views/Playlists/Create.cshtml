@@ -4,47 +4,135 @@
     ViewData["Title"] = "Create Playlist";
 }
 
-<div class="container mt-4">
+@section Styles {
+    <style>
+
+        body {
+            background: var(--ytm-bg-primary);
+            color: var(--ytm-text-primary);
+        }
+        .ytm-card {
+            background: var(--ytm-bg-secondary);
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+            border: 1px solid var(--ytm-border-color);
+        }
+        .ytm-card-header {
+            background: var(--ytm-bg-primary);
+            border-bottom: 1px solid var(--ytm-border-color);
+            border-radius: 18px 18px 0 0;
+            padding: 1.5rem 2rem 1rem 2rem;
+        }
+        .ytm-card-header h4 {
+            color: var(--ytm-text-primary);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .ytm-card-body {
+            padding: 2rem;
+        }
+        .ytm-label {
+            color: var(--ytm-text-primary);
+            font-weight: 500;
+        }
+        .ytm-input, .ytm-input:focus {
+            background: var(--ytm-bg-primary);
+            color: var(--ytm-text-primary);
+            border: 1px solid var(--ytm-border-color);
+            border-radius: 8px;
+        }
+        .ytm-input[type="file"] {
+            background: var(--ytm-bg-secondary);
+            color: var(--ytm-text-primary);
+        }
+        .ytm-btn-red {
+            background: var(--ytm-accent-red);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 32px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .ytm-btn-red:hover, .ytm-btn-red:focus {
+            background: var(--ytm-accent-red-hover);
+            color: #fff;
+        }
+        .ytm-btn-outline {
+            background: transparent;
+            color: var(--ytm-text-primary);
+            border: 1px solid var(--ytm-text-primary);
+            border-radius: 25px;
+            padding: 12px 32px;
+            font-weight: 600;
+            transition: background 0.2s, color 0.2s;
+        }
+        .ytm-btn-outline:hover, .ytm-btn-outline:focus {
+            background: var(--ytm-text-primary);
+            color: var(--ytm-bg-primary);
+        }
+        .form-check-label, .form-check-input {
+            cursor: pointer;
+        }
+        .ytm-form-check .form-check-input:checked {
+            background-color: var(--ytm-accent-red);
+            border-color: var(--ytm-accent-red);
+        }
+        .ytm-form-check .form-check-input {
+            background-color: var(--ytm-bg-secondary);
+            border: 1px solid var(--ytm-border-color);
+        }
+        .ytm-form-check .form-check-label {
+            color: var(--ytm-text-primary);
+        }
+        .alert-danger {
+            border-radius: 10px;
+        }
+    </style>
+}
+
+<div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow bg-gray-800 text-white border-0">
-                <div class="card-header bg-red-600 text-white">
+        <div class="col-lg-7 col-md-9">
+            <div class="ytm-card shadow">
+                <div class="ytm-card-header d-flex align-items-center">
+                    <i class="bi bi-music-note-list fs-2 me-3 text-danger"></i>
                     <h4 class="mb-0">Create New Playlist</h4>
                 </div>
-                <div class="card-body">
+                <div class="ytm-card-body">
                     @if (ViewBag.ErrorMessage != null)
                     {
-                        <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+                        <div class="alert alert-danger mb-4">@ViewBag.ErrorMessage</div>
                     }
-                    <form asp-action="Create" method="post" enctype="multipart/form-data">
-                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <form asp-action="Create" method="post" enctype="multipart/form-data" autocomplete="off">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-                        <div class="mb-3">
-                            <label asp-for="Name" class="form-label">Playlist Name</label>
-                            <input asp-for="Name" class="form-control bg-dark text-light" />
+                        <div class="mb-4">
+                            <label asp-for="Name" class="form-label ytm-label">Playlist Name</label>
+                            <input asp-for="Name" class="form-control ytm-input" placeholder="Enter playlist name..." />
                             <span asp-validation-for="Name" class="text-danger"></span>
                         </div>
 
-                        <div class="mb-3">
-                            <label asp-for="Description" class="form-label">Description</label>
-                            <textarea asp-for="Description" class="form-control bg-dark text-light" rows="3"></textarea>
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label ytm-label">Description</label>
+                            <textarea asp-for="Description" class="form-control ytm-input" rows="3" placeholder="Describe your playlist..."></textarea>
                             <span asp-validation-for="Description" class="text-danger"></span>
                         </div>
 
-                        <div class="mb-3">
-                            <label asp-for="CoverImageUrl" class="form-label">Cover Image</label>
-                            <input type="file" name="coverImage" class="form-control bg-dark text-light" accept="image/*" />
+                        <div class="mb-4">
+                            <label asp-for="CoverImageUrl" class="form-label ytm-label">Cover Image</label>
+                            <input type="file" name="coverImage" class="form-control ytm-input" accept="image/*" />
                             <span asp-validation-for="CoverImageUrl" class="text-danger"></span>
                         </div>
 
-                        <div class="mb-3 form-check">
-                            <input asp-for="IsPublic" class="form-check-input" />
-                            <label asp-for="IsPublic" class="form-check-label">Make this playlist public</label>
+                        <div class="mb-4 ytm-form-check form-check">
+                            <input asp-for="IsPublic" class="form-check-input" id="isPublicCheck" />
+                            <label asp-for="IsPublic" class="form-check-label" for="isPublicCheck">Make this playlist public</label>
                         </div>
 
-                        <div class="d-flex justify-content-between">
-                            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
-                            <button type="submit" class="btn bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition-colors">Create Playlist</button>
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <a asp-action="Index" class="ytm-btn-outline">Back to List</a>
+                            <button type="submit" class="ytm-btn-red">Create Playlist</button>
                         </div>
                     </form>
                 </div>

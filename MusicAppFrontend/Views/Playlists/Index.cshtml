@@ -21,7 +21,7 @@
                 <div class="space-y-3">
                     <div class="flex items-center space-x-3">
                         <div class="w-10 h-10 bg-gradient-to-br from-[var(--ytm-accent-red)] to-[var(--ytm-accent-red-hover)] rounded-xl flex items-center justify-center shadow-lg">
-                            <i class="bi bi-music-note-list text-white text-lg"></i>
+                            <i class="bi bi-music-note-list ytm-header-icon text-lg"></i>
                         </div>
                         <h1 class="text-4xl font-bold text-[var(--ytm-text-primary)]">Your Library</h1>
                     </div>
@@ -52,7 +52,7 @@
                 <!-- Enhanced Create Button -->
                 <a asp-action="Create" class="create-playlist-btn group">
                     <div class="flex items-center space-x-2">
-                        <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center group-hover:bg-opacity-30 transition-all duration-200">
+                        <div class="w-8 h-8 flex items-center justify-center">
                             <i class="bi bi-plus text-lg"></i>
                         </div>
                         <span class="font-medium">Create Playlist</span>
@@ -218,6 +218,43 @@
 
 @section Styles {
 <style>
+    /* Remove all local theme toggle logic and scripts */
+    /* Ensure the page only uses theme variables and responds to the global theme toggle (data-bs-theme on <html>) */
+    /* Remove any html[data-theme="light"]/html[data-theme="dark"] blocks and rely on global CSS variables (site.css) */
+
+    /* Enhanced Create Button */
+    .create-playlist-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 500;
+        color: white;
+        transition: all 0.3s ease;
+        background: #FF0000; /* Solid red */
+        box-shadow: 0 4px 16px rgba(255, 0, 0, 0.25);
+        text-decoration: none;
+    }
+    .create-playlist-btn .w-8 {
+        background: rgba(255,255,255,0.12);
+    }
+    .create-playlist-btn:hover {
+        background: #d60000; /* Slightly darker red on hover */
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(255, 0, 0, 0.35);
+    }
+    @@media (prefers-color-scheme: light) {
+        .create-playlist-btn {
+            color: #fff;
+            background: linear-gradient(135deg, var(--ytm-accent-red), var(--ytm-accent-red-hover));
+            box-shadow: 0 4px 16px rgba(255, 0, 0, 0.18);
+        }
+        .create-playlist-btn .w-8 {
+            background: rgba(255,255,255,0.18);
+        }
+    }
+
     /* Enhanced Filter Pills */
     .filter-pill {
         display: inline-flex;
@@ -233,41 +270,26 @@
         border: 1px solid var(--ytm-border-color);
         text-decoration: none;
     }
-    
     .filter-pill:hover {
         background: var(--ytm-bg-tertiary);
         color: var(--ytm-text-primary);
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
-    
     .filter-pill.active {
-        background: linear-gradient(135deg, var(--ytm-accent-red), var(--ytm-accent-red-hover));
-        color: white;
-        border-color: var(--ytm-accent-red);
+        background: #FF0000; /* Solid red */
+        color: white !important;
+        border-color: #FF0000;
         box-shadow: 0 4px 16px rgba(255, 0, 0, 0.25);
     }
-    
-    /* Enhanced Create Button */
-    .create-playlist-btn {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.75rem;
-        font-weight: 500;
-        color: white;
-        transition: all 0.3s ease;
-        background: linear-gradient(135deg, var(--ytm-accent-red), var(--ytm-accent-red-hover));
-        box-shadow: 0 4px 16px rgba(255, 0, 0, 0.25);
-        text-decoration: none;
+    @@media (prefers-color-scheme: light) {
+        .filter-pill.active {
+            background: linear-gradient(135deg, var(--ytm-accent-red), var(--ytm-accent-red-hover));
+            color: #fff !important;
+            border-color: var(--ytm-accent-red);
+            box-shadow: 0 4px 16px rgba(255, 0, 0, 0.18);
+        }
     }
-    
-    .create-playlist-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(255, 0, 0, 0.35);
-        color: white;
-    }
-    
     /* Enhanced Playlist Grid */
     .playlist-grid {
         display: grid;
@@ -805,6 +827,29 @@
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
     }
+    
+    body, .min-h-screen {
+        background: var(--ytm-bg-primary);
+        color: var(--ytm-text-primary);
+    }
+    .ytm-card,
+    .playlist-card {
+        background: var(--ytm-bg-secondary);
+        border-color: var(--ytm-border-color);
+    }
+    .playlist-info {
+        background: var(--ytm-bg-secondary);
+        color: var(--ytm-text-primary);
+    }
+    .playlist-title {
+        color: var(--ytm-text-primary);
+    }
+    .playlist-description {
+        color: var(--ytm-text-secondary);
+    }
+    .playlist-meta {
+        color: var(--ytm-text-tertiary);
+    }
 </style>
 }
 
@@ -1047,6 +1092,28 @@
         
         cards.forEach(card => observer.observe(card));
     });
+    
+    (function() {
+    // Theme toggle logic
+    const html = document.documentElement;
+    const themeToggle = document.getElementById('theme-toggle');
+    // Load theme from localStorage or system
+    function getPreferredTheme() {
+        const stored = localStorage.getItem('ytm-theme');
+        if (stored) return stored;
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    function setTheme(theme) {
+        html.setAttribute('data-theme', theme);
+        localStorage.setItem('ytm-theme', theme);
+    }
+    // Initial theme
+    setTheme(getPreferredTheme());
+    themeToggle.addEventListener('click', function() {
+        const current = html.getAttribute('data-theme');
+        setTheme(current === 'dark' ? 'light' : 'dark');
+    });
+})();
 </script>
 
 <style>
@@ -1078,6 +1145,11 @@
     
     .animate-slide-up {
         animation: slide-up 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    
+    .ytm-header-icon {
+        color: var(--ytm-text-primary);
+        transition: color 0.2s;
     }
 </style>
 }

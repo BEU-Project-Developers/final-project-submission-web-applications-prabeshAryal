@@ -4,9 +4,81 @@
     ViewData["Title"] = "Delete Playlist";
 }
 
-<div class="container mt-4">
+@section Styles {
+    <style>
+        .ytm-delete-card {
+            background: var(--ytm-bg-secondary);
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+            border: 1px solid var(--ytm-border-color);
+            color: var(--ytm-text-primary);
+        }
+        .ytm-delete-header {
+            background: var(--ytm-bg-primary);
+            border-bottom: 1px solid var(--ytm-border-color);
+            border-radius: 18px 18px 0 0;
+            padding: 1.5rem 2rem 1rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .ytm-delete-header .bi {
+            color: var(--ytm-accent-red);
+            font-size: 2rem;
+        }
+        .ytm-delete-warning {
+            background: rgba(255,0,0,0.08);
+            border: 1px solid var(--ytm-accent-red);
+            color: var(--ytm-accent-red);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .ytm-delete-btn {
+            background: var(--ytm-accent-red);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 32px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .ytm-delete-btn:hover, .ytm-delete-btn:focus {
+            background: #d60000;
+            color: #fff;
+        }
+        .ytm-cancel-btn {
+            background: transparent;
+            color: var(--ytm-text-primary);
+            border: 1px solid var(--ytm-text-primary);
+            border-radius: 25px;
+            padding: 12px 32px;
+            font-weight: 600;
+            transition: background 0.2s, color 0.2s;
+        }
+        .ytm-cancel-btn:hover, .ytm-cancel-btn:focus {
+            background: var(--ytm-text-primary);
+            color: var(--ytm-bg-primary);
+        }
+        .ytm-delete-meta {
+            color: var(--ytm-text-secondary);
+            font-size: 0.95rem;
+        }
+        .ytm-delete-img {
+            max-width: 100px;
+            border-radius: 12px;
+            margin-right: 1.25rem;
+            background: var(--ytm-bg-tertiary);
+        }
+        .ytm-delete-desc {
+            color: var(--ytm-text-secondary);
+        }
+    </style>
+}
+
+<div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-lg-7 col-md-9">
             @if (ViewBag.ErrorMessage != null)
             {
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -14,36 +86,37 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             }
-            <div class="card shadow bg-gray-800 text-white border-0">
-                <div class="card-header bg-red-600 text-white">
+            <div class="ytm-delete-card">
+                <div class="ytm-delete-header">
+                    <i class="bi bi-trash"></i>
                     <h4 class="mb-0">Delete Playlist</h4>
                 </div>
-                <div class="card-body">
-                    <div class="alert alert-warning">
-                        <h5 class="alert-heading">Warning!</h5>
-                        <p>Are you sure you want to delete this playlist? This action cannot be undone.</p>
+                <div class="p-4">
+                    <div class="ytm-delete-warning">
+                        <h5 class="alert-heading mb-1"><i class="bi bi-exclamation-triangle me-2"></i>Warning!</h5>
+                        <p class="mb-0">Are you sure you want to delete this playlist? <b>This action cannot be undone.</b></p>
                     </div>
-
-                    <div class="mb-4">
-                        <div class="d-flex align-items-center mb-3">
-                            <img src="@(string.IsNullOrEmpty(Model.CoverImageUrl) ? "/assets/default-playlist.png" : Model.CoverImageUrl)" 
-                                 alt="@Model.Name" class="img-thumbnail me-3" style="max-width: 100px;" />
-                            <div>
-                                <h5 class="mb-1">@Model.Name</h5>
-                                <p class="text-muted mb-0">@Model.SongCount songs</p>
-                                <p class="text-muted mb-0">Created by @Model.Username on @Model.CreatedAt.ToString("MMM d, yyyy")</p>
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="@(string.IsNullOrEmpty(Model.CoverImageUrl) ? "/assets/default-playlist.png" : Model.CoverImageUrl)"
+                             alt="@Model.Name" class="ytm-delete-img"
+                             onerror="this.onerror=null;this.src='/assets/default-playlist.png';" />
+                        <div>
+                            <h5 class="mb-1">@Model.Name</h5>
+                            <div class="ytm-delete-meta">
+                                <span>@Model.SongCount songs</span> &middot;
+                                <span>Created by @Model.Username</span> &middot;
+                                <span>@Model.CreatedAt.ToString("MMM d, yyyy")</span>
                             </div>
                         </div>
-                        <p class="mb-0">@Model.Description</p>
                     </div>
-
+                    <p class="ytm-delete-desc mb-4">@Model.Description</p>
                     <form asp-action="Delete" method="post" onsubmit="return confirm('Are you absolutely sure you want to delete this playlist?');">
                         <input type="hidden" asp-for="Id" />
                         <div class="d-flex justify-content-between">
-                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="ytm-cancel-btn">
                                 <i class="bi bi-arrow-left"></i> Cancel
                             </a>
-                            <button type="submit" class="btn btn-danger">
+                            <button type="submit" class="ytm-delete-btn">
                                 <i class="bi bi-trash"></i> Delete Playlist
                             </button>
                         </div>
