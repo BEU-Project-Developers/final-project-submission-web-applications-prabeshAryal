@@ -1092,28 +1092,7 @@
         
         cards.forEach(card => observer.observe(card));
     });
-    
-    (function() {
-    // Theme toggle logic
-    const html = document.documentElement;
-    const themeToggle = document.getElementById('theme-toggle');
-    // Load theme from localStorage or system
-    function getPreferredTheme() {
-        const stored = localStorage.getItem('ytm-theme');
-        if (stored) return stored;
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    function setTheme(theme) {
-        html.setAttribute('data-theme', theme);
-        localStorage.setItem('ytm-theme', theme);
-    }
-    // Initial theme
-    setTheme(getPreferredTheme());
-    themeToggle.addEventListener('click', function() {
-        const current = html.getAttribute('data-theme');
-        setTheme(current === 'dark' ? 'light' : 'dark');
-    });
-})();
+    // Removed local theme toggle logic. Theme is now handled globally via shared layout and site.js
 </script>
 
 <style>
