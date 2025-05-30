@@ -6,6 +6,7 @@
     --ytm-bg-primary: #0F0F0F;
     --ytm-bg-secondary: #212121;
     --ytm-bg-tertiary: #383838;
+    --ytm-bg-input: #383838;
     --ytm-text-primary: #FFFFFF;
     --ytm-text-secondary: #AAAAAA;
     --ytm-accent-red: #FF0000;
@@ -21,6 +22,7 @@
     --ytm-bg-primary: #FFFFFF;
     --ytm-bg-secondary: #F2F2F2; /* Light grey */
     --ytm-bg-tertiary: #E5E5E5; /* Slightly darker grey */
+    --ytm-bg-input: #F8F9FA; /* Light input background */
     --ytm-text-primary: #0F0F0F; /* Dark text */
     --ytm-text-secondary: #606060; /* Grey text */
     --ytm-accent-red: #FF0000; /* Keep accent red or change if desired */
@@ -285,7 +287,7 @@ body {
 
 /* Bottom section */
 .sidebar-bottom-section {
-    /* Styles specific to this section if needed */
+    margin-top: auto;
 }
 
 /* --- Theme Toggle Specific Styles --- */
@@ -863,60 +865,415 @@ footer {
     color: var(--ytm-accent-red) !important;
 }
 
-/* --- Sticky Music Player Styles --- */
-.sticky-music-player {
+/* --- Dropdown Styles for Theme Compatibility --- */
+.dropdown-menu {
+    background-color: var(--ytm-bg-secondary) !important;
+    border: 1px solid var(--ytm-border-color) !important;
+    border-radius: 8px !important;
+    padding: 8px 0 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    min-width: 160px !important;
+}
+
+.dropdown-item {
+    color: var(--ytm-text-primary) !important;
+    padding: 8px 16px !important;
+    font-size: 0.9rem !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+    border: none !important;
+    background: none !important;
+    width: 100% !important;
+    text-align: left !important;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background-color: var(--ytm-bg-tertiary) !important;
+    color: var(--ytm-text-primary) !important;
+}
+
+.dropdown-item:active {
+    background-color: var(--ytm-bg-tertiary) !important;
+    color: var(--ytm-text-primary) !important;
+}
+
+.dropdown-divider {
+    border-top: 1px solid var(--ytm-border-color) !important;
+    margin: 8px 0 !important;
+    opacity: 1 !important;
+}
+
+.dropdown-toggle {
+    color: var(--ytm-text-primary) !important;
+    border: none !important;
+    background: none !important;
+}
+
+.dropdown-toggle:hover,
+.dropdown-toggle:focus {
+    color: var(--ytm-text-primary) !important;
+    background-color: transparent !important;
+    border: none !important;
+}
+
+.dropdown-toggle::after {
+    display: none !important;
+}
+
+/* --- Form Select Styles for Theme Compatibility --- */
+.form-select {
+    background-color: var(--ytm-bg-secondary) !important;
+    border: 1px solid var(--ytm-border-color) !important;
+    color: var(--ytm-text-primary) !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+    transition: all 0.2s ease !important;
+}
+
+.form-select:focus {
+    border-color: var(--ytm-accent-red) !important;
+    box-shadow: 0 0 0 0.25rem rgba(255, 0, 0, 0.25) !important;
+    background-color: var(--ytm-bg-secondary) !important;
+    color: var(--ytm-text-primary) !important;
+}
+
+.form-select option {
+    background-color: var(--ytm-bg-secondary) !important;
+    color: var(--ytm-text-primary) !important;
+    padding: 8px 12px !important;
+}
+
+/* Regular select elements */
+select,
+select.form-control {
+    background-color: var(--ytm-bg-secondary) !important;
+    border: 1px solid var(--ytm-border-color) !important;
+    color: var(--ytm-text-primary) !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+    transition: all 0.2s ease !important;
+}
+
+select:focus,
+select.form-control:focus {
+    border-color: var(--ytm-accent-red) !important;
+    box-shadow: 0 0 0 0.25rem rgba(255, 0, 0, 0.25) !important;
+    background-color: var(--ytm-bg-secondary) !important;
+    color: var(--ytm-text-primary) !important;
+}
+
+select option,
+select.form-control option {
+    background-color: var(--ytm-bg-secondary) !important;
+    color: var(--ytm-text-primary) !important;
+    padding: 8px 12px !important;
+}
+
+/* --- Theme-specific overrides for WebKit browsers --- */
+/* For Safari/Chrome dropdown arrow styling */
+.form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23AAAAAA' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e") !important;
+}
+
+[data-bs-theme="light"] .form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23606060' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e") !important;
+}
+
+/* Ensure profile dropdown button styling */
+.nav-link.dropdown-toggle {
+    padding: 4px 8px !important;
+    border-radius: 50% !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.nav-link.dropdown-toggle:hover {
+    background-color: var(--ytm-bg-secondary) !important;
+}
+
+/* --- Additional Form Controls Theme Support --- */
+.form-control {
+    background-color: var(--ytm-bg-secondary) !important;
+    border: 1px solid var(--ytm-border-color) !important;
+    color: var(--ytm-text-primary) !important;
+    border-radius: 8px !important;
+}
+
+.form-control:focus {
+    border-color: var(--ytm-accent-red) !important;
+    box-shadow: 0 0 0 0.25rem rgba(255, 0, 0, 0.25) !important;
+    background-color: var(--ytm-bg-secondary) !important;
+    color: var(--ytm-text-primary) !important;
+}
+
+.form-control::placeholder {
+    color: var(--ytm-text-secondary) !important;
+    opacity: 0.7 !important;
+}
+
+.form-label {
+    color: var(--ytm-text-primary) !important;
+    font-weight: 500 !important;
+}
+
+/* --- Tailwind-style Utility Classes for Custom Variables --- */
+.bg-\[var\(--ytm-bg-input\)\] {
+    background-color: var(--ytm-bg-input) !important;
+}
+
+.bg-\[var\(--ytm-bg-primary\)\] {
+    background-color: var(--ytm-bg-primary) !important;
+}
+
+.bg-\[var\(--ytm-bg-secondary\)\] {
+    background-color: var(--ytm-bg-secondary) !important;
+}
+
+.text-\[var\(--ytm-text-primary\)\] {
+    color: var(--ytm-text-primary) !important;
+}
+
+.text-\[var\(--ytm-text-secondary\)\] {
+    color: var(--ytm-text-secondary) !important;
+}
+
+.border-\[var\(--ytm-border-color\)\] {
+    border-color: var(--ytm-border-color) !important;
+}
+
+.focus\:ring-\[var\(--ytm-accent-red\)\]:focus {
+    --tw-ring-color: var(--ytm-accent-red) !important;
+    box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1) !important;
+}
+
+.focus\:border-\[var\(--ytm-accent-red\)\]:focus {
+    border-color: var(--ytm-accent-red) !important;
+}
+
+.text-\[var\(--ytm-accent-red\)\] {
+    color: var(--ytm-accent-red) !important;
+}
+
+/* Additional form control styling to work with both Bootstrap and Tailwind classes */
+select[class*="bg-[var(--ytm-bg-input)]"],
+input[class*="bg-[var(--ytm-bg-input)]"],
+textarea[class*="bg-[var(--ytm-bg-input)]"] {
+    background-color: var(--ytm-bg-input) !important;
+    border: 1px solid var(--ytm-border-color) !important;
+    color: var(--ytm-text-primary) !important;
+}
+
+select[class*="bg-[var(--ytm-bg-input)]"]:focus,
+input[class*="bg-[var(--ytm-bg-input)]"]:focus,
+textarea[class*="bg-[var(--ytm-bg-input)]"]:focus {
+    border-color: var(--ytm-accent-red) !important;
+    box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1) !important;
+    background-color: var(--ytm-bg-input) !important;
+    color: var(--ytm-text-primary) !important;
+}
+
+select[class*="bg-[var(--ytm-bg-input)]"] option,
+select[class*="bg-[var(--ytm-bg-secondary)]"] option {
+    background-color: var(--ytm-bg-secondary) !important;
+    color: var(--ytm-text-primary) !important;
+}
+
+/* Queue Toast Styles */
+.queue-toast {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: var(--ytm-bg-secondary);
-    border-top: 1px solid var(--ytm-border-color);
-    z-index: 1040;
-    height: 80px;
-    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.2);
-    transition: transform 0.3s ease;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    width: 350px;
+    max-height: 500px;
+    background: var(--ytm-bg-secondary);
+    border: 1px solid var(--ytm-border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    overflow: hidden;
+    animation: slideInRight 0.3s ease-out;
 }
 
-.sticky-music-player.d-none {
-    transform: translateY(100%);
-}
-
-.music-player-container {
+.queue-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    height: 100%;
-    padding: 0 16px;
-    gap: 16px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--ytm-border-color);
+    background: var(--ytm-bg-tertiary);
 }
 
-/* Player Info Section */
-.player-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-    flex: 0 0 300px;
+.queue-header h5 {
+    margin: 0;
+    color: var(--ytm-text-primary);
+    font-size: 16px;
+    font-weight: 600;
 }
 
-.player-album-art {
-    width: 48px;
-    height: 48px;
+.queue-close-btn {
+    background: none;
+    border: none;
+    color: var(--ytm-text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px;
     border-radius: 4px;
-    object-fit: cover;
+    transition: all 0.2s ease;
+}
+
+.queue-close-btn:hover {
+    background: var(--ytm-bg-primary);
+    color: var(--ytm-text-primary);
+}
+
+.queue-content {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.queue-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.queue-content::-webkit-scrollbar-track {
+    background: var(--ytm-bg-secondary);
+}
+
+.queue-content::-webkit-scrollbar-thumb {
+    background: var(--ytm-text-secondary);
+    border-radius: 3px;
+}
+
+.queue-content::-webkit-scrollbar-thumb:hover {
+    background: var(--ytm-text-primary);
+}
+
+.queue-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.queue-item:hover {
+    background: var(--ytm-bg-tertiary);
+}
+
+.queue-item.current {
+    background: rgba(255, 0, 0, 0.1);
+    border-left: 3px solid var(--ytm-accent-red);
+}
+
+.queue-item-artwork {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    margin-right: 12px;
+    border-radius: 4px;
+    overflow: hidden;
     flex-shrink: 0;
 }
 
-.player-song-details {
-    min-width: 0;
-    flex: 1;
+.queue-item-artwork img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-.player-song-title {
+.current-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--ytm-accent-red);
+    font-size: 12px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 4px;
+    border-radius: 50%;
+}
+
+.queue-item-info {
+    flex: 1;
+    min-width: 0;
+    margin-right: 12px;
+}
+
+.queue-item-title {
     color: var(--ytm-text-primary);
+    font-size: 14px;
     font-weight: 500;
-    font-size: 0.9rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     margin-bottom: 2px;
+}
+
+.queue-item-artist {
+    color: var(--ytm-text-secondary);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.queue-item-duration {
+    color: var(--ytm-text-secondary);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+/* Animation for queue toast */
+@keyframes slideInRight {
+    from {
+        transform: translateY(-50%) translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(-50%) translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Music notification styles */
+.music-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--ytm-bg-secondary);
+    color: var(--ytm-text-primary);
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    z-index: 10001;
+    animation: fadeInOut 3s ease-in-out;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0; transform: translateX(100%); }
+    10%, 90% { opacity: 1; transform: translateX(0); }
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+    .queue-toast {
+        right: 10px;
+        left: 10px;
+        width: auto;
+        max-width: none;
+    }
+    
+    .queue-item {
+        padding: 10px 16px;
+    }
+    
+    .queue-item-artwork {
+        width: 36px;
+        height: 36px;
+        margin-right: 10px;
+    }
 }

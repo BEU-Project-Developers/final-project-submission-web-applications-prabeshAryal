@@ -15,6 +15,8 @@ class MusicPlayer {
         // Initialize player if elements exist
         if (this.audio && this.player) {
             this.initializePlayer();
+            // Restore previous state if any
+            this.restorePlayerState();
         }
     }
 
@@ -79,6 +81,9 @@ class MusicPlayer {
 
         this.elements.shuffleBtn?.addEventListener('click', () => {
             this.toggleShuffle();
+        });        // Queue button
+        this.elements.queueBtn?.addEventListener('click', () => {
+            this.showQueue();
         });
 
         // Minimize player
@@ -105,12 +110,14 @@ class MusicPlayer {
                     break;
             }
         });
-    }
-
-    setupAudioEvents() {
+    }    setupAudioEvents() {
         // Time update
         this.audio.addEventListener('timeupdate', () => {
             this.updateProgress();
+            // Save state periodically during playback
+            if (this.isPlaying && this.currentSong) {
+                this.savePlayerState();
+            }
         });
 
         // Metadata loaded
@@ -121,6 +128,19 @@ class MusicPlayer {
         // Track ended
         this.audio.addEventListener('ended', () => {
             this.handleTrackEnd();
+        });
+
+        // Play/pause events
+        this.audio.addEventListener('play', () => {
+            this.isPlaying = true;
+            this.updatePlayButton();
+            this.savePlayerState();
+        });
+
+        this.audio.addEventListener('pause', () => {
+            this.isPlaying = false;
+            this.updatePlayButton();
+            this.savePlayerState();
         });
 
         // Error handling
@@ -150,12 +170,13 @@ class MusicPlayer {
         } else {
             this.playlist = [song];
             this.currentIndex = 0;
-        }
-
-        this.loadCurrentSong();
+        }        this.loadCurrentSong();
         this.showPlayer();
         this.play();
-    }    loadCurrentSong() {
+        
+        // Save state when a new song is loaded
+        this.savePlayerState();
+    }loadCurrentSong() {
         if (!this.currentSong) return;
 
         // Update audio source
@@ -211,9 +232,7 @@ class MusicPlayer {
         } else {
             this.play();
         }
-    }
-
-    nextTrack() {
+    }    nextTrack() {
         if (this.playlist.length <= 1) return;
 
         if (this.isShuffle) {
@@ -228,6 +247,9 @@ class MusicPlayer {
         if (this.isPlaying) {
             this.play();
         }
+        
+        // Save state after track change
+        this.savePlayerState();
     }
 
     previousTrack() {
@@ -236,6 +258,7 @@ class MusicPlayer {
         if (this.audio.currentTime > 3) {
             // If more than 3 seconds played, restart current track
             this.audio.currentTime = 0;
+            this.savePlayerState();
             return;
         }
 
@@ -248,15 +271,16 @@ class MusicPlayer {
         if (this.isPlaying) {
             this.play();
         }
-    }    seekTo(percentage) {
+        
+        // Save state after track change
+        this.savePlayerState();
+    }seekTo(percentage) {
         if (this.audio.duration) {
             this.audio.currentTime = (percentage / 100) * this.audio.duration;
             // Update visual progress immediately
             this.elements.progressBar.style.setProperty('--progress', `${percentage}%`);
         }
-    }
-
-    setVolume(volume) {
+    }    setVolume(volume) {
         this.volume = Math.max(0, Math.min(1, volume));
         this.audio.volume = this.volume;
         
@@ -265,6 +289,7 @@ class MusicPlayer {
         }
         
         this.updateVolumeIcon();
+        this.savePlayerState();
     }
 
     toggleMute() {
@@ -274,16 +299,19 @@ class MusicPlayer {
             this.audio.volume = this.volume;
         }
         this.updateVolumeIcon();
+        this.savePlayerState();
     }
 
     toggleRepeat() {
         this.isRepeat = !this.isRepeat;
         this.elements.repeatBtn?.classList.toggle('active', this.isRepeat);
+        this.savePlayerState();
     }
 
     toggleShuffle() {
         this.isShuffle = !this.isShuffle;
         this.elements.shuffleBtn?.classList.toggle('active', this.isShuffle);
+        this.savePlayerState();
     }
 
     // UI update methods
@@ -339,15 +367,227 @@ class MusicPlayer {
         this.player?.classList.remove('d-none');
         // Add bottom padding to content to prevent overlap
         document.body.style.paddingBottom = '80px';
-    }
-
-    hidePlayer() {
+    }    hidePlayer() {
         this.pause();
         this.player?.classList.add('d-none');
         document.body.style.paddingBottom = '';
         
         // Reset page title
         document.title = document.title.replace(/^.+ - .+ - /, '');
+        
+        // Clear saved state when player is hidden
+        this.clearPlayerState();
+    }
+
+    showQueue() {
+        // Remove any existing queue toast
+        const existingToast = document.getElementById('queue-toast');
+        if (existingToast) {
+            existingToast.remove();
+            return; // Toggle behavior - close if already open
+        }
+
+        if (!this.playlist || this.playlist.length === 0) {
+            this.showNotification('No songs in queue');
+            return;
+        }
+
+        // Create the queue toast container
+        const queueToast = document.createElement('div');
+        queueToast.id = 'queue-toast';
+        queueToast.className = 'queue-toast';        // Create header
+        const header = document.createElement('div');
+        header.className = 'queue-header';
+        header.innerHTML = `
+            <h5>Current Queue</h5>
+            <button class="queue-close-btn" onclick="document.getElementById('queue-toast').remove()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        `;
+
+        // Create scrollable content area
+        const content = document.createElement('div');
+        content.className = 'queue-content';        // Generate playlist items
+        this.playlist.forEach((song, index) => {
+            const songItem = document.createElement('div');
+            songItem.className = `queue-item ${index === this.currentIndex ? 'current' : ''}`;
+            songItem.dataset.index = index;            // Get the correct image URL with proper fallbacks
+            const imageUrl = song.coverImageUrl || song.CoverImageUrl || 'https://placehold.co/40x40/212121/AAAAAA?text=Song';
+            const title = song.title || song.Title || 'Unknown Title';
+            const artist = song.artistName || song.ArtistName || 'Unknown Artist';
+
+            songItem.innerHTML = `                <div class="queue-item-artwork">
+                    <img src="${imageUrl}" alt="${title}" onerror="this.src='https://placehold.co/40x40/212121/AAAAAA?text=Song'">
+                    ${index === this.currentIndex ? '<i class="bi bi-volume-up-fill current-indicator"></i>' : ''}
+                </div>
+                <div class="queue-item-info">
+                    <div class="queue-item-title">${title}</div>
+                    <div class="queue-item-artist">${artist}</div>
+                </div>
+                <div class="queue-item-duration">${this.formatTime(song.duration || 0)}</div>
+            `;
+
+            // Add click handler to play specific song while keeping the playlist intact
+            songItem.addEventListener('click', () => {
+                if (index !== this.currentIndex) {
+                    this.currentIndex = index;
+                    this.currentSong = this.playlist[index];
+                    this.loadCurrentSong();
+                    if (this.isPlaying) {
+                        this.play();
+                    }
+                }
+                queueToast.remove();
+            });
+
+            content.appendChild(songItem);
+        });
+
+        // Assemble the toast
+        queueToast.appendChild(header);
+        queueToast.appendChild(content);
+        document.body.appendChild(queueToast);
+
+        // Auto-close after 10 seconds of inactivity
+        setTimeout(() => {
+            if (document.getElementById('queue-toast')) {
+                queueToast.remove();
+            }
+        }, 10000);
+    }
+
+    showNotification(message) {
+        // Simple notification method
+        const notification = document.createElement('div');
+        notification.className = 'music-notification';
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // State persistence methods for continuous playback
+    savePlayerState() {
+        if (!this.currentSong) return;
+        
+        const state = {
+            currentSong: this.currentSong,
+            playlist: this.playlist,
+            currentIndex: this.currentIndex,
+            currentTime: this.audio.currentTime || 0,
+            isPlaying: this.isPlaying,
+            volume: this.volume,
+            isRepeat: this.isRepeat,
+            isShuffle: this.isShuffle,
+            timestamp: Date.now()
+        };
+        
+        try {
+            localStorage.setItem('musicPlayerState', JSON.stringify(state));
+        } catch (e) {
+            console.warn('Failed to save player state:', e);
+        }
+    }
+
+    restorePlayerState() {
+        try {
+            const savedState = localStorage.getItem('musicPlayerState');
+            if (!savedState) return;
+            
+            const state = JSON.parse(savedState);
+            
+            // Check if state is not too old (max 24 hours)
+            const maxAge = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+            if (Date.now() - state.timestamp > maxAge) {
+                localStorage.removeItem('musicPlayerState');
+                return;
+            }
+            
+            // Restore state
+            this.currentSong = state.currentSong;
+            this.playlist = state.playlist || [];
+            this.currentIndex = state.currentIndex || 0;
+            this.volume = state.volume || 0.7;
+            this.isRepeat = state.isRepeat || false;
+            this.isShuffle = state.isShuffle || false;
+            
+            if (this.currentSong) {
+                this.loadCurrentSong();
+                this.showPlayer();
+                
+                // Set the saved time position
+                if (state.currentTime > 0) {
+                    this.audio.addEventListener('loadedmetadata', () => {
+                        this.audio.currentTime = state.currentTime;
+                        this.updateProgress();
+                    }, { once: true });
+                }
+                
+                // Restore volume and UI states
+                this.setVolume(this.volume);
+                this.elements.repeatBtn?.classList.toggle('active', this.isRepeat);
+                this.elements.shuffleBtn?.classList.toggle('active', this.isShuffle);
+                
+                // If was playing, resume playback after a short delay
+                if (state.isPlaying) {
+                    // Show a brief visual indicator that playback was restored
+                    this.showRestoreIndicator();
+                    
+                    // Add a small delay to ensure audio is ready
+                    setTimeout(() => {
+                        this.play();
+                    }, 500);
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to restore player state:', e);
+            localStorage.removeItem('musicPlayerState');
+        }
+    }
+
+    showRestoreIndicator() {
+        // Create a temporary indicator to show that playback was restored
+        const indicator = document.createElement('div');
+        indicator.textContent = '🎵 Playback restored';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bs-success);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            transform: translateX(100%);
+        `;
+        
+        document.body.appendChild(indicator);
+        
+        // Animate in
+        requestAnimationFrame(() => {
+            indicator.style.transform = 'translateX(0)';
+        });
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            indicator.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                document.body.removeChild(indicator);
+            }, 300);
+        }, 3000);
+    }
+
+    clearPlayerState() {
+        try {
+            localStorage.removeItem('musicPlayerState');
+        } catch (e) {
+            console.warn('Failed to clear player state:', e);
+        }
     }
 
     // Utility methods
@@ -383,6 +623,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Make it globally accessible
     window.musicPlayer = musicPlayer;
+    
+    // Save state before page unloads (for manual navigation)
+    window.addEventListener('beforeunload', function() {
+        if (window.musicPlayer && window.musicPlayer.currentSong) {
+            window.musicPlayer.savePlayerState();
+        }
+    });
+    
+    // Save state when page becomes hidden (for tab switching, etc.)
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden && window.musicPlayer && window.musicPlayer.currentSong) {
+            window.musicPlayer.savePlayerState();
+        }
+    });
+    
+    // Handle browser back/forward navigation
+    window.addEventListener('pageshow', function(event) {
+        // If page is loaded from cache (back/forward), restore state
+        if (event.persisted && window.musicPlayer) {
+            window.musicPlayer.restorePlayerState();
+        }
+    });
 });
 
 // Helper function to play a song from anywhere in the app
@@ -398,7 +660,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         const playBtn = e.target.closest('[data-play-song]');
         const playAlbumBtn = e.target.closest('[data-play-album]');
-          if (playBtn) {
+        
+        if (playBtn) {
             e.preventDefault();
             
             try {
