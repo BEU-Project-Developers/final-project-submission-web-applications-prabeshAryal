@@ -56,7 +56,7 @@ namespace MusicApp.Controllers
 
             return await SafeApiAction(async () =>
             {
-                var success = await _authService.LoginAsync(model.Email, model.Password, model.RememberMe);
+                var success = await _authService.LoginAsync(model.UsernameOrEmail, model.Password, model.RememberMe);
 
                 if (success)
                 {
@@ -68,7 +68,7 @@ namespace MusicApp.Controllers
                 }
 
                 // Login failed
-                var errorMessage = "Invalid email or password. Please try again.";
+                var errorMessage = "Invalid username/email or password. Please try again.";
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
                     return Json(new { success = false, message = errorMessage });

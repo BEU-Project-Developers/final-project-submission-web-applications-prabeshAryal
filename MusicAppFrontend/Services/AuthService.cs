@@ -72,13 +72,13 @@ namespace MusicApp.Services
             }
         }
 
-        public async Task<bool> LoginAsync(string email, string password, bool rememberMe)
+        public async Task<bool> LoginAsync(string usernameOrEmail, string password, bool rememberMe)
         {
             try
             {
                 var response = await _apiService.PostAsync<LoginResponse>(
                     "api/Auth/login", 
-                    new { email, password, rememberMe });
+                    new { usernameOrEmail, password, rememberMe });
                 
                 if (response != null && response.User != null)
                 {
