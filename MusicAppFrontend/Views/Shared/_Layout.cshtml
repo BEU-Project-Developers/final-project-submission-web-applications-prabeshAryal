@@ -25,7 +25,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
     @await RenderSectionAsync("Styles", required: false)
-
+    
     @* Add custom styles for auth modal *@
     <style>
         /* Modal backdrop blur */
@@ -36,60 +36,142 @@
         }
 
         .auth-modal .modal-dialog {
-            max-width: 400px;
+            max-width: 450px;
         }
 
         .auth-modal .modal-content {
             background: var(--bs-body-bg);
             border: none;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
         }
 
         .auth-modal .modal-header {
-            border-bottom: none;
-            padding: 1.5rem 1.5rem 0.5rem;
+            border-bottom: 1px solid var(--bs-border-color);
+            padding: 1.5rem 2rem 1rem;
+            background: linear-gradient(135deg, var(--bs-body-bg) 0%, rgba(255, 0, 0, 0.02) 100%);
         }
 
         .auth-modal .modal-body {
-            padding: 1rem 1.5rem 1.5rem;
+            padding: 1rem 2rem 2rem;
         }
 
+        .auth-modal .modal-title {
+            font-weight: 600;
+            font-size: 1.5rem;
+            color: var(--bs-body-color);
+        }
+
+        /* Enhanced tab styling */
+        .auth-modal .nav-tabs {
+            border: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .auth-modal .nav-tabs .nav-link {
+            border: none;
+            border-radius: 12px;
+            margin: 0 0.25rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            color: var(--bs-secondary);
+            background: transparent;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .auth-modal .nav-tabs .nav-link:hover {
+            color: #ff0000;
+            background: rgba(255, 0, 0, 0.05);
+            border: none;
+        }
+
+        .auth-modal .nav-tabs .nav-link.active {
+            color: #ffffff;
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+            border: none;
+            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
+        }
+
+        .auth-modal .nav-tabs .nav-link.active:hover {
+            color: #ffffff;
+            background: linear-gradient(135deg, #cc0000 0%, #aa0000 100%);
+        }
+
+        /* Form styling */
         .auth-modal .form-control {
             background: var(--bs-body-bg);
-            border: 1px solid var(--bs-border-color);
+            border: 2px solid var(--bs-border-color);
+            border-radius: 8px;
             padding: 0.75rem 1rem;
+            font-size: 0.95rem;
             transition: all 0.2s ease;
         }
 
         .auth-modal .form-control:focus {
             border-color: #ff0000;
-            box-shadow: 0 0 0 0.25rem rgba(255, 0, 0, 0.15);
+            box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.15);
+            background: var(--bs-body-bg);
         }
 
-        .auth-modal .btn-primary {
-            background-color: #ff0000;
-            border-color: #ff0000;
-            padding: 0.75rem 1rem;
+        .auth-modal .form-label {
+            color: var(--bs-body-color);
             font-weight: 500;
-            transition: all 0.2s ease;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        /* Button styling */
+        .auth-modal .btn-primary {
+            background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
         }
 
         .auth-modal .btn-primary:hover {
-            background-color: #cc0000;
-            border-color: #cc0000;
+            background: linear-gradient(135deg, #cc0000 0%, #aa0000 100%);
+            box-shadow: 0 6px 16px rgba(255, 0, 0, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .auth-modal .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3);
         }
 
         .auth-modal .btn-primary:focus {
-            background-color: #cc0000;
-            border-color: #cc0000;
-            box-shadow: 0 0 0 0.25rem rgba(255, 0, 0, 0.25);
+            box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.25), 0 4px 12px rgba(255, 0, 0, 0.3);
         }
 
+        /* Remember me checkbox */
+        .auth-modal .form-check-input {
+            border: 2px solid var(--bs-border-color);
+            border-radius: 4px;
+        }
+
+        .auth-modal .form-check-input:checked {
+            background-color: #ff0000;
+            border-color: #ff0000;
+        }
+
+        .auth-modal .form-check-input:focus {
+            border-color: #ff0000;
+            box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.15);
+        }
+
+        /* Switch links */
         .auth-modal .auth-switch {
             color: #ff0000;
-            cursor: pointer;
             text-decoration: none;
+            font-weight: 500;
             transition: all 0.2s ease;
         }
 
@@ -98,29 +180,46 @@
             text-decoration: underline;
         }
 
+        /* Alert styling */
         .auth-modal .alert {
-            margin-bottom: 1rem;
-            border-color: #ff0000;
-            background-color: rgba(255, 0, 0, 0.1);
-            color: #ff0000;
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 1.5rem;
         }
 
-        /* Form labels */
-        .auth-modal .form-label {
-            color: var(--bs-body-color);
-            font-weight: 500;
-            margin-bottom: 0.5rem;
+        .auth-modal .alert-danger {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border-left: 4px solid #dc3545;
         }
 
-        /* Remember me checkbox */
-        .auth-modal .form-check-input:checked {
-            background-color: #ff0000;
-            border-color: #ff0000;
+        .auth-modal .alert-success {
+            background: rgba(25, 135, 84, 0.1);
+            color: #198754;
+            border-left: 4px solid #198754;
         }
 
-        .auth-modal .form-check-input:focus {
-            border-color: #ff0000;
-            box-shadow: 0 0 0 0.25rem rgba(255, 0, 0, 0.25);
+        /* Loading spinner */
+        .auth-modal .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }        /* Responsive adjustments */
+        @@media (max-width: 576px) {
+            .auth-modal .modal-dialog {
+                max-width: 95%;
+                margin: 1rem;
+            }
+            
+            .auth-modal .modal-header,
+            .auth-modal .modal-body {
+                padding-left: 1.5rem;
+                padding-right: 1.5rem;
+            }
+            
+            .auth-modal .nav-tabs .nav-link {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
         }
 
         /* Sticky Music Player */
@@ -355,98 +454,43 @@
                         </li>
                     </ul>
                 </div>
-            }
-            else
+            }            else
             {
-                <button type="button" class="btn btn-link nav-link" data-bs-toggle="modal" data-bs-target="#authModal" data-auth-mode="register">
+                <button type="button" class="btn btn-link nav-link" data-bs-toggle="modal" data-bs-target="#authModal" data-auth-mode="login">
                     <i class="bi bi-person-circle" style="font-size: 2rem;"></i>
                 </button>
             }
         </div>
-    </header>
-
-    @* Auth Modal *@
+    </header>    @* Auth Modal *@
     <div class="modal fade auth-modal" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="authModalLabel">Create Account</h5>
+                    <h5 class="modal-title" id="authModalLabel">Welcome</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="authAlert" class="alert alert-danger d-none" role="alert"></div>
-                    
-                    @* Register Form (Now Default) *@
-                    <form id="registerForm" class="auth-form">
-                        <input type="hidden" name="ReturnUrl" value="@ViewBag.ReturnUrl" />
-                        @* Add register alert div for error display *@
-                        <div id="registerFormAlert" class="alert alert-danger d-none" role="alert"></div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="registerFirstName" class="form-label">First Name</label>
-                                <input type="text" class="form-control" id="registerFirstName" name="FirstName" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="registerLastName" class="form-label">Last Name</label>
-                                <input type="text" class="form-control" id="registerLastName" name="LastName" required>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="registerUsername" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="registerUsername" name="Username" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="registerEmail" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="registerEmail" name="Email" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="registerPassword" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="registerPassword" name="Password" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="registerConfirmPassword" class="form-label">Confirm Password</label>
-                            <input type="password" class="form-control" id="registerConfirmPassword" name="ConfirmPassword" required>
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary" id="registerSubmitBtn">Create Account</button>
-                            <button class="btn btn-primary d-none" type="button" id="registerLoadingBtn" disabled>
-                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                Creating Account...
+                    <ul class="nav nav-tabs nav-justified mb-4" id="authTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login-tab-pane" 
+                                    type="button" role="tab" aria-controls="login-tab-pane" aria-selected="true">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
                             </button>
-                        </div>
-                        <div class="text-center mt-3">
-                            <span>Already have an account? <a href="#" class="auth-switch" data-auth-mode="login">Sign In</a></span>
-                        </div>
-                    </form>
-
-                    @* Login Form (Now Secondary) *@
-                    <form id="loginForm" class="auth-form d-none">
-                        <input type="hidden" name="ReturnUrl" value="@ViewBag.ReturnUrl" />
-                        @* Add login alert div for error display *@
-                        <div id="loginFormAlert" class="alert alert-danger d-none" role="alert"></div>
-                        <div class="mb-3">
-                            <label for="loginEmail" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="loginEmail" name="Email" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="loginPassword" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="loginPassword" name="Password" required>
-                        </div>
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="loginRememberMe" name="RememberMe">
-                            <label class="form-check-label" for="loginRememberMe">Remember me</label>
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary" id="loginSubmitBtn">Sign In</button>
-                            <button class="btn btn-primary d-none" type="button" id="loginLoadingBtn" disabled>
-                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                Signing In...
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-tab-pane" 
+                                    type="button" role="tab" aria-controls="register-tab-pane" aria-selected="false">
+                                <i class="bi bi-person-plus me-2"></i>Create Account
                             </button>
+                        </li>
+                    </ul>                    <div class="tab-content" id="authTabsContent">
+                        <div class="tab-pane fade show active" id="login-tab-pane" role="tabpanel" aria-labelledby="login-tab" tabindex="0">
+                            @await Html.PartialAsync("_LoginPartial", new MusicApp.ViewModels.LoginViewModel { UserIdentifier = "", Password = "" })
                         </div>
-                        <div class="text-center mt-3">
-                            <span>Don't have an account? <a href="#" class="auth-switch" data-auth-mode="register">Sign Up</a></span>
+                        <div class="tab-pane fade" id="register-tab-pane" role="tabpanel" aria-labelledby="register-tab" tabindex="0">
+                            @await Html.PartialAsync("_RegisterPartial", new MusicApp.ViewModels.RegisterViewModel { FirstName = "", LastName = "", Username = "", Email = "", Password = "", ConfirmPassword = "" })
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -617,222 +661,156 @@
 
     @* Render section for page-specific scripts *@
     @await RenderSectionAsync("Scripts", required: false)
-
-    @* Update auth modal JavaScript *@
+    
+    @* Auth modal JavaScript *@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const authModal = document.getElementById('authModal');
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerForm');
-            const authAlert = document.getElementById('authAlert');
-            const modalTitle = document.querySelector('#authModal .modal-title');
 
-            // Initialize with register form visible
-            switchAuthMode('register');
-
-            // Handle auth mode switching
-            document.querySelectorAll('.auth-switch').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const mode = this.dataset.authMode;
-                    switchAuthMode(mode);
-                });
-            });
-
-            // Handle modal open with specific mode
+            // Handle modal opening with specific tab
             authModal.addEventListener('show.bs.modal', function(event) {
                 const button = event.relatedTarget;
-                const mode = button.dataset.authMode || 'register'; // Default to register
-                switchAuthMode(mode);
+                const mode = button.dataset.authMode || 'login'; // Default to login
+                
+                if (mode === 'register') {
+                    // Switch to register tab
+                    const registerTab = new bootstrap.Tab(document.getElementById('register-tab'));
+                    registerTab.show();
+                } else {
+                    // Switch to login tab
+                    const loginTab = new bootstrap.Tab(document.getElementById('login-tab'));
+                    loginTab.show();
+                }
+                
+                // Clear any existing alerts
+                clearAlerts();
             });
 
-            function switchAuthMode(mode) {
-                if (mode === 'login') {
-                    loginForm.classList.remove('d-none');
-                    registerForm.classList.add('d-none');
-                    modalTitle.textContent = 'Sign In';
-                } else {
-                    loginForm.classList.add('d-none');
-                    registerForm.classList.remove('d-none');
-                    modalTitle.textContent = 'Create Account';
+            // Reset forms when modal is closed
+            authModal.addEventListener('hidden.bs.modal', function() {
+                if (loginForm) {
+                    loginForm.reset();
                 }
-                authAlert.classList.add('d-none');
-                
-                // Hide form-specific alerts too
-                document.getElementById('loginFormAlert').classList.add('d-none');
-                document.getElementById('registerFormAlert').classList.add('d-none');
-            }
-            
-            // Helper function to show auth errors in the common alert area
-            function showAuthError(message) {
-                authAlert.textContent = message;
-                authAlert.classList.remove('d-none');
+                if (registerForm) {
+                    registerForm.reset();
+                }
+                clearAlerts();
+                resetButtons();
+            });
+
+            function clearAlerts() {
+                const alerts = authModal.querySelectorAll('.alert');
+                alerts.forEach(alert => alert.classList.add('d-none'));
             }
 
-            // Handle login form submission
-            loginForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                authAlert.classList.add('d-none'); // Hide the common alert
-                
-                // Show loading button and hide submit button
+            function resetButtons() {
+                // Reset login buttons
                 const loginSubmitBtn = document.getElementById('loginSubmitBtn');
                 const loginLoadingBtn = document.getElementById('loginLoadingBtn');
-                const loginFormAlert = document.getElementById('loginFormAlert');
-                
-                loginSubmitBtn.classList.add('d-none');
-                loginLoadingBtn.classList.remove('d-none');
-                loginFormAlert.classList.add('d-none');
-                
-                const formData = new FormData(this);
-                
-                try {
-                    const response = await fetch('@Url.Action("Login", "Account")', {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-
-                    console.log('Login response status:', response.status);
-                    console.log('Login response headers:', [...response.headers.entries()]);
-
-                    // Get the response content as text first
-                    const responseText = await response.text();
-                    console.log('Login response text:', responseText);
-                    
-                    // Try to parse as JSON if possible
-                    let data;
-                    try {
-                        data = responseText ? JSON.parse(responseText) : { success: false, message: 'Empty response from server' };
-                        console.log('Parsed JSON data:', data);
-                    } catch (jsonError) {
-                        console.error('Error parsing response JSON:', jsonError, 'Response text:', responseText);
-                        data = { success: false, message: 'Error processing server response' };
-                    }
-
-                    // Handle the response
-                    if (response.ok && data && data.success) {
-                        window.location.reload();
-                    } else {
-                        // Show error message
-                        let errorMsg = 'Login failed. ';
-                        
-                        if (data && data.message) {
-                            errorMsg += data.message;
-                        } else if (!response.ok) {
-                            errorMsg += `Server returned ${response.status} ${response.statusText}`;
-                        } else {
-                            errorMsg += 'Please try again.';
-                        }
-                        
-                        loginFormAlert.textContent = errorMsg;
-                        loginFormAlert.classList.remove('d-none');
-                        
-                        // Reset buttons
-                        loginSubmitBtn.classList.remove('d-none');
-                        loginLoadingBtn.classList.add('d-none');
-                    }
-                } catch (error) {
-                    console.error('Login request error:', error);
-                    
-                    // Show error message
-                    loginFormAlert.textContent = 'An error occurred. Please try again.';
-                    loginFormAlert.classList.remove('d-none');
-                    
-                    // Reset buttons
+                if (loginSubmitBtn && loginLoadingBtn) {
                     loginSubmitBtn.classList.remove('d-none');
                     loginLoadingBtn.classList.add('d-none');
                 }
-            });
 
-            // Handle register form submission
-            registerForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                authAlert.classList.add('d-none'); // Hide the common alert
-                
-                // Show loading button and hide submit button
+                // Reset register buttons
                 const registerSubmitBtn = document.getElementById('registerSubmitBtn');
                 const registerLoadingBtn = document.getElementById('registerLoadingBtn');
-                const registerFormAlert = document.getElementById('registerFormAlert');
-                
-                registerSubmitBtn.classList.add('d-none');
-                registerLoadingBtn.classList.remove('d-none');
-                registerFormAlert.classList.add('d-none');
-                
-                // Validate password match
-                const password = document.getElementById('registerPassword').value;
-                const confirmPassword = document.getElementById('registerConfirmPassword').value;
-                if (password !== confirmPassword) {
-                    registerFormAlert.textContent = 'Passwords do not match.';
-                    registerFormAlert.classList.remove('d-none');
+                if (registerSubmitBtn && registerLoadingBtn) {
                     registerSubmitBtn.classList.remove('d-none');
                     registerLoadingBtn.classList.add('d-none');
-                    return;
                 }
-                
-                const formData = new FormData(this);
-                
-                try {
-                    const response = await fetch('@Url.Action("Register", "Account")', {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
+            }
 
-                    console.log('Register response status:', response.status);
-                    console.log('Register response headers:', [...response.headers.entries()]);
+            function showAlert(alertElement, message, type = 'danger') {
+                if (alertElement) {
+                    alertElement.textContent = message;
+                    alertElement.className = `alert alert-${type}`;
+                    alertElement.classList.remove('d-none');
+                }
+            }
 
-                    // Get the response content as text first
-                    const responseText = await response.text();
-                    console.log('Register response text:', responseText);
+            // Handle login form submission
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    // Instead of AJAX, submit the form as a normal POST so the server can set the auth cookie and redirect
+                    loginForm.submit();
+                });
+            }
+
+            // Handle register form submission
+            if (registerForm) {
+                registerForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
                     
-                    // Try to parse as JSON if possible
-                    let data;
-                    try {
-                        data = responseText ? JSON.parse(responseText) : { success: false, message: 'Empty response from server' };
-                        console.log('Parsed JSON data:', data);
-                    } catch (jsonError) {
-                        console.error('Error parsing response JSON:', jsonError, 'Response text:', responseText);
-                        data = { success: false, message: 'Error processing server response' };
+                    const registerSubmitBtn = document.getElementById('registerSubmitBtn');
+                    const registerLoadingBtn = document.getElementById('registerLoadingBtn');
+                    const registerFormAlert = document.getElementById('registerFormAlert');
+                    
+                    // Validate password match
+                    const password = document.getElementById('registerPassword').value;
+                    const confirmPassword = document.getElementById('registerConfirmPassword').value;
+                    if (password !== confirmPassword) {
+                        showAlert(registerFormAlert, 'Passwords do not match.', 'danger');
+                        return;
                     }
+                    
+                    // Switch to loading state
+                    registerSubmitBtn.classList.add('d-none');
+                    registerLoadingBtn.classList.remove('d-none');
+                    registerFormAlert.classList.add('d-none');
+                    
+                    const formData = new FormData(this);
+                    
+                    try {
+                        const response = await fetch('@Url.Action("Register", "Account")', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
 
-                    // Handle the response
-                    if (response.ok && data && data.success) {
-                        window.location.reload();
-                    } else {
-                        // Show error message
-                        let errorMsg = 'Registration failed. ';
-                        
-                        if (data && data.message) {
-                            errorMsg += data.message;
-                        } else if (!response.ok) {
-                            errorMsg += `Server returned ${response.status} ${response.statusText}`;
-                        } else {
-                            errorMsg += 'Please try again.';
+                        let data;
+                        try {
+                            const responseText = await response.text();
+                            data = responseText ? JSON.parse(responseText) : { success: false, message: 'Empty response from server' };
+                        } catch (jsonError) {
+                            data = { success: false, message: 'Error processing server response' };
                         }
-                        
-                        registerFormAlert.textContent = errorMsg;
-                        registerFormAlert.classList.remove('d-none');
+
+                        if (response.ok && data && data.success) {
+                            showAlert(registerFormAlert, 'Registration successful! Redirecting...', 'success');
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            let errorMsg = 'Registration failed. ';
+                            if (data && data.message) {
+                                errorMsg += data.message;
+                            } else if (!response.ok) {
+                                errorMsg += `Server returned ${response.status} ${response.statusText}`;
+                            } else {
+                                errorMsg += 'Please try again.';
+                            }
+                            
+                            showAlert(registerFormAlert, errorMsg, 'danger');
+                            
+                            // Reset buttons
+                            registerSubmitBtn.classList.remove('d-none');
+                            registerLoadingBtn.classList.add('d-none');
+                        }
+                    } catch (error) {
+                        showAlert(registerFormAlert, 'An error occurred. Please try again.', 'danger');
                         
                         // Reset buttons
                         registerSubmitBtn.classList.remove('d-none');
                         registerLoadingBtn.classList.add('d-none');
                     }
-                } catch (error) {
-                    console.error('Registration request error:', error);
-                    
-                    // Show error message
-                    registerFormAlert.textContent = 'An error occurred. Please try again.';
-                    registerFormAlert.classList.remove('d-none');
-                    
-                    // Reset buttons
-                    registerSubmitBtn.classList.remove('d-none');
-                    registerLoadingBtn.classList.add('d-none');
-                }
-            });
+                });
+            }
         });
     </script>
 </body>

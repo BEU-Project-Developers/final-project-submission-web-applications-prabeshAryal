@@ -1,0 +1,35 @@
+@model MusicApp.ViewModels.LoginViewModel
+
+<div id="loginFormAlert" class="alert alert-danger d-none" role="alert"></div>
+
+<form id="loginForm" asp-action="Login" asp-controller="Account" method="post">
+    <input type="hidden" name="ReturnUrl" value="@ViewBag.ReturnUrl" />
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label for="loginUserIdentifier" class="form-label">Username or Email</label>
+        <input type="text" class="form-control" id="loginUserIdentifier" name="UserIdentifier" asp-for="UserIdentifier" required>
+        <span asp-validation-for="UserIdentifier" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label for="loginPassword" class="form-label">Password</label>
+        <input type="password" class="form-control" id="loginPassword" name="Password" asp-for="Password" required>
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="loginRememberMe" name="RememberMe" asp-for="RememberMe">
+        <label class="form-check-label" for="loginRememberMe">Remember me</label>
+    </div>    <div class="d-grid gap-2">
+        <button type="submit" id="loginSubmitBtn" class="btn btn-primary w-100">Sign In</button>
+        <button type="button" id="loginLoadingBtn" class="btn btn-primary w-100 d-none" disabled>
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Signing in...
+        </button>
+    </div>
+</form>
+
+<div class="text-center mt-3">
+    <span>Don't have an account? <a href="#" class="auth-switch" data-bs-toggle="tab" data-bs-target="#register-tab-pane">Sign Up</a></span>
+</div>

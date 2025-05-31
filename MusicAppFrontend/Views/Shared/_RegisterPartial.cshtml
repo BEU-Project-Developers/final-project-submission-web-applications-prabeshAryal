@@ -1,0 +1,55 @@
+@model MusicApp.ViewModels.RegisterViewModel
+
+<div id="registerFormAlert" class="alert alert-danger d-none" role="alert"></div>
+
+<form id="registerForm" asp-action="Register" asp-controller="Account" method="post">
+    <input type="hidden" name="ReturnUrl" value="@ViewBag.ReturnUrl" />
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="registerFirstName" class="form-label">First Name</label>
+            <input type="text" class="form-control" id="registerFirstName" name="FirstName" asp-for="FirstName" required>
+            <span asp-validation-for="FirstName" class="text-danger"></span>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="registerLastName" class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="registerLastName" name="LastName" asp-for="LastName" required>
+            <span asp-validation-for="LastName" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label for="registerUsername" class="form-label">Username</label>
+        <input type="text" class="form-control" id="registerUsername" name="Username" asp-for="Username" required>
+        <span asp-validation-for="Username" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label for="registerEmail" class="form-label">Email</label>
+        <input type="email" class="form-control" id="registerEmail" name="Email" asp-for="Email" required>
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label for="registerPassword" class="form-label">Password</label>
+        <input type="password" class="form-control" id="registerPassword" name="Password" asp-for="Password" required>
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label for="registerConfirmPassword" class="form-label">Confirm Password</label>
+        <input type="password" class="form-control" id="registerConfirmPassword" name="ConfirmPassword" asp-for="ConfirmPassword" required>
+        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+    </div>    <div class="d-grid gap-2">
+        <button type="submit" id="registerSubmitBtn" class="btn btn-primary w-100">Create Account</button>
+        <button type="button" id="registerLoadingBtn" class="btn btn-primary w-100 d-none" disabled>
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Creating account...
+        </button>
+    </div>
+</form>
+
+<div class="text-center mt-3">
+    <span>Already have an account? <a href="#" class="auth-switch" data-bs-toggle="tab" data-bs-target="#login-tab-pane">Sign In</a></span>
+</div>

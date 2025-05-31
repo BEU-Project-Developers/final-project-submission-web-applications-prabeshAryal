@@ -434,17 +434,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Registration successful
                 showAlert(registerAlert, 'Registration successful!', 'success');
                 
-                // Store the token in localStorage
-                if (data.token) {
-                    localStorage.setItem('jwt_token', data.token);
-                }
-                if (data.refreshToken) {
-                    localStorage.setItem('refresh_token', data.refreshToken);
-                }
-                if (data.user) {
-                    localStorage.setItem('user_info', JSON.stringify(data.user));
-                }
-                
                 // Redirect to dashboard after a short delay
                 setTimeout(() => {
                     window.location.href = document.querySelector('input[name="ReturnUrl"]').value || '/Account/Dashboard';
@@ -569,17 +558,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 // Login successful
                 showAlert(loginAlert, 'Login successful!', 'success');
-                
-                // Store the token in localStorage
-                if (data.token) {
-                    localStorage.setItem('jwt_token', data.token);
-                }
-                if (data.refreshToken) {
-                    localStorage.setItem('refresh_token', data.refreshToken);
-                }
-                if (data.user) {
-                    localStorage.setItem('user_info', JSON.stringify(data.user));
-                }
                 
                 // Redirect to dashboard after a short delay
                 setTimeout(() => {
