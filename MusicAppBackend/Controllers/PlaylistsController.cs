@@ -273,12 +273,10 @@ namespace MusicAppBackend.Controllers
             if (playlist.UserId != userId && !User.IsInRole("Admin"))
             {
                 return Forbid();
-            }
-
-            playlist.Name = playlistDto.Name ?? playlist.Name;
+            }            playlist.Name = playlistDto.Name ?? playlist.Name;
             playlist.Description = playlistDto.Description ?? playlist.Description;
             playlist.IsPublic = playlistDto.IsPublic ?? playlist.IsPublic;
-            playlist.UpdatedAt = DateTime.UtcNow;            try
+            playlist.UpdatedAt = DateTime.UtcNow;try
             {
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Playlist {Id} updated successfully. New name: {Name}, Description: {Description}, IsPublic: {IsPublic}", 
@@ -633,9 +631,7 @@ namespace MusicAppBackend.Controllers
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public bool? IsPublic { get; set; }
-    }
-
-    public class PlaylistUpdateDTO
+    }    public class PlaylistUpdateDTO
     {
         public string? Name { get; set; }
         public string? Description { get; set; }

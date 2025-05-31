@@ -276,23 +276,28 @@ namespace MusicApp.Controllers
                     var result = await _apiService.PutAsync<PlaylistDto>($"api/Playlists/{id}", updateDto);
                     _logger.LogInformation("API call result: {@Result}", result);
                     if (result != null)
-                    {
-                        // Handle cover image upload if file is provided
+                    {                        // Handle cover image upload if file is provided
                         if (coverImage != null && coverImage.Length > 0)
-                        {                            var fileName = !string.IsNullOrEmpty(result.Name) 
-                                ? $"{result.Name.Replace(" ", "-").ToLower()}.{Path.GetExtension(coverImage.FileName).TrimStart('.')}"
-                                : $"playlist-{id}.{Path.GetExtension(coverImage.FileName).TrimStart('.')}";
+                        {
+                            _logger.LogInformation("Uploading cover image for playlist {Id}", id);
                             
-                            var uploadResult = await _fileUploadService.UploadPlaylistCoverAsync(coverImage, fileName, result.Name ?? "");
-                            if (uploadResult.Success)
+                            // Use the backend's dedicated cover upload endpoint
+                            try
                             {
-                                result.CoverImageUrl = $"https://localhost:5117/api/files/playlists/{fileName}";
-                                await _apiService.PutAsync<PlaylistDto>($"api/Playlists/{id}", new
+                                var coverUploadResult = await _apiService.UploadFileAsync($"api/Playlists/{id}/cover", coverImage, "file");
+                                if (!string.IsNullOrEmpty(coverUploadResult))
                                 {
-                                    Name = result.Name,
-                                    Description = result.Description,
-                                    IsPublic = result.IsPublic
-                                });
+                                    _logger.LogInformation("Cover image uploaded successfully for playlist {Id}. File path: {FilePath}", id, coverUploadResult);
+                                }
+                                else
+                                {
+                                    _logger.LogWarning("Cover image upload returned null/empty result for playlist {Id}", id);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Failed to upload cover image for playlist {Id}: {ErrorMessage}", id, ex.Message);
+                                // Don't fail the entire operation if cover upload fails
                             }
                         }
                         SetSuccessMessage("Playlist updated successfully.");
