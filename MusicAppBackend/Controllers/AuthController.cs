@@ -36,8 +36,28 @@ namespace MusicAppBackend.Controllers
                 return BadRequest(new { message = result.Message });
             }
 
-            _logger.LogInformation("User successfully registered with email: {Email}", register.Email);
-            return Ok(new { message = result.Message, user = result.User });
+            // Generate token for the newly registered user
+            var loginResult = await _authService.LoginAsync(new LoginDTO 
+            { 
+                UsernameOrEmail = register.Email, 
+                Password = register.Password 
+            });
+
+            if (!loginResult.Success)
+            {
+                _logger.LogWarning("Auto-login after registration failed for email: {Email}", register.Email);
+                // Still return success for registration but without token
+                return Ok(new { message = result.Message, user = result.User });
+            }
+
+            _logger.LogInformation("User successfully registered with email: {Email} and auto-logged in", register.Email);
+            return Ok(new TokenResponseDTO
+            {
+                Token = loginResult.Token!,
+                RefreshToken = loginResult.RefreshToken!,
+                User = loginResult.User!,
+                Message = result.Message // Add the registration success message
+            });
         }        [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO login)
         {
