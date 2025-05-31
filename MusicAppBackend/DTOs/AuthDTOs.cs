@@ -5,11 +5,11 @@ namespace MusicAppBackend.DTOs
 {
     public class LoginDTO
     {
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Username or Email is required")]
+        public string UsernameOrEmail { get; set; } = string.Empty;
         
-        [Required]
+        [Required(ErrorMessage = "Password is required")]
+        [MinLength(6, ErrorMessage = "Password must be at least 6 characters")]
         public string Password { get; set; } = string.Empty;
     }
     
@@ -61,4 +61,4 @@ namespace MusicAppBackend.DTOs
         public string RefreshToken { get; set; } = string.Empty;
         public UserDTO User { get; set; } = null!;
     }
-} 
+}

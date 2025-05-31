@@ -41,19 +41,22 @@ namespace MusicAppBackend.Services
 
         public async Task<(bool Success, string Message, UserDTO? User, string? Token, string? RefreshToken)> LoginAsync(LoginDTO login)
         {
+            // Check if the input is an email or username
             var user = await _context.Users
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
-                .FirstOrDefaultAsync(u => u.Email == login.Email);
+                .FirstOrDefaultAsync(u => 
+                    u.Email == login.UsernameOrEmail || 
+                    u.Username == login.UsernameOrEmail);
 
             if (user == null)
             {
-                return (false, "User not found", null, null, null);
+                return (false, "Invalid credentials", null, null, null);
             }
 
             if (!VerifyPassword(login.Password, user.PasswordHash))
             {
-                return (false, "Invalid password", null, null, null);
+                return (false, "Invalid credentials", null, null, null);
             }
 
             // Update last login time
@@ -274,4 +277,4 @@ namespace MusicAppBackend.Services
             return BCrypt.Net.BCrypt.Verify(password, passwordHash);
         }
     }
-} 
+}
