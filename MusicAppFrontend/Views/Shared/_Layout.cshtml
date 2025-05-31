@@ -671,7 +671,7 @@
 
             // Handle login form submission
             loginForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
+                e.preventDefault(); // Call this first to stop default form submission
                 authAlert.classList.add('d-none'); // Hide the common alert
                 
                 // Show loading button and hide submit button
@@ -800,8 +800,15 @@
                     }
 
                     // Handle the response
-                    if (response.ok && data && data.success) {
-                        window.location.reload();
+                    console.log('Processing registration response:', { ok: response.ok, data });
+
+                    // Add strict check for success property or check for user object
+                    if (response.ok && ((data && data.success === true) || (data && data.user))) {
+                        console.log('Registration successful, reloading page');
+                        // Delay the reload slightly to allow any response processing to complete
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 100);
                     } else {
                         // Show error message
                         let errorMsg = 'Registration failed. ';
@@ -814,6 +821,7 @@
                             errorMsg += 'Please try again.';
                         }
                         
+                        console.log('Showing error message:', errorMsg);
                         registerFormAlert.textContent = errorMsg;
                         registerFormAlert.classList.remove('d-none');
                         

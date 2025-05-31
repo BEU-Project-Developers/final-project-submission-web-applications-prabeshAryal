@@ -150,16 +150,31 @@ namespace MusicApp.Services
         {
             try
             {
+                _logger.LogInformation("Attempting to register user: {Username}", model.Username);
+                
+                // Use LoginResponse to parse the backend response that now includes tokens
                 var response = await _apiService.PostAsync<LoginResponse>("api/Auth/register", model);
                 
-                if (response != null && response.User != null)
+                if (response == null)
                 {
+                    _logger.LogWarning("Registration failed: null response received");
+                    return false;
+                }
+                
+                _logger.LogInformation("Registration response received with user: {Username}", 
+                    response.User?.Username ?? "null");
+                
+                // Check if we got tokens and user data back
+                if (response.User != null && !string.IsNullOrEmpty(response.Token))
+                {
+                    _logger.LogInformation("Registration successful with token for: {Username}", response.User.Username);
+                    
                     // Store tokens in local storage for API requests
                     await SetLocalStorageAsync("jwt_token", response.Token);
                     await SetLocalStorageAsync("refresh_token", response.RefreshToken);
                     await SetLocalStorageAsync("user_info", JsonSerializer.Serialize(response.User));
                     
-                    // Also set up cookie authentication for server-side validation
+                    // Set up cookie authentication for server-side validation
                     var user = response.User;
                     var claims = new List<Claim>
                     {
@@ -182,27 +197,44 @@ namespace MusicApp.Services
                     var authProperties = new AuthenticationProperties
                     {
                         IsPersistent = true, // Remember me by default for new registrations
-                        ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7) // Set cookie expiration
+                        ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7), // Set cookie expiration
+                        AllowRefresh = true
                     };
                     
-                    // Sign in using cookie authentication
                     // Make sure we have a valid HttpContext
                     if (_httpContextAccessor.HttpContext != null)
                     {
+                        // Sign in using cookie authentication
                         await _httpContextAccessor.HttpContext.SignInAsync(
                             CookieAuthenticationDefaults.AuthenticationScheme,
                             new ClaimsPrincipal(claimsIdentity),
                             authProperties);
-                              _logger.LogInformation("User registered and authenticated via cookies: {IsAuthenticated}", 
+                            
+                        _logger.LogInformation("User registered and authenticated via cookies: {IsAuthenticated}", 
                             _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated);
                     }
                     else
                     {
-                        _logger.LogWarning("HttpContext is null during registration");
+                        _logger.LogWarning("HttpContext is null during registration - cookie auth skipped");
                     }
                     
                     return true;
                 }
+                else if (response.User != null)
+                {
+                    _logger.LogInformation("Registration successful but without token for: {Username}", 
+                        response.User.Username);
+                    
+                    // This is the fallback case where registration succeeded but auto-login failed
+                    // We still consider registration successful, but user will need to login manually
+                    
+                    // Store just the user info (without tokens)
+                    await SetLocalStorageAsync("user_info", JsonSerializer.Serialize(response.User));
+                    
+                    return true;
+                }
+                
+                _logger.LogWarning("Registration failed: User property not found in response");
                 return false;
             }
             catch (Exception ex)
