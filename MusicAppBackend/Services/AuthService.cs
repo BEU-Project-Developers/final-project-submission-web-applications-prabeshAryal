@@ -41,20 +41,30 @@ namespace MusicAppBackend.Services
 
         public async Task<(bool Success, string Message, UserDTO? User, string? Token, string? RefreshToken)> LoginAsync(LoginDTO login)
         {
+<<<<<<< HEAD
             // Use regex to check if identifier is email
             var isEmail = System.Text.RegularExpressions.Regex.IsMatch(login.Identifier ?? string.Empty, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
             var user = isEmail
                 ? await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Email == login.Identifier)
                 : await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Username == login.Identifier);
+=======
+            // Check if the input is an email or username
+            var user = await _context.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => 
+                    u.Email == login.UsernameOrEmail || 
+                    u.Username == login.UsernameOrEmail);
+>>>>>>> main
 
             if (user == null)
             {
-                return (false, "User not found", null, null, null);
+                return (false, "Invalid credentials", null, null, null);
             }
 
             if (!VerifyPassword(login.Password, user.PasswordHash))
             {
-                return (false, "Invalid password", null, null, null);
+                return (false, "Invalid credentials", null, null, null);
             }
 
             // Update last login time

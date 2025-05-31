@@ -6,7 +6,6 @@
 <div class="min-h-screen bg-[var(--ytm-bg-primary)] py-8">
     <div class="container mx-auto px-4">
         <div class="max-w-4xl mx-auto">
-            <!-- Header Section -->
             <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow-xl border border-[var(--ytm-border-color)] mb-6">
                 <div class="px-8 py-6 border-b border-[var(--ytm-border-color)]">
                     <div class="flex items-center justify-between">
@@ -24,7 +23,6 @@
                 </div>
             </div>
 
-            <!-- Messages -->
             @if (TempData["SuccessMessage"] != null)
             {
                 <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6" role="alert">
@@ -44,11 +42,10 @@
                 </div>
             }
 
-            <!-- Form -->
             <form id="songEditForm" asp-action="Edit" method="post" enctype="multipart/form-data" class="space-y-6">
                 <input type="hidden" asp-for="Id" />
+                <input type="hidden" name="PrimaryArtistId" id="PrimaryArtistId" value="@(Model.Artists?.FirstOrDefault(a => a.IsPrimaryArtist)?.Id ?? Model.ArtistId)" />
                 
-                <!-- Required Fields Section -->
                 <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow-lg border border-[var(--ytm-border-color)]">
                     <div class="px-6 py-4 border-b border-[var(--ytm-border-color)]">
                         <h2 class="text-xl font-semibold text-[var(--ytm-text-primary)] flex items-center">
@@ -58,7 +55,6 @@
                         <p class="text-sm text-[var(--ytm-text-secondary)] mt-1">Essential song details that must be provided</p>
                     </div>
                     <div class="p-6 space-y-4">
-                        <!-- Title -->
                         <div>
                             <label asp-for="Title" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">
                                 Song Title <span class="text-[var(--ytm-accent-red)]">*</span>
@@ -66,22 +62,50 @@
                             <input asp-for="Title" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] placeholder-[var(--ytm-text-secondary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" placeholder="Enter song title" />
                             <span asp-validation-for="Title" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
                         </div>
-
-                        <!-- Artist and Album Row -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label asp-for="ArtistId" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Artist</label>
-                                <select asp-for="ArtistId" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition">
-                                    <option value="">Select an Artist</option>
-                                    @if (ViewBag.Artists != null)
-                                    {
-                                        @foreach (var artist in ViewBag.Artists)
-                                        {
-                                            <option value="@artist.Id" selected="@(Model.ArtistId == artist.Id)">@artist.Name</option>
-                                        }
-                                    }
-                                </select>
-                                <span asp-validation-for="ArtistId" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
+                                <label class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Artists <span class="text-[var(--ytm-accent-red)]">*</span></label>
+                                <div id="artist-selection" class="space-y-3">
+                                    <div>
+                                        <label asp-for="ArtistId" class="block text-xs font-medium text-[var(--ytm-text-secondary)] mb-1">Primary Artist</label>
+                                        <select asp-for="ArtistId" class="w-full px-3 py-2 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition text-sm">
+                                            <option value="">Select Primary Artist</option>
+                                            @if (ViewBag.Artists != null)
+                                            {
+                                                @foreach (var artist in ViewBag.Artists)
+                                                {
+                                                    <option value="@artist.Id" selected="@(Model.ArtistId == artist.Id)">@artist.Name</option>
+                                                }
+                                            }
+                                        </select>
+                                        <span asp-validation-for="ArtistId" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-xs font-medium text-[var(--ytm-text-secondary)] mb-1">Additional Artists</label>
+                                        <div class="border border-[var(--ytm-border-color)] rounded-lg p-3 bg-[var(--ytm-bg-input)] max-h-32 overflow-y-auto">
+                                            @if (ViewBag.Artists != null)
+                                            {
+                                                @foreach (var artist in ViewBag.Artists)
+                                                {
+                                                    <div class="flex items-center mb-1">
+                                                        <input class="artist-checkbox mr-2 rounded text-[var(--ytm-accent-red)] focus:ring-[var(--ytm-accent-red)]" type="checkbox" 
+                                                               name="ArtistIds" value="@artist.Id" id="edit_artist_@artist.Id"
+                                                               @(Model.Artists?.Any(a => a.Id == artist.Id) == true ? "checked" : "")>
+                                                        <label class="text-xs text-[var(--ytm-text-primary)]" for="edit_artist_@artist.Id">
+                                                            @artist.Name
+                                                            @if (Model.Artists?.FirstOrDefault(a => a.Id == artist.Id)?.IsPrimaryArtist == true)
+                                                            {
+                                                                <span class="text-[var(--ytm-accent-red)] ml-1">(Primary)</span>
+                                                            }
+                                                        </label>
+                                                    </div>
+                                                }
+                                            }
+                                        </div>
+                                        <p class="text-xs text-[var(--ytm-text-secondary)] mt-1">Select multiple artists if this is a collaboration</p>
+                                    </div>
+                                </div>
                             </div>
                             <div>
                                 <label asp-for="AlbumId" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Album</label>
@@ -99,7 +123,6 @@
                             </div>
                         </div>
 
-                        <!-- Duration -->
                         <div>
                             <label asp-for="Duration" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">
                                 Duration <span class="text-[var(--ytm-accent-red)]">*</span>
@@ -111,7 +134,6 @@
                     </div>
                 </div>
 
-                <!-- Optional Fields Toggle -->
                 <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow-lg border border-[var(--ytm-border-color)]">
                     <div class="px-6 py-4 border-b border-[var(--ytm-border-color)]">
                         <div class="flex items-center justify-between">
@@ -132,11 +154,8 @@
                         </div>
                     </div>
                     
-                    <!-- Optional Fields Content -->
                     <div id="optionalFields" class="hidden p-6 space-y-4">
-                        <!-- Audio and Cover File Uploads Row -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Audio File Upload -->
                             <div>
                                 <label class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Audio File</label>
                                 @if (!string.IsNullOrEmpty(Model.AudioUrl))
@@ -152,28 +171,27 @@
                                         </audio>
                                     </div>
                                 }
-                                <input type="file" id="audioFile" name="audioFile" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" accept="audio/*" />
+                                <input type="file" id="audioFile" name="audioFile" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[var(--ytm-accent-red)] file:text-white hover:file:bg-[var(--ytm-accent-red-hover)] transition" accept="audio/*" />
                                 <p class="text-xs text-[var(--ytm-text-secondary)] mt-1">Upload a new audio file (MP3, WAV, etc.) or leave empty to keep current</p>
                                 <input type="hidden" asp-for="AudioUrl" />
                             </div>
 
-                            <!-- Cover Image Upload -->
                             <div>
                                 <label class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Cover Image</label>
                                 @if (!string.IsNullOrEmpty(Model.CoverImageUrl))
                                 {
                                     <div class="mb-3">
-                                        <img src="@Model.CoverImageUrl" alt="Current cover" class="w-32 h-32 object-cover rounded-lg shadow-md" />
+                                        <img src="@Model.CoverImageUrl" alt="Current cover" id="currentCoverImage" class="w-32 h-32 object-cover rounded-lg shadow-md" />
                                         <p class="text-xs text-[var(--ytm-text-secondary)] mt-1">Current cover image</p>
                                     </div>
                                 }
-                                <input type="file" id="coverImage" name="coverImage" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" accept="image/*" />
+                                <input type="file" id="coverImage" name="coverImage" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[var(--ytm-accent-red)] file:text-white hover:file:bg-[var(--ytm-accent-red-hover)] transition" accept="image/*" />
                                 <p class="text-xs text-[var(--ytm-text-secondary)] mt-1">Upload a new cover image (JPG, PNG) or leave empty to keep current</p>
                                 <input type="hidden" asp-for="CoverImageUrl" />
+                                <div id="coverImagePreviewContainer" class="mt-2"></div>
                             </div>
                         </div>
 
-                        <!-- Track Number and Genre Row -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label asp-for="TrackNumber" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Track Number</label>
@@ -187,7 +205,6 @@
                             </div>
                         </div>
 
-                        <!-- Release Date and Play Count Row -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label asp-for="ReleaseDate" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Release Date</label>
@@ -203,7 +220,6 @@
                     </div>
                 </div>
 
-                <!-- Form Actions -->
                 <div class="flex items-center justify-between pt-6">
                     <div class="flex space-x-3">
                         <a asp-action="Index" class="px-6 py-3 rounded-lg bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-primary)] font-medium hover:bg-gray-600 transition flex items-center">
@@ -233,113 +249,258 @@
 
 @section Scripts {
 <script>
+    // Placeholder for custom alert
+    function showCustomAlert(message, callback) {
+        console.warn("Placeholder CustomAlert: " + message);
+        // Replace with your actual modal implementation
+        alert(message); 
+        if (callback) callback();
+    }
+
+    // Placeholder for custom confirm
+    function showCustomConfirm(message, onConfirm, onCancel) {
+        console.warn("Placeholder CustomConfirm: " + message);
+        // Replace with your actual modal implementation
+        if (confirm(message)) {
+            if (onConfirm) onConfirm();
+        } else {
+            if (onCancel) onCancel();
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
+        // DOM Element Cache
+        const songEditForm = document.getElementById('songEditForm');
+        const primaryArtistSelect = document.querySelector('select[name="ArtistId"]');
+        const artistCheckboxes = document.querySelectorAll('.artist-checkbox');
+        const primaryArtistIdInput = document.getElementById('PrimaryArtistId');
+        
         const toggle = document.getElementById('optionalFieldsToggle');
         const optionalFields = document.getElementById('optionalFields');
         const toggleLabel = document.getElementById('toggleLabel');
         const resetButton = document.getElementById('resetForm');
+        const coverImageInput = document.getElementById('coverImage');
+        const coverImagePreviewContainer = document.getElementById('coverImagePreviewContainer');
+        const currentCoverImage = document.getElementById('currentCoverImage'); // Existing server-rendered image
 
-        // Optional fields toggle functionality
-        toggle.addEventListener('change', function() {
-            if (this.checked) {
-                optionalFields.classList.remove('hidden');
-                optionalFields.classList.add('animate-fadeIn');
-                toggleLabel.textContent = 'Hide Advanced Options';
-            } else {
-                optionalFields.classList.add('hidden');
-                optionalFields.classList.remove('animate-fadeIn');
-                toggleLabel.textContent = 'Show Advanced Options';
+        // --- Artist Selection Logic ---
+        function updateArtistLabels() {
+            const primaryArtistId = primaryArtistSelect ? primaryArtistSelect.value : null;
+            artistCheckboxes.forEach(checkbox => {
+                const label = checkbox.nextElementSibling;
+                if (label) {
+                    let artistName = label.textContent.replace(/\s*\(Primary\)/i, '').trim(); // More robust removal of (Primary)
+                    if (checkbox.value === primaryArtistId && primaryArtistId) {
+                        label.innerHTML = `${artistName} <span class="text-[var(--ytm-accent-red)] ml-1">(Primary)</span>`;
+                    } else {
+                        label.textContent = artistName;
+                    }
+                }
+            });
+            if (primaryArtistIdInput && primaryArtistId) {
+                 primaryArtistIdInput.value = primaryArtistId;
+            } else if (primaryArtistIdInput) {
+                 primaryArtistIdInput.value = ""; // Clear if no primary artist selected
             }
-        });
+        }
 
-        // Reset form functionality
-        resetButton.addEventListener('click', function() {
-            if (confirm('Are you sure you want to reset all changes? This will revert all fields to their original values.')) {
-                document.getElementById('songEditForm').reset();
-                // Close optional fields if open
-                if (toggle.checked) {
-                    toggle.checked = false;
+        function initializeArtistSelectionState() {
+            const selectedPrimaryId = primaryArtistSelect ? primaryArtistSelect.value : null;
+            artistCheckboxes.forEach(checkbox => {
+                if (checkbox.value === selectedPrimaryId && selectedPrimaryId) {
+                    checkbox.checked = true;
+                    checkbox.disabled = true;
+                } else {
+                    checkbox.disabled = false;
+                }
+            });
+            updateArtistLabels();
+        }
+
+        if (primaryArtistSelect) {
+            primaryArtistSelect.addEventListener('change', function() {
+                const selectedPrimaryId = this.value;
+                artistCheckboxes.forEach(checkbox => {
+                    if (checkbox.value === selectedPrimaryId && selectedPrimaryId) {
+                        checkbox.checked = true;
+                        checkbox.disabled = true;
+                    } else {
+                        checkbox.disabled = false;
+                    }
+                });
+                updateArtistLabels();
+                if (primaryArtistIdInput) primaryArtistIdInput.value = selectedPrimaryId;
+            });
+        }
+
+        artistCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                // If a primary artist is selected and this checkbox matches it, it shouldn't be uncheckable.
+                // This logic is mostly handled by disabling it. If it's somehow enabled and unchecked,
+                // the primary select should ideally clear. For simplicity, we rely on the disabled state.
+                updateArtistLabels(); // Update labels if a non-primary artist is checked/unchecked
+            });
+        });
+        
+        initializeArtistSelectionState(); // Initial setup
+
+        // --- Optional Fields Toggle Functionality ---
+        if (toggle && optionalFields && toggleLabel) {
+            toggle.addEventListener('change', function() {
+                if (this.checked) {
+                    optionalFields.classList.remove('hidden');
+                    requestAnimationFrame(() => { // Ensure display change is processed before animation
+                        optionalFields.classList.add('animate-fadeIn');
+                    });
+                    toggleLabel.textContent = 'Hide Advanced Options';
+                } else {
+                    optionalFields.classList.remove('animate-fadeIn');
                     optionalFields.classList.add('hidden');
                     toggleLabel.textContent = 'Show Advanced Options';
                 }
+            });
+
+            // Auto-expand optional fields if any have values on initial load
+            const optionalInputs = optionalFields.querySelectorAll('input:not([type="file"]), textarea, select');
+            let hasOptionalValues = false;
+            optionalInputs.forEach(input => {
+                if (input.value && input.value.trim() !== '') {
+                    // For select, check if it's not the default "empty" option if applicable
+                    if (input.tagName === 'SELECT') {
+                        if (input.selectedIndex > 0 || (input.selectedIndex === 0 && input.options[0] && input.options[0].value !== "")) {
+                             hasOptionalValues = true;
+                        }
+                    } else {
+                        hasOptionalValues = true;
+                    }
+                }
+            });
+
+            if (hasOptionalValues) {
+                toggle.checked = true;
+                optionalFields.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    optionalFields.classList.add('animate-fadeIn');
+                });
+                toggleLabel.textContent = 'Hide Advanced Options';
             }
-        });
-
-        // Form validation and submission
-        document.getElementById('songEditForm').addEventListener('submit', function(e) {
-            const title = document.querySelector('input[name="Title"]').value.trim();
-            const duration = document.querySelector('input[name="Duration"]').value.trim();
-
-            if (!title) {
-                e.preventDefault();
-                alert('Song title is required.');
-                return false;
-            }
-
-            if (!duration) {
-                e.preventDefault();
-                alert('Song duration is required.');
-                return false;
-            }
-
-            // Show loading state
-            const submitButton = this.querySelector('button[type="submit"]');
-            const originalText = submitButton.innerHTML;
-            submitButton.innerHTML = '<i class="bi bi-hourglass-split mr-2 animate-spin"></i>Saving...';
-            submitButton.disabled = true;
-
-            // Re-enable button after a delay (in case of validation errors)
-            setTimeout(() => {
-                submitButton.innerHTML = originalText;
-                submitButton.disabled = false;
-            }, 3000);
-        });
-
-        // Auto-expand optional fields if any have values
-        const optionalInputs = optionalFields.querySelectorAll('input, textarea, select');
-        let hasOptionalValues = false;
-        
-        optionalInputs.forEach(input => {
-            if (input.type !== 'file' && input.value && input.value.trim() !== '') {
-                hasOptionalValues = true;
-            }
-        });
-
-        if (hasOptionalValues) {
-            toggle.checked = true;
-            optionalFields.classList.remove('hidden');
-            toggleLabel.textContent = 'Hide Advanced Options';
         }
 
-        // File upload preview functionality
-        const coverImageInput = document.getElementById('coverImage');
-        const audioFileInput = document.getElementById('audioFile');
+        // --- Reset Form Functionality ---
+        if (resetButton && songEditForm) {
+            resetButton.addEventListener('click', function() {
+                showCustomConfirm('Are you sure you want to reset all changes? This will revert all fields to their original values.', function() {
+                    songEditForm.reset(); // Resets form field values to their initial state
 
-        if (coverImageInput) {
+                    // Explicitly reset toggle and optional fields visibility
+                    if (toggle) toggle.checked = false;
+                    if (optionalFields) {
+                        optionalFields.classList.remove('animate-fadeIn');
+                        optionalFields.classList.add('hidden');
+                    }
+                    if (toggleLabel) toggleLabel.textContent = 'Show Advanced Options';
+
+                    // Re-initialize artist selection states
+                    initializeArtistSelectionState();
+                    if(primaryArtistIdInput && primaryArtistSelect) primaryArtistIdInput.value = primaryArtistSelect.value;
+
+
+                    // Clear client-side cover image preview
+                    if (coverImagePreviewContainer) {
+                        coverImagePreviewContainer.innerHTML = ''; // Clear any dynamic preview
+                    }
+                     // Show the original server-rendered image if it exists and was hidden
+                    if (currentCoverImage) {
+                        currentCoverImage.style.display = ''; 
+                    }
+
+
+                    // Re-check if optional fields should be auto-expanded after reset (likely not, as values are cleared)
+                    // but if there were default values from server that are not empty, this could be re-evaluated.
+                    // For simplicity, current reset always hides them.
+                });
+            });
+        }
+
+        // --- Form Validation and Submission ---
+        if (songEditForm) {
+            songEditForm.addEventListener('submit', function(e) {
+                const titleInput = songEditForm.querySelector('input[name="Title"]');
+                const durationInput = songEditForm.querySelector('input[name="Duration"]');
+                const title = titleInput ? titleInput.value.trim() : '';
+                const duration = durationInput ? durationInput.value.trim() : '';
+                let isValid = true;
+
+                if (!title) {
+                    isValid = false;
+                    showCustomAlert('Song title is required.');
+                    if (titleInput) titleInput.focus();
+                }
+
+                if (isValid && !duration) {
+                    isValid = false;
+                    showCustomAlert('Song duration is required.');
+                    if (durationInput) durationInput.focus();
+                }
+                
+                if (isValid && primaryArtistSelect && !primaryArtistSelect.value) {
+                    isValid = false;
+                    showCustomAlert('Primary Artist is required.');
+                    primaryArtistSelect.focus();
+                }
+
+                if (!isValid) {
+                    e.preventDefault(); // Stop submission
+                    return;
+                }
+
+                // Show loading state
+                const submitButton = songEditForm.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.dataset.originalText = submitButton.innerHTML; // Store original HTML
+                    submitButton.innerHTML = '<i class="bi bi-hourglass-split mr-2 animate-spin"></i>Saving...';
+                    submitButton.disabled = true;
+                }
+                // Server will handle re-enabling or redirecting.
+            });
+        }
+
+        // --- File Upload Preview Functionality (Cover Image) ---
+        if (coverImageInput && coverImagePreviewContainer) {
             coverImageInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
+                coverImagePreviewContainer.innerHTML = ''; // Clear previous JS preview
+
                 if (file) {
                     const reader = new FileReader();
-                    reader.onload = function(e) {
-                        // Find or create preview image
-                        let preview = document.querySelector('#coverImagePreview');
-                        if (!preview) {
-                            preview = document.createElement('img');
-                            preview.id = 'coverImagePreview';
-                            preview.className = 'w-32 h-32 object-cover rounded-lg shadow-md mt-2';
-                            coverImageInput.parentNode.insertBefore(preview, coverImageInput.nextSibling);
+                    reader.onload = function(event) {
+                        const img = document.createElement('img');
+                        img.id = 'coverImageJsPreview'; // Differentiate from server-rendered
+                        img.src = event.target.result;
+                        img.alt = 'New cover preview';
+                        img.className = 'w-32 h-32 object-cover rounded-lg shadow-md';
+                        coverImagePreviewContainer.appendChild(img);
+                        
+                        // Hide the original server-rendered image if it exists
+                        if (currentCoverImage) {
+                           currentCoverImage.style.display = 'none'; 
                         }
-                        preview.src = e.target.result;
                     };
                     reader.readAsDataURL(file);
+                } else {
+                    // No file selected, show the original server-rendered image if it exists
+                    if (currentCoverImage) {
+                       currentCoverImage.style.display = ''; 
+                    }
                 }
             });
         }
-    });
+    }); // End of DOMContentLoaded
 
-    // Add CSS animations
-    const style = document.createElement('style');
-    style.textContent = `
+    // Add CSS animations (Razor workaround: use .innerHTML for CSS)
+    // It's generally better to put this in a .css file if possible.
+    const styleTag = document.createElement('style');
+    styleTag.innerHTML = `
         .animate-fadeIn {
             animation: fadeIn 0.3s ease-in-out;
         }
@@ -357,10 +518,17 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
-    `;
-    document.head.appendChild(style);
-</script>
-}
 
-@* Include validation scripts *@
+        /* Style for file inputs to match Tailwind form elements better */
+        input[type="file"] {
+            /* Basic styling, can be enhanced */
+        }
+        input[type="file"]::file-selector-button {
+            /* Tailwind-like styling for the button part */
+            /* These are now applied directly in the input tag using 'file:' Tailwind prefix */
+        }
+    `;
+    document.head.appendChild(styleTag);
+</script>
 <partial name="_ValidationScriptsPartial" />
+}

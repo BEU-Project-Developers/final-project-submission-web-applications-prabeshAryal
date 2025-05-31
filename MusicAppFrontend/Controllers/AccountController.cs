@@ -15,19 +15,30 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http; 
+using MusicApp.Models.DTOs; // For UserDto (frontend) and ApiResponse
+using MusicApp.Models; // For MusicApp.Models.User
 
 namespace MusicApp.Controllers
 {
     public class AccountController : BaseAppController
     {
         private readonly ApplicationDbContext _context;
-        private readonly AuthService _authService;
+        private readonly FileUploadService _fileUploadService;
+        private readonly IConfiguration _configuration;
 
-        public AccountController(ApplicationDbContext context, AuthService authService, ApiService apiService, ILogger<AccountController> logger)
-            : base(apiService, logger)
+        public AccountController(
+            ApplicationDbContext context,
+            AuthService authService,
+            ApiService apiService,
+            FileUploadService fileUploadService,
+            IConfiguration configuration,
+            ILogger<AccountController> logger)
+            : base(apiService, authService, logger)
         {
-            _context = context;
-            _authService = authService;
+            _context = context; // Not used in provided snippet, but keeping
+            _fileUploadService = fileUploadService;
+            _configuration = configuration;
         }
 
         [HttpGet]
@@ -56,7 +67,7 @@ namespace MusicApp.Controllers
 
             return await SafeApiAction(async () =>
             {
-                var success = await _authService.LoginAsync(model.Email, model.Password, model.RememberMe);
+                var success = await _authService.LoginAsync(model.UsernameOrEmail, model.Password, model.RememberMe);
 
                 if (success)
                 {
@@ -68,7 +79,7 @@ namespace MusicApp.Controllers
                 }
 
                 // Login failed
-                var errorMessage = "Invalid email or password. Please try again.";
+                var errorMessage = "Invalid username/email or password. Please try again.";
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
                     return Json(new { success = false, message = errorMessage });
@@ -167,208 +178,184 @@ namespace MusicApp.Controllers
         {
             if (!User.Identity.IsAuthenticated)
             {
-                return RedirectToAction("Login", new { returnUrl = Url.Action("Dashboard") });
+                return RedirectToAction("Login", "Account");
             }
 
-            return await SafeApiAction(async () =>
+            var authUserDto = await _authService.GetCurrentUserAsync();
+            if (authUserDto == null)
             {
-                // Try to get user profile from the API
-                var userProfile = await SafeApiCall(
-                    async () => await _apiService.GetAsync<UserDto>("api/Users/profile"),
-                    (UserDto)null,
-                    "Unable to load user profile",
-                    "AccountController.Dashboard - Loading user profile"
-                );
-                
-                // Create and populate ProfileViewModel
-                var profile = new ProfileViewModel();
-                
-                if (userProfile != null)
-                {
-                    // Create a User object from UserDto
-                    profile.User = new User
-                    {
-                        Id = userProfile.Id,
-                        Username = userProfile.Username,
-                        Email = userProfile.Email,
-                        FirstName = userProfile.FirstName, 
-                        LastName = userProfile.LastName,
-                        ProfileImageUrl = userProfile.ProfileImageUrl,
-                        CreatedAt = userProfile.CreatedAt
-                    };
-                    
-                    // Get user statistics (now dynamic!)
-                    var statisticsResponse = await SafeApiCall(
-                        async () => await _apiService.GetAsync<object>("api/Users/statistics"),
-                        (object)null,
-                        "Unable to load user statistics",
-                        "AccountController.Dashboard - Loading user statistics"
-                    );
+                _logger.LogWarning("Dashboard: User is authenticated but GetCurrentUserAsync returned null.");
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                return RedirectToAction("Login", "Account");
+            }
 
-                    if (statisticsResponse != null)
-                    {
-                        // Convert to JsonElement for safe property access
-                        var statsJson = JsonSerializer.Serialize(statisticsResponse);
-                        var statsObj = JsonSerializer.Deserialize<JsonElement>(statsJson);
-                        
-                        // Set listening time
-                        if (statsObj.TryGetProperty("totalListeningTimeMinutes", out JsonElement listeningTime))
-                        {
-                            var minutes = listeningTime.GetInt64();
-                            var hours = minutes / 60;
-                            var remainingMinutes = minutes % 60;
-                            profile.TotalListeningTime = hours > 0 ? $"{hours}h {remainingMinutes}m" : $"{minutes}m";
-                        }
-                        
-                        // Set top genre
-                        if (statsObj.TryGetProperty("topGenre", out JsonElement topGenre))
-                        {
-                            profile.TopGenre = topGenre.GetString() ?? "No data";
-                        }
-                        
-                        // Set favorite artist
-                        if (statsObj.TryGetProperty("favoriteArtist", out JsonElement favoriteArtist))
-                        {
-                            profile.FavoriteArtist = favoriteArtist.GetString() ?? "No data";
-                        }
-                        
-                        // Populate recently played tracks
-                        if (statsObj.TryGetProperty("recentlyPlayed", out JsonElement recentlyPlayedElement) && 
-                            recentlyPlayedElement.ValueKind == JsonValueKind.Array)
-                        {
-                            foreach (var track in recentlyPlayedElement.EnumerateArray())
-                            {
-                                profile.RecentlyPlayedTracks.Add(new ProfileViewModel.RecentlyPlayedTrack
-                                {
-                                    Id = track.GetProperty("id").GetInt32(),
-                                    SongTitle = track.GetProperty("title").GetString() ?? "Unknown",
-                                    ArtistName = track.GetProperty("artist").GetString() ?? "Unknown Artist",
-                                    AlbumName = "Unknown Album", // Not in current response
-                                    Duration = track.TryGetProperty("duration", out var durationProp) && 
-                                              durationProp.ValueKind != JsonValueKind.Null 
-                                              ? TimeSpan.FromTicks(durationProp.GetInt64()).ToString(@"m\:ss") 
-                                              : "--:--",
-                                    CoverImageUrl = "/images/default-cover.png" // Default for now
-                                });
-                            }
-                        }
-                        
-                        // Populate activity feed
-                        if (statsObj.TryGetProperty("recentActivity", out JsonElement activityElement) && 
-                            activityElement.ValueKind == JsonValueKind.Array)
-                        {
-                            foreach (var activity in activityElement.EnumerateArray())
-                            {
-                                profile.ActivityFeedItems.Add(new ProfileViewModel.ActivityFeedItem
-                                {
-                                    Id = activity.GetProperty("id").GetInt32(),
-                                    Type = "song_played",
-                                    Description = $"Played \"{activity.GetProperty("songTitle").GetString()}\" by {activity.GetProperty("artistName").GetString()}",
-                                    Timestamp = DateTime.Parse(activity.GetProperty("timestamp").GetString() ?? DateTime.UtcNow.ToString())
-                                });
-                            }
-                        }
-                    }
-                    
-                    // Get top artists (now dynamic!)
-                    var topArtistsResponse = await SafeApiCall(
-                        async () => await _apiService.GetAsync<object[]>("api/Users/top-artists"),
-                        new object[0],
-                        "Unable to load top artists",
-                        "AccountController.Dashboard - Loading top artists"
-                    );
+            // Map AuthUserDto to MusicApp.Models.User
+            var feUserModel = new MusicApp.Models.User
+            {
+                Id = authUserDto.Id,
+                Username = authUserDto.Username,
+                Email = authUserDto.Email,
+                FirstName = authUserDto.FirstName,
+                LastName = authUserDto.LastName,
+                ProfileImageUrl = authUserDto.ProfileImageUrl,
+                Bio = authUserDto.Bio,
+            };
+            
+            var backendUrl = _configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5117";
+            var model = new ProfileViewModel();
+            model.InitializeFromUser(feUserModel, backendUrl);
 
-                    if (topArtistsResponse != null && topArtistsResponse.Length > 0)
-                    {
-                        foreach (var artist in topArtistsResponse)
-                        {
-                            var artistJson = JsonSerializer.Serialize(artist);
-                            var artistObj = JsonSerializer.Deserialize<JsonElement>(artistJson);
-                            profile.TopArtists.Add(new ProfileViewModel.TopArtist
-                            {
-                                Id = artistObj.GetProperty("id").GetInt32(),
-                                ArtistName = artistObj.GetProperty("name").GetString() ?? "Unknown Artist",
-                                PlayCount = artistObj.GetProperty("playCount").GetInt32(),
-                                ArtistImageUrl = artistObj.TryGetProperty("imageUrl", out JsonElement imageUrl) && 
-                                               imageUrl.ValueKind != JsonValueKind.Null 
-                                               ? imageUrl.GetString()
-                                               : "/images/default-artist.png"
-                            });
-                        }
-                    }
-                }
-                else
-                {
-                    // No user data found, add sample data
-                    profile.AddSampleData();
-                }
-                
-                return View(profile);
-            },
-            () => {
-                // Return a default profile to avoid null reference
-                var profile = new ProfileViewModel();
-                profile.AddSampleData();
-                SetErrorMessage("Unable to load dashboard data. Please try again later.");
-                return View(profile);
-            },
-            "Unable to load dashboard data. Please try again later.",
-            "AccountController.Dashboard");
+            return View(model);
         }
+
 
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> Profile()
         {
-            if (!User.Identity.IsAuthenticated)
+            var authUserDto = await _authService.GetCurrentUserAsync();
+            if (authUserDto == null)
             {
-                return RedirectToAction("Login", new { returnUrl = Url.Action("Profile") });
+                _logger.LogWarning("Profile GET: User not authenticated or could not be fetched.");
+                return Challenge(); 
+            }
+            
+            // Map AuthUserDto to MusicApp.Models.User
+            var feUserModel = new MusicApp.Models.User
+            {
+                Id = authUserDto.Id,
+                Username = authUserDto.Username,
+                Email = authUserDto.Email,
+                FirstName = authUserDto.FirstName,
+                LastName = authUserDto.LastName,
+                ProfileImageUrl = authUserDto.ProfileImageUrl,
+                Bio = authUserDto.Bio
+            };
+
+            var backendUrl = _configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5117";
+            var model = new ProfileViewModel();
+            model.InitializeFromUser(feUserModel, backendUrl);
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Profile(ProfileViewModel model)
+        {
+            var authUserDto = await _authService.GetCurrentUserAsync();
+            if (authUserDto == null)
+            {
+                _logger.LogWarning("Profile POST: Current user not found, though authorized. Challenging.");
+                return Challenge(); 
             }
 
-            return await SafeApiAction(async () =>
+            // Map AuthUserDto to MusicApp.Models.User for re-populating view model if needed
+            var currentUserFeModel = new MusicApp.Models.User
             {
-                // Get user profile from the API
-                var userProfile = await SafeApiCall(
-                    async () => await _apiService.GetAsync<UserDto>("api/Users/profile"),
-                    (UserDto)null,
-                    "Unable to load user profile",
-                    "AccountController.Profile - Loading user profile"
-                );
+                Id = authUserDto.Id,
+                Username = authUserDto.Username,
+                Email = authUserDto.Email,
+                FirstName = authUserDto.FirstName,
+                LastName = authUserDto.LastName,
+                ProfileImageUrl = authUserDto.ProfileImageUrl,
+                Bio = authUserDto.Bio
+            };
+
+            var backendUrl = _configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5117";
+            model.Email = authUserDto.Email; // Email is not editable but good to have in VM
+            // Re-initialize ProfileImageUrl and User for the view model in case of error return
+            var tempViewModelForDisplay = new ProfileViewModel();
+            tempViewModelForDisplay.InitializeFromUser(currentUserFeModel, backendUrl);
+            model.ProfileImageUrl = tempViewModelForDisplay.ProfileImageUrl;
+            model.User = currentUserFeModel; 
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Profile POST: Model state is invalid for user {Username}.", authUserDto.Username);
+                return View(model); // Return with validation errors
+            }
+
+            string? newProfileImageUrl = authUserDto.ProfileImageUrl; // Start with existing image URL
+
+            if (model.ProfileImage != null && model.ProfileImage.Length > 0)
+            {
+                _logger.LogInformation("Profile POST: New profile image uploaded by user {Username}: {FileName}, Size: {Length} bytes.", authUserDto.Username, model.ProfileImage.FileName, model.ProfileImage.Length);
                 
-                // Create and populate ProfileViewModel
-                var profile = new ProfileViewModel();
-                
-                if (userProfile != null)
+                // Assuming UploadProfileImageAsync returns string? (path on success, error message or null on failure)
+                // Based on compiler errors: CS1061 'string' does not contain 'Success', 'FilePath', 'ErrorMessage'
+                string? uploadedFilePathOrError = await _fileUploadService.UploadProfileImageAsync(model.ProfileImage);
+
+                if (!string.IsNullOrEmpty(uploadedFilePathOrError) && 
+                    !uploadedFilePathOrError.StartsWith("Error:", StringComparison.OrdinalIgnoreCase) && 
+                    !uploadedFilePathOrError.StartsWith("Failed:", StringComparison.OrdinalIgnoreCase)) // Common error prefixes
                 {
-                    // Create a User object from UserDto
-                    profile.User = new User
-                    {
-                        Id = userProfile.Id,
-                        Username = userProfile.Username,
-                        Email = userProfile.Email,
-                        FirstName = userProfile.FirstName, 
-                        LastName = userProfile.LastName,
-                        ProfileImageUrl = userProfile.ProfileImageUrl,
-                        CreatedAt = userProfile.CreatedAt
-                    };
+                    newProfileImageUrl = uploadedFilePathOrError; // This should be the relative path like /uploads/image.jpg
+                    _logger.LogInformation("Profile POST: Profile image for user {Username} uploaded successfully. New path: {FilePath}", authUserDto.Username, newProfileImageUrl);
                 }
                 else
                 {
-                    // No user data found, add sample data
-                    profile.AddSampleData();
+                    string errorMessage = "Image upload failed. Please try another image.";
+                    if (!string.IsNullOrEmpty(uploadedFilePathOrError)) {
+                        // Attempt to extract a cleaner error message if prefixed
+                        if (uploadedFilePathOrError.StartsWith("Error:", StringComparison.OrdinalIgnoreCase)) errorMessage = uploadedFilePathOrError.Substring(6).Trim();
+                        else if (uploadedFilePathOrError.StartsWith("Failed:", StringComparison.OrdinalIgnoreCase)) errorMessage = uploadedFilePathOrError.Substring(7).Trim();
+                        else errorMessage = uploadedFilePathOrError; // Use as is if no known prefix
+                    }
+                    _logger.LogError("Profile POST: Profile image upload failed for user {Username}. Details: {ErrorMessage}", authUserDto.Username, uploadedFilePathOrError ?? "Unknown error from FileUploadService.");
+                    ModelState.AddModelError("ProfileImage", errorMessage);
+                    return View(model);
                 }
-                
-                return View(profile);
-            },
-            () => {
-                // Return a default profile to avoid null reference
-                var profile = new ProfileViewModel();
-                profile.AddSampleData();
-                SetErrorMessage("Unable to load profile data. Please try again later.");
-                return View(profile);
-            },
-            "Unable to load profile data. Please try again later.",
-            "AccountController.Profile");
+            }
+
+            string firstName = authUserDto.FirstName ?? ""; 
+            string lastName = authUserDto.LastName ?? "";   
+
+            if (!string.IsNullOrWhiteSpace(model.FullName)) {
+                var nameParts = model.FullName.Trim().Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                firstName = nameParts.Length > 0 ? nameParts[0] : "";
+                lastName = nameParts.Length > 1 ? nameParts[1] : "";
+            }
+            
+            var updateUserPayload = new 
+            {
+                FirstName = firstName,
+                LastName = lastName,
+                Username = model.Username, 
+                Bio = model.Bio,
+                ProfileImageUrl = newProfileImageUrl 
+            };
+
+            _logger.LogInformation("Profile POST: Attempting to update profile for user ID {UserId} ({Username})", authUserDto.Id, authUserDto.Username);
+
+            try
+            {
+                var apiResponse = await _apiService.PutAsync<ApiResponse<UserDto>>($"users/{authUserDto.Id}", updateUserPayload);
+
+                if (apiResponse != null && apiResponse.Success && apiResponse.Data != null) 
+                {
+                    _logger.LogInformation("Profile POST: Profile updated successfully via API for user ID {UserId} ({Username}).", authUserDto.Id, authUserDto.Username);
+                    
+                    // Call the new method in AuthService to update claims
+                    await _authService.UpdateUserClaimsAsync(apiResponse.Data);
+                    
+                    TempData["SuccessMessage"] = "Profile updated successfully!";
+                    return RedirectToAction("Dashboard");
+                }
+                else
+                {
+                    _logger.LogError("Profile POST: API call to update profile failed for user ID {UserId} ({Username}). API Message: {ApiMessage}", authUserDto.Id, authUserDto.Username, apiResponse?.Message ?? "No message from API.");
+                    ModelState.AddModelError(string.Empty, apiResponse?.Message ?? "Failed to update profile. Please try again.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Profile POST: Exception during profile update for user ID {UserId} ({Username}).", authUserDto.Id, authUserDto.Username);
+                ModelState.AddModelError(string.Empty, "An unexpected error occurred while updating your profile. Please try again later.");
+            }
+
+            return View(model);
         }
 
         [HttpGet]

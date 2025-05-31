@@ -85,7 +85,7 @@ namespace MusicApp.Controllers
             return View();
         }        [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Title,ArtistId,AlbumId,Duration,TrackNumber,Genre,ReleaseDate")] SongCreateViewModel model)
+        public async Task<IActionResult> Create([Bind("Title,ArtistId,AlbumId,Duration,TrackNumber,Genre,ReleaseDate")] SongCreateViewModel model, int[] ArtistIds)
         {            if (!ModelState.IsValid)
             {
                 var artists = await SafeApiCall(
@@ -103,14 +103,35 @@ namespace MusicApp.Controllers
                 ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
                 ViewBag.Albums = albums?.Data ?? new List<AlbumDto>();
                 return View(model);
-            }
-
-            return await SafeApiAction(async () =>
+            }            return await SafeApiAction(async () =>
             {
-                // Map to backend DTO
-                var songCreateDto = new {
+                // Get PrimaryArtistId from the form data
+                int? primaryArtistId = null;
+                if (Request.Form.ContainsKey("PrimaryArtistId") && int.TryParse(Request.Form["PrimaryArtistId"], out var parsedPrimaryId))
+                {
+                    primaryArtistId = parsedPrimaryId;
+                }
+                
+                // Use the ArtistIds from the form submission
+                var artistIds = ArtistIds?.ToList() ?? new List<int>();
+                
+                // Ensure primary artist is included in the list if not already present
+                if (primaryArtistId.HasValue && !artistIds.Contains(primaryArtistId.Value))
+                {
+                    artistIds.Add(primaryArtistId.Value);
+                }
+                
+                // Log received data for debugging
+                _logger.LogInformation("Create song - Received ArtistIds: {ArtistIds}, PrimaryArtistId: {PrimaryArtistId}", 
+                    string.Join(", ", artistIds), primaryArtistId);
+
+                // Map to backend DTO with multiple artists support
+                var songCreateDto = new SongCreateDTO
+                {
                     Title = model.Title,
-                    ArtistId = model.ArtistId,
+                    ArtistId = model.ArtistId, // Keep backward compatibility
+                    ArtistIds = artistIds.Any() ? artistIds : (model.ArtistId.HasValue ? new List<int> { model.ArtistId.Value } : new List<int>()),
+                    PrimaryArtistId = primaryArtistId ?? model.ArtistId,
                     AlbumId = model.AlbumId,
                     Duration = model.Duration,
                     TrackNumber = model.TrackNumber,
@@ -193,10 +214,12 @@ namespace MusicApp.Controllers
             "Unable to load song details. Please try again later.",
             $"SongsController.Edit GET for ID {id}");
         }        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, SongDto model, IFormFile audioFile, IFormFile coverImage)
+        [ValidateAntiForgeryToken]        public async Task<IActionResult> Edit(int id, SongDto model, IFormFile audioFile, IFormFile coverImage, int[] ArtistIds)
         {
             _logger.LogInformation("SongsController.Edit POST action hit with id: {Id} and model.Id: {ModelId}", id, model.Id);
+            
+            // Log received ArtistIds for debugging
+            _logger.LogInformation("Received ArtistIds: {ArtistIds}", string.Join(", ", ArtistIds ?? new int[0]));
             
             if (id != model.Id)
             {
@@ -205,7 +228,7 @@ namespace MusicApp.Controllers
             }
 
             // Remove file validation errors since they're not part of the model
-            var keysToRemove = new[] { "audioFile", "AudioFile", "coverImage", "CoverImage" };
+            var keysToRemove = new[] { "audioFile", "AudioFile", "coverImage", "CoverImage", "ArtistIds" };
             foreach (var key in keysToRemove)
             {
                 if (ModelState.ContainsKey(key))
@@ -245,12 +268,33 @@ namespace MusicApp.Controllers
             }
 
             return await SafeApiAction(async () =>
-            {
-                _logger.LogInformation("SongsController.Edit POST: Attempting to update song with id: {Id}", id);
+            {                _logger.LogInformation("SongsController.Edit POST: Attempting to update song with id: {Id}", id);
+                
+                // Get PrimaryArtistId from the form data
+                int? primaryArtistId = null;
+                if (Request.Form.ContainsKey("PrimaryArtistId") && int.TryParse(Request.Form["PrimaryArtistId"], out var parsedPrimaryId))
+                {
+                    primaryArtistId = parsedPrimaryId;
+                }
+                
+                // Use the ArtistIds from the form submission
+                var artistIds = ArtistIds?.ToList() ?? new List<int>();
+                
+                // Ensure primary artist is included in the list if not already present
+                if (primaryArtistId.HasValue && !artistIds.Contains(primaryArtistId.Value))
+                {
+                    artistIds.Add(primaryArtistId.Value);
+                }
+                
+                _logger.LogInformation("Final ArtistIds for update: {ArtistIds}, PrimaryArtistId: {PrimaryArtistId}", 
+                    string.Join(", ", artistIds), primaryArtistId);
+                
                 var updateDto = new SongUpdateDTO
                 {
                     Title = model.Title,
-                    ArtistId = model.ArtistId,
+                    ArtistId = model.ArtistId, // Keep backward compatibility
+                    ArtistIds = artistIds,
+                    PrimaryArtistId = primaryArtistId ?? model.ArtistId,
                     AlbumId = model.AlbumId,
                     Duration = model.Duration,
                     AudioUrl = model.AudioUrl,

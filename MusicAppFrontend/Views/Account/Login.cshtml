@@ -24,7 +24,29 @@
 
                     <form id="loginForm" method="post" asp-action="Login" asp-controller="Account">
                         <div asp-validation-summary="ModelOnly" class="text-danger d-none"></div>
+<<<<<<< HEAD
                         @Html.Partial("_LoginFormPartial", Model)
+=======
+
+                        <div class="mb-3">
+                            <label asp-for="UsernameOrEmail" class="form-label">Username or Email</label>
+                            <input asp-for="UsernameOrEmail" class="form-control" />
+                            <span asp-validation-for="UsernameOrEmail" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label">Password</label>
+                            <input asp-for="Password" class="form-control" type="password" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="hidden" asp-for="RememberMe" value="false" />
+                            <input asp-for="RememberMe" class="form-check-input" type="checkbox" value="true" />
+                            <label asp-for="RememberMe" class="form-check-label">Remember me</label>
+                        </div>
+
+>>>>>>> main
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">Sign In</button>
                         </div>

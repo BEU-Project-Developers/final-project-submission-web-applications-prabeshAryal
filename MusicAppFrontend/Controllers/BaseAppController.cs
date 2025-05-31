@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using MusicApp.Services;
 using System.Net;
+using System.Security.Claims;
 
 namespace MusicApp.Controllers
 {
@@ -11,11 +13,94 @@ namespace MusicApp.Controllers
     {
         protected readonly ApiService _apiService;
         protected readonly ILogger _logger;
+        protected readonly AuthService _authService;
 
         protected BaseAppController(ApiService apiService, ILogger logger)
         {
             _apiService = apiService;
             _logger = logger;
+        }
+
+        protected BaseAppController(ApiService apiService, AuthService authService, ILogger logger)
+        {
+            _apiService = apiService;
+            _authService = authService;
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// Executes before each action to populate common ViewData including user profile image
+        /// </summary>
+        public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+        {
+            await PopulateUserProfileImageAsync();
+            await base.OnActionExecutionAsync(context, next);
+        }
+
+        /// <summary>
+        /// Populates ViewData["UserProfileImage"] for navigation bar display
+        /// </summary>
+        private async Task PopulateUserProfileImageAsync()
+        {
+            try
+            {
+                // Check if user is authenticated
+                if (User?.Identity?.IsAuthenticated == true)
+                {
+                    // Try to get current user data including profile image
+                    if (_authService != null)
+                    {
+                        var currentUser = await _authService.GetCurrentUserAsync();
+                        if (currentUser != null)
+                        {                            // Set profile image URL or default
+                            ViewData["UserProfileImage"] = !string.IsNullOrEmpty(currentUser.ProfileImageUrl) 
+                                ? currentUser.ProfileImageUrl 
+                                : "/assets/default-profile.png";
+                                
+                            // Also set user display name for navigation
+                            ViewData["UserDisplayName"] = !string.IsNullOrEmpty(currentUser.FirstName) 
+                                ? $"{currentUser.FirstName} {currentUser.LastName}".Trim()
+                                : currentUser.Username;
+                                
+                            _logger?.LogDebug("Profile image populated for user {Username}: {ProfileImage}", 
+                                currentUser.Username, ViewData["UserProfileImage"]);
+                        }                        else
+                        {
+                            // Fallback: user is authenticated but we couldn't get profile data
+                            ViewData["UserProfileImage"] = "/assets/default-profile.png";
+                            ViewData["UserDisplayName"] = User.Identity.Name ?? "User";
+                            
+                            _logger?.LogWarning("Could not retrieve user profile data for authenticated user {UserName}", 
+                                User.Identity.Name);
+                        }
+                    }
+                    else
+                    {
+                        // Fallback: no AuthService available
+                        ViewData["UserProfileImage"] = "/assets/default-profile.png";
+                        ViewData["UserDisplayName"] = User.Identity.Name ?? "User";
+                        
+                        _logger?.LogWarning("AuthService not available in BaseAppController for user {UserName}", 
+                            User.Identity.Name);
+                    }
+                }
+                else
+                {
+                    // User not authenticated - clear any profile data
+                    ViewData["UserProfileImage"] = null;
+                    ViewData["UserDisplayName"] = null;
+                }
+            }
+            catch (Exception ex)
+            {                // If anything fails, use default values to prevent navigation issues
+                ViewData["UserProfileImage"] = User?.Identity?.IsAuthenticated == true 
+                    ? "/assets/default-profile.png" 
+                    : null;
+                ViewData["UserDisplayName"] = User?.Identity?.Name ?? null;
+                
+                _logger?.LogError(ex, "Error populating user profile image for user {UserName}: {ErrorMessage}", 
+                    User?.Identity?.Name, ex.Message);
+            }
         }
 
         /// <summary>

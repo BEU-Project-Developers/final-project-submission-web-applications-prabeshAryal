@@ -32,9 +32,11 @@ namespace MusicAppBackend.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        
-        // Navigation properties
+          // Navigation properties
         public virtual ICollection<Album> Albums { get; set; } = new List<Album>();
+        
+        // New many-to-many relationship
+        public virtual ICollection<SongArtist> SongArtists { get; set; } = new List<SongArtist>();
     }
 
     public class ArtistUpdateDTO

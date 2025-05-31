@@ -10,9 +10,8 @@
     }
 }
 
-<style>
-    .song-container {
-        background-color: #1f1f1f;
+<style>    .song-container {
+        background-color: var(--ytm-bg-secondary, #1f1f1f);
         border-radius: 12px;
         overflow: hidden;
         margin-bottom: 2rem;
@@ -46,13 +45,13 @@
     .song-title {
         font-size: 2.5rem;
         font-weight: 700;
-        color: #ffffff;
+        color: var(--ytm-text-primary, #ffffff);
         margin-bottom: 0.5rem;
     }
 
     .song-artist {
         font-size: 1.3rem;
-        color: #aaaaaa;
+        color: var(--ytm-text-secondary, #aaaaaa);
         margin-bottom: 1rem;
     }
 
@@ -64,7 +63,7 @@
     }
 
     .meta-item {
-        color: #aaaaaa;
+        color: var(--ytm-text-secondary, #aaaaaa);
         font-size: 0.9rem;
         display: flex;
         align-items: center;
@@ -78,11 +77,9 @@
         display: flex;
         gap: 1rem;
         margin-top: auto;
-    }
-
-    .btn-play {
-        background-color: #ff0000;
-        color: #ffffff;
+    }    .btn-play {
+        background-color: var(--ytm-accent-red, #ff0000);
+        color: var(--ytm-text-primary, #ffffff);
         border: none;
         border-radius: 20px;
         padding: 0.5rem 1.5rem;
@@ -98,17 +95,22 @@
 
     .btn-play:hover {
         background-color: #cc0000;
-        color: #ffffff;
-    }
+        color: var(--ytm-text-primary, #ffffff);    }
 
     .btn-action {
-        color: #aaaaaa;
-        border: 1px solid #444444;
+        color: var(--ytm-text-secondary, #aaaaaa);
+        border: 1px solid var(--ytm-border-color, #444444);
         background: transparent;
         border-radius: 20px;
         padding: 0.5rem 1.5rem;
         display: flex;
         align-items: center;
+    }
+    
+    .btn-liked {
+        background-color: var(--ytm-accent-red, #ff0000);
+        color: var(--ytm-text-primary, #ffffff);
+        border: none;
     }
 
     .btn-action i {
@@ -116,18 +118,18 @@
     }
 
     .btn-action:hover {
-        background-color: #333333;
-        color: #ffffff;
+        background-color: var(--ytm-bg-tertiary, #333333);
+        color: var(--ytm-text-primary, #ffffff);
     }
 
     .song-player {
         padding: 1rem 2rem;
-        border-top: 1px solid #444444;
+        border-top: 1px solid var(--ytm-border-color, #444444);
     }
 
     .player-container {
         width: 100%;
-        background-color: #333333;
+        background-color: var(--ytm-bg-tertiary, #333333);
         padding: 1rem;
         border-radius: 8px;
     }
@@ -139,23 +141,23 @@
     }
 
     .section-title {
-        color: #ffffff;
+        color: var(--ytm-text-primary, #ffffff);
         margin-bottom: 1.5rem;
         font-weight: 500;
     }
 
     .related-tracks {
-        background-color: #1f1f1f;
+        background-color: var(--ytm-bg-secondary, #1f1f1f);
         border-radius: 8px;
         overflow: hidden;
-        border: 1px solid #444444;
+        border: 1px solid var(--ytm-border-color, #444444);
     }
 
     .track-item {
         display: flex;
         align-items: center;
         padding: 0.75rem 1rem;
-        border-bottom: 1px solid #444444;
+        border-bottom: 1px solid var(--ytm-border-color, #444444);
         transition: background-color 0.2s ease;
     }
 
@@ -164,7 +166,7 @@
     }
 
     .track-item:hover {
-        background-color: #333333;
+        background-color: var(--ytm-bg-tertiary, #333333);
     }
 
     .track-cover {
@@ -180,18 +182,18 @@
     }
 
     .track-title {
-        color: #ffffff;
+        color: var(--ytm-text-primary, #ffffff);
         font-weight: 500;
         margin-bottom: 0.25rem;
     }
 
     .track-artist {
-        color: #aaaaaa;
+        color: var(--ytm-text-secondary, #aaaaaa);
         font-size: 0.85rem;
     }
 
     .track-duration {
-        color: #aaaaaa;
+        color: var(--ytm-text-secondary, #aaaaaa);
         margin-left: 1rem;
         font-size: 0.9rem;
     }
@@ -209,21 +211,89 @@
             max-width: 300px;
             align-self: center;
         }
-    }
+    }    .ytm-toast {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    z-index: 9999;
+    min-width: 200px;
+    max-width: 80vw;
+    padding: 0.8rem 1.5rem;
+    border-radius: 0.75rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    box-shadow: 0 4px 20px 0 rgba(0,0,0,0.3);
+    opacity: 1;
+    background: var(--ytm-bg-secondary, #222);
+    color: var(--ytm-text-primary, #fff);
+    border: 2px solid var(--ytm-accent-red, #ff0000);
+    transition: opacity 0.4s, top 0.3s;
+    pointer-events: none;
+    text-align: center;
+}
+[data-bs-theme="light"] .ytm-toast {
+    box-shadow: 0 6px 32px 0 rgba(0,0,0,0.15);
+}
+.toast-success { border-color: #16a34a; }
+.toast-error { border-color: #dc2626; }
+.toast-info { border-color: var(--ytm-border-color, #444); }
+
+.ytm-modal {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.55); z-index: 10000; display: flex; align-items: center; justify-content: center;
+}
+[data-bs-theme="light"] .ytm-modal {
+    background: rgba(0,0,0,0.35); /* Lighter overlay for light theme */
+}
+.ytm-modal-content {
+    background: var(--ytm-bg-primary, #181818); color: var(--ytm-text-primary, #fff);
+    border-radius: 1rem; padding: 2.5rem 2rem; max-width: 400px; width: 95vw; box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25);
+}
+.ytm-modal-content h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem; }
+.ytm-modal-content p { color: var(--ytm-text-secondary, #aaa); margin-bottom: 1.5rem; }
+#playlistList { max-height: 300px; overflow-y: auto; margin-bottom: 1.5rem; }
+.ytm-playlist-item {
+    display: flex; align-items: center; padding: 0.75rem; margin-bottom: 0.5rem;
+    border: 1px solid var(--ytm-border-color, #444); border-radius: 8px; cursor: pointer;
+    background: var(--ytm-bg-secondary, #232323); transition: background 0.2s;
+}
+.ytm-playlist-item:hover { background: var(--ytm-bg-tertiary, #333); }
+.ytm-playlist-item img, .ytm-playlist-placeholder { width: 40px; height: 40px; border-radius: 6px; margin-right: 0.75rem; object-fit: cover; display: flex; align-items: center; justify-content: center; background: var(--ytm-bg-tertiary, #333); }
+.ytm-playlist-placeholder { color: var(--ytm-text-secondary, #aaa); font-size: 1.5rem; justify-content: center; align-items: center; }
+.ytm-playlist-name { color: var(--ytm-text-primary, #fff); font-weight: 500; }
+.ytm-playlist-count { color: var(--ytm-text-secondary, #aaa); font-size: 0.9rem; }
+.ytm-modal-actions { display: flex; gap: 1rem; justify-content: flex-end; }
+.ytm-btn-cancel { background: transparent; border: 1px solid var(--ytm-border-color, #444); color: var(--ytm-text-secondary, #aaa); padding: 0.5rem 1.2rem; border-radius: 6px; cursor: pointer; }
+.ytm-btn-cancel:hover { background: var(--ytm-bg-tertiary, #333); color: var(--ytm-text-primary, #fff); }
 </style>
 
-<div class="song-container">
-    <div class="song-header">
+<div class="song-container">    <div class="song-header">
         <img src="@(Model.CoverImageUrl ?? GetRandomImageUrl(300, 300))" alt="@Model.Title cover" class="song-cover"
-            onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Song';">
+            onerror="this.src='https://placehold.co/300x300/var(--ytm-bg-secondary)/var(--ytm-text-secondary)?text=Song';">
         
-        <div class="song-info">
-            <div class="song-title-section">
+        <div class="song-info">            <div class="song-title-section">
                 <div class="song-title">@Model.Title</div>
                 <div class="song-artist">
-                    <a asp-controller="Artists" asp-action="Details" asp-route-id="@Model.ArtistId">
-                        @Model.ArtistName
-                    </a>
+                    @if (Model.Artists != null && Model.Artists.Any())
+                    {
+                        @for (int i = 0; i < Model.Artists.Count; i++)
+                        {
+                            var artist = Model.Artists[i];
+                            <a asp-controller="Artists" asp-action="Details" asp-route-id="@artist.Id" class="hover:text-white">
+                                @artist.Name
+                            </a>@(i < Model.Artists.Count - 1 ? ", " : "")
+                        }
+                    }
+                    else if (!string.IsNullOrEmpty(Model.ArtistName))
+                    {
+                        <a asp-controller="Artists" asp-action="Details" asp-route-id="@Model.ArtistId" class="hover:text-white">
+                            @Model.ArtistName
+                        </a>
+                    }
+                    else
+                    {
+                        <span>Unknown Artist</span>
+                    }
                 </div>
                 
                 <div class="song-meta">
@@ -255,39 +325,28 @@
             </div>
               <div class="song-actions">
                 <button class="btn btn-play" 
-                        data-play-song='@Html.Raw(Json.Serialize(new { 
-                            id = Model.Id, 
-                            title = Model.Title, 
-                            artistName = Model.ArtistName, 
-                            audioUrl = Model.AudioUrl, 
-                            coverImageUrl = Model.CoverImageUrl 
-                        }))'>
+                    data-play-song='@Html.Raw(Json.Serialize(new { 
+                        id = Model.Id, 
+                        title = Model.Title, 
+                        artistName = Model.Artists != null && Model.Artists.Any() ? string.Join(", ", Model.Artists.Select(a => a.Name)) : Model.ArtistName, 
+                        audioUrl = Model.AudioUrl, 
+                        coverImageUrl = Model.CoverImageUrl 
+                    }))'
+                    title="Play">
                     <i class="bi bi-play-fill"></i> Play
-                </button>
-                <button class="btn btn-action" id="likeButton" data-song-id="@Model.Id">
+                </button>                <button class="btn btn-action" id="likeButton" data-song-id="@Model.Id" data-liked="false">
                     <i class="bi bi-heart"></i> Like
                 </button>
-                <button class="btn btn-action" id="addToPlaylistButton" data-song-id="@Model.Id">
+                <button class="btn btn-action" id="addToPlaylistButton" data-song-id="@Model.Id" data-song-title="@Model.Title">
                     <i class="bi bi-plus"></i> Add to Playlist
                 </button>
-                <button class="btn btn-action">
+                <button class="btn btn-action" id="shareButton">
                     <i class="bi bi-share"></i> Share
                 </button>
             </div>
-        </div>
-    </div>
+        </div>    </div>
     
-    @if (!string.IsNullOrEmpty(Model.AudioUrl))
-    {
-        <div class="song-player">
-            <div class="player-container">
-                <audio controls class="audio-player">
-                    <source src="@Model.AudioUrl" type="audio/mpeg">
-                    Your browser does not support the audio element.
-                </audio>
-            </div>
-        </div>
-    }
+    <!-- Remove the song-player audio block, as the main player is used -->
 </div>
 
 <div class="related-section">
@@ -301,13 +360,20 @@
         @if (similarSongs.Any())
         {
             foreach (var song in similarSongs)
-            {
-                <a asp-controller="Songs" asp-action="Details" asp-route-id="@song.Id" class="track-item">
+            {                <a asp-controller="Songs" asp-action="Details" asp-route-id="@song.Id" class="track-item">
                     <img src="@(song.CoverImageUrl ?? GetRandomImageUrl(40, 40))" alt="@song.Title cover" class="track-cover"
-                         onerror="this.src='https://placehold.co/40x40/212121/AAAAAA?text=Song';">
-                    <div class="track-info">
+                         onerror="this.src='https://placehold.co/40x40/var(--ytm-bg-secondary)/var(--ytm-text-secondary)?text=Song';">                    <div class="track-info">
                         <div class="track-title">@song.Title</div>
-                        <div class="track-artist">@song.ArtistName</div>
+                        <div class="track-artist">
+                            @if (song.Artists != null && song.Artists.Any())
+                            {
+                                @string.Join(", ", song.Artists.Select(a => a.Name))
+                            }
+                            else
+                            {
+                                @song.ArtistName
+                            }
+                        </div>
                     </div>
                     <div class="track-duration">@(song.Duration?.ToString(@"m\:ss") ?? "--:--")</div>
                 </a>
@@ -327,61 +393,126 @@
 </div>
 
 @section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const likeButton = document.getElementById('likeButton');
-            if (likeButton) {
-                likeButton.addEventListener('click', function () {
-                    const songId = this.dataset.songId;
-                    fetch(`/api/Songs/${songId}/like`, {
-                        method: 'POST',
-                        headers: {
-                            'RequestVerificationToken': getAntiForgeryToken()
-                        }
-                    })
-                    .then(response => {
-                        if (response.ok) {
-                            alert('Song liked!');
-                            // Optionally update UI to show liked state
-                            likeButton.classList.add('liked');
-                            likeButton.innerHTML = '<i class="bi bi-heart-fill"></i> Liked';
-                        } else {
-                            response.text().then(text => alert('Failed to like song: ' + text));
-                        }
-                    })
-                    .catch(error => alert('Error liking song: ' + error));
-                });
-            }
-
-            const addToPlaylistButton = document.getElementById('addToPlaylistButton');
-            if (addToPlaylistButton) {
-                addToPlaylistButton.addEventListener('click', function() {
-                    const songId = this.dataset.songId;
-                    const playlistId = prompt('Enter Playlist ID to add this song to:');
-                    if (playlistId) {
-                        fetch(`/api/Playlists/${playlistId}/songs`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'RequestVerificationToken': getAntiForgeryToken()
-                            },
-                            body: JSON.stringify({ songId: parseInt(songId) })
-                        })
-                        .then(response => {
-                            if (response.ok) {
-                                alert('Song added to playlist!');
-                            } else {
-                                response.text().then(text => alert('Failed to add song to playlist: ' + text));
-                            }
-                        })
-                        .catch(error => alert('Error adding to playlist: ' + error));
-                    }
-                });
-            }
-        });
-        function getAntiForgeryToken() {
-            const tokenField = document.querySelector('input[name="__RequestVerificationToken"]');
-            return tokenField ? tokenField.value : '';
+<script>
+    // Improved toast function for visibility and theme
+    function showToast(message, type = 'info') {
+        let toast = document.createElement('div');
+        toast.className = `ytm-toast toast-${type}`;
+        toast.innerText = message;
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '0'; }, 2200);
+        setTimeout(() => { toast.remove(); }, 2600);
+    }    document.addEventListener('DOMContentLoaded', function () {
+        // Like button: simple toggle without session storage
+        const likeButton = document.getElementById('likeButton');
+        if (likeButton) {
+            likeButton.addEventListener('click', function() {
+                const isLiked = this.classList.contains('btn-liked');
+                
+                if (isLiked) {
+                    // Unlike the song - return to normal state
+                    this.classList.remove('btn-liked');
+                    this.querySelector('i').classList.replace('bi-heart-fill', 'bi-heart');
+                    showToast('Song unliked', 'info');
+                } else {
+                    // Like the song - change to red style
+                    this.classList.add('btn-liked');
+                    this.querySelector('i').classList.replace('bi-heart', 'bi-heart-fill');
+                    showToast('Song liked!', 'success');
+                }
+            });
         }
-    </script>
+        // Add to Playlist button: open modal using the same approach as Artist/Album views
+        const addToPlaylistButton = document.getElementById('addToPlaylistButton');
+        if (addToPlaylistButton) {
+            addToPlaylistButton.addEventListener('click', function() {
+                const songId = this.dataset.songId;
+                const songTitle = this.dataset.songTitle;
+                // Use the same modal approach as Artist/Album views
+                fetch(`/Playlists/GetUserPlaylists`, {
+                    method: 'GET',
+                    headers: { 'RequestVerificationToken': getAntiForgeryToken() }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const playlists = data.data || [];
+                    if (!playlists.length) {
+                        showToast("You don't have any playlists yet. Create a playlist first!", 'error');
+                        return;
+                    }
+                    // Build modal HTML
+                    const modalHtml = `
+                        <div id="playlistModal" class="ytm-modal">
+                            <div class="ytm-modal-content">
+                                <h3>Add Song to Playlist</h3>
+                                <p>Select a playlist to add <b>${songTitle}</b>:</p>
+                                <div id="playlistList">
+                                    ${playlists.map(playlist => `
+                                        <div class="ytm-playlist-item" data-playlist-id="${playlist.id}">
+                                            ${playlist.coverImageUrl ? `<img src="${playlist.coverImageUrl}" alt="${playlist.name}">` : '<div class="ytm-playlist-placeholder"><i class="bi bi-music-note-list"></i></div>'}
+                                            <div>
+                                                <div class="ytm-playlist-name">${playlist.name}</div>
+                                                <div class="ytm-playlist-count">${playlist.songCount} songs</div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="ytm-modal-actions">
+                                    <button id="cancelPlaylistModal" class="ytm-btn-cancel">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    document.getElementById('cancelPlaylistModal').addEventListener('click', closePlaylistModal);
+                    document.querySelectorAll('.ytm-playlist-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            const playlistId = this.dataset.playlistId;
+                            addSongToPlaylist(songId, playlistId, songTitle);
+                        });
+                    });
+                    document.getElementById('playlistModal').addEventListener('click', function(e) {
+                        if (e.target === this) closePlaylistModal();
+                    });
+                })
+                .catch(() => showToast('Error loading playlists. Please try again.', 'error'));
+            });
+        }
+        // Share button: copy URL to clipboard and show toast
+        const shareButton = document.getElementById('shareButton');
+        if (shareButton) {
+            shareButton.addEventListener('click', function() {
+                navigator.clipboard.writeText(window.location.href)
+                    .then(() => showToast('Song link copied to clipboard!', 'success'))
+                    .catch(() => showToast('Failed to copy link.', 'error'));
+            });
+        }
+    });
+    function closePlaylistModal() {
+        const modal = document.getElementById('playlistModal');
+        if (modal) modal.remove();
+    }    function addSongToPlaylist(songId, playlistId, songTitle) {
+        fetch('/Playlists/AddSongToPlaylistAjax', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': getAntiForgeryToken()
+            },
+            body: JSON.stringify({ playlistId: playlistId, songId: songId })
+        })
+        .then(response => {
+            if (response.ok) {
+                showToast(`'${songTitle}' added to playlist!`, 'success');
+                closePlaylistModal();
+            } else {
+                response.text().then(text => showToast('Failed to add song to playlist: ' + text, 'error'));
+            }
+        })
+        .catch(() => showToast('Error adding to playlist.', 'error'));
+    }
+    function getAntiForgeryToken() {
+        const tokenField = document.querySelector('input[name="__RequestVerificationToken"]');
+        return tokenField ? tokenField.value : '';
+    }
+</script>
 }

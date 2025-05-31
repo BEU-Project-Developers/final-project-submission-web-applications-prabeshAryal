@@ -72,13 +72,13 @@ namespace MusicApp.Services
             }
         }
 
-        public async Task<bool> LoginAsync(string email, string password, bool rememberMe)
+        public async Task<bool> LoginAsync(string usernameOrEmail, string password, bool rememberMe)
         {
             try
             {
                 var response = await _apiService.PostAsync<LoginResponse>(
                     "api/Auth/login", 
-                    new { email, password, rememberMe });
+                    new { usernameOrEmail, password, rememberMe });
                 
                 if (response != null && response.User != null)
                 {
@@ -150,16 +150,31 @@ namespace MusicApp.Services
         {
             try
             {
+                _logger.LogInformation("Attempting to register user: {Username}", model.Username);
+                
+                // Use LoginResponse to parse the backend response that now includes tokens
                 var response = await _apiService.PostAsync<LoginResponse>("api/Auth/register", model);
                 
-                if (response != null && response.User != null)
+                if (response == null)
                 {
+                    _logger.LogWarning("Registration failed: null response received");
+                    return false;
+                }
+                
+                _logger.LogInformation("Registration response received with user: {Username}", 
+                    response.User?.Username ?? "null");
+                
+                // Check if we got tokens and user data back
+                if (response.User != null && !string.IsNullOrEmpty(response.Token))
+                {
+                    _logger.LogInformation("Registration successful with token for: {Username}", response.User.Username);
+                    
                     // Store tokens in local storage for API requests
                     await SetLocalStorageAsync("jwt_token", response.Token);
                     await SetLocalStorageAsync("refresh_token", response.RefreshToken);
                     await SetLocalStorageAsync("user_info", JsonSerializer.Serialize(response.User));
                     
-                    // Also set up cookie authentication for server-side validation
+                    // Set up cookie authentication for server-side validation
                     var user = response.User;
                     var claims = new List<Claim>
                     {
@@ -182,27 +197,44 @@ namespace MusicApp.Services
                     var authProperties = new AuthenticationProperties
                     {
                         IsPersistent = true, // Remember me by default for new registrations
-                        ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7) // Set cookie expiration
+                        ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7), // Set cookie expiration
+                        AllowRefresh = true
                     };
                     
-                    // Sign in using cookie authentication
                     // Make sure we have a valid HttpContext
                     if (_httpContextAccessor.HttpContext != null)
                     {
+                        // Sign in using cookie authentication
                         await _httpContextAccessor.HttpContext.SignInAsync(
                             CookieAuthenticationDefaults.AuthenticationScheme,
                             new ClaimsPrincipal(claimsIdentity),
                             authProperties);
-                              _logger.LogInformation("User registered and authenticated via cookies: {IsAuthenticated}", 
+                            
+                        _logger.LogInformation("User registered and authenticated via cookies: {IsAuthenticated}", 
                             _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated);
                     }
                     else
                     {
-                        _logger.LogWarning("HttpContext is null during registration");
+                        _logger.LogWarning("HttpContext is null during registration - cookie auth skipped");
                     }
                     
                     return true;
                 }
+                else if (response.User != null)
+                {
+                    _logger.LogInformation("Registration successful but without token for: {Username}", 
+                        response.User.Username);
+                    
+                    // This is the fallback case where registration succeeded but auto-login failed
+                    // We still consider registration successful, but user will need to login manually
+                    
+                    // Store just the user info (without tokens)
+                    await SetLocalStorageAsync("user_info", JsonSerializer.Serialize(response.User));
+                    
+                    return true;
+                }
+                
+                _logger.LogWarning("Registration failed: User property not found in response");
                 return false;
             }
             catch (Exception ex)
@@ -363,23 +395,63 @@ namespace MusicApp.Services
             var userId = await GetLocalStorageAsync("userId");
             return userId ?? null;
         }
-    }    public class LoginResponse
+
+        public async Task UpdateUserClaimsAsync(AuthUserDto user)
+        {
+            if (_httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true)
+            {
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim("FirstName", user.FirstName),
+                    new Claim("LastName", user.LastName),
+                    new Claim("ProfileImageUrl", user.ProfileImageUrl ?? string.Empty),
+                    new Claim("Bio", user.Bio ?? string.Empty)
+                };
+
+                if (user.Roles != null)
+                {
+                    foreach (var role in user.Roles)
+                    {
+                        claims.Add(new Claim(ClaimTypes.Role, role));
+                    }
+                }
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7),
+                    AllowRefresh = true
+                };
+
+                await _httpContextAccessor.HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity),
+                    authProperties);
+
+                _logger.LogInformation("Updated user claims for user: {Username}", user.Username);
+            }
+        }    }    public class LoginResponse
     {
-        public string Token { get; set; }
-        public string RefreshToken { get; set; }
-        public AuthUserDto User { get; set; }
+        public string Token { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
+        public AuthUserDto User { get; set; } = new AuthUserDto();
         // Removed Success and Message properties to match backend TokenResponseDTO
     }
 
     public class AuthUserDto
     {
         public int Id { get; set; }
-        public string Username { get; set; }
-        public string Email { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string ProfileImageUrl { get; set; }
-        public List<string> Roles { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string ProfileImageUrl { get; set; } = string.Empty;
+        public string? Bio { get; set; } // Added missing Bio property
+        public List<string> Roles { get; set; } = new List<string>();
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

@@ -28,22 +28,48 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="row">
+                          <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label asp-for="ArtistId" class="form-label">Artist</label>
-                                    <select asp-for="ArtistId" class="form-control">
-                                        <option value="">Select an Artist (Optional)</option>
-                                        @if (ViewBag.Artists != null)
-                                        {
-                                            @foreach (var artist in ViewBag.Artists)
-                                            {
-                                                <option value="@artist.Id">@artist.Name</option>
-                                            }
-                                        }
-                                    </select>
-                                    <span asp-validation-for="ArtistId" class="text-danger"></span>
+                                    <label class="form-label">Artists</label>
+                                    <div id="artist-selection">
+                                        <!-- Primary Artist Selection -->
+                                        <div class="mb-2">
+                                            <label asp-for="ArtistId" class="form-label text-sm">Primary Artist</label>
+                                            <select asp-for="ArtistId" class="form-control">
+                                                <option value="">Select Primary Artist (Optional)</option>
+                                                @if (ViewBag.Artists != null)
+                                                {
+                                                    @foreach (var artist in ViewBag.Artists)
+                                                    {
+                                                        <option value="@artist.Id">@artist.Name</option>
+                                                    }
+                                                }
+                                            </select>
+                                            <span asp-validation-for="ArtistId" class="text-danger"></span>
+                                        </div>
+                                        
+                                        <!-- Multiple Artists Selection -->
+                                        <div class="mb-2">
+                                            <label class="form-label text-sm">Additional Artists</label>
+                                            <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                                @if (ViewBag.Artists != null)
+                                                {
+                                                    @foreach (var artist in ViewBag.Artists)
+                                                    {
+                                                        <div class="form-check">
+                                                            <input class="form-check-input artist-checkbox" type="checkbox" 
+                                                                   name="ArtistIds" value="@artist.Id" id="artist_@artist.Id">
+                                                            <label class="form-check-label text-sm" for="artist_@artist.Id">
+                                                                @artist.Name
+                                                            </label>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                            <small class="text-muted">Select multiple artists if this is a collaboration</small>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -103,4 +129,217 @@
 {
     <div class="alert alert-danger mt-3">@ViewBag.ErrorMessage</div>
 }
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const primaryArtistSelect = document.querySelector('select[name="ArtistId"]');
+    const artistCheckboxes = document.querySelectorAll('.artist-checkbox');
+    const songCreateForm = document.querySelector('form');
+    
+    console.log('Create form initialized with:', {
+        primaryArtistSelect: !!primaryArtistSelect,
+        artistCheckboxes: artistCheckboxes.length,
+        form: !!songCreateForm
+    });
+    
+    // --- Artist Selection Logic ---
+    function updateArtistLabels() {
+        const primaryArtistId = primaryArtistSelect ? primaryArtistSelect.value : null;
+        artistCheckboxes.forEach(checkbox => {
+            const label = checkbox.nextElementSibling;
+            if (label) {
+                let artistName = label.textContent.replace(/\s*\(Primary\)/i, '').trim();
+                if (checkbox.value === primaryArtistId && primaryArtistId) {
+                    label.innerHTML = `${artistName} <span class="text-danger ms-1">(Primary)</span>`;
+                } else {
+                    label.textContent = artistName;
+                }
+            }
+        });
+        updatePrimaryArtistId();
+    }
+      function initializeArtistSelectionState() {
+        const selectedPrimaryId = primaryArtistSelect ? primaryArtistSelect.value : null;
+        artistCheckboxes.forEach(checkbox => {
+            if (checkbox.value === selectedPrimaryId && selectedPrimaryId) {
+                checkbox.checked = true; // Primary artist must be checked
+                // Visually indicate but do NOT disable (so value is submitted)
+                checkbox.classList.add('primary-artist');
+                checkbox.dataset.isPrimary = 'true';
+            } else {
+                checkbox.classList.remove('primary-artist');
+                checkbox.dataset.isPrimary = 'false';
+            }
+        });
+        updateArtistLabels();
+    }
+    // Handle primary artist selection
+    if (primaryArtistSelect) {
+        primaryArtistSelect.addEventListener('change', function() {
+            const selectedPrimaryId = this.value;
+            artistCheckboxes.forEach(checkbox => {
+                if (checkbox.value === selectedPrimaryId && selectedPrimaryId) {
+                    checkbox.checked = true;
+                    checkbox.classList.add('primary-artist');
+                    checkbox.dataset.isPrimary = 'true';
+                } else {
+                    checkbox.classList.remove('primary-artist');
+                    checkbox.dataset.isPrimary = 'false';
+                }
+            });
+            updateArtistLabels();
+        });
+    }
+    // Prevent unchecking primary artist
+    artistCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.dataset.isPrimary === 'true' && !this.checked) {
+                this.checked = true;
+                return;
+            }
+            updateArtistLabels();
+        });
+    });
+    function updatePrimaryArtistId() {
+        const primaryArtistId = primaryArtistSelect ? primaryArtistSelect.value : '';
+        let primaryArtistInput = document.querySelector('input[name="PrimaryArtistId"]');
+        if (!primaryArtistInput) {
+            primaryArtistInput = document.createElement('input');
+            primaryArtistInput.type = 'hidden';
+            primaryArtistInput.name = 'PrimaryArtistId';
+            songCreateForm.appendChild(primaryArtistInput);
+        }
+        primaryArtistInput.value = primaryArtistId;
+    }
+    // On submit, ensure primary artist is always included in ArtistIds
+    if (songCreateForm) {
+        songCreateForm.addEventListener('submit', function(e) {
+            const primaryArtistId = primaryArtistSelect ? primaryArtistSelect.value : null;
+            let foundPrimary = false;
+            artistCheckboxes.forEach(checkbox => {
+                if (checkbox.value === primaryArtistId && primaryArtistId) {
+                    checkbox.checked = true;
+                    foundPrimary = true;
+                }
+            });
+            if (!foundPrimary && primaryArtistId) {
+                // If for some reason the primary artist is not in the checkboxes, add a hidden input
+                let hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'ArtistIds';
+                hidden.value = primaryArtistId;
+                songCreateForm.appendChild(hidden);
+            }
+        });
+    }
+    // Initialize
+    initializeArtistSelectionState();
+      // Debug: Log initial artist states
+    console.log('Initial artist selection states:');
+    artistCheckboxes.forEach(checkbox => {
+        console.log(`Artist ${checkbox.value}: checked=${checkbox.checked}, isPrimary=${checkbox.dataset.isPrimary || 'false'}`);
+    });
+    
+    // --- Form Validation and Submission ---
+    if (songCreateForm) {
+        songCreateForm.addEventListener('submit', function(e) {
+            console.log('=== FORM SUBMISSION DEBUG ===');
+              // Debug: Log all selected artists before submission
+            console.log('Form submission - Artist checkbox states:');
+            const selectedArtists = [];
+            
+            artistCheckboxes.forEach(checkbox => {
+                console.log(`Artist ${checkbox.value}: checked=${checkbox.checked}, isPrimary=${checkbox.dataset.isPrimary}, name=${checkbox.name}`);
+                if (checkbox.checked) {
+                    selectedArtists.push(checkbox.value);
+                }
+            });
+            
+            console.log('Selected artists:', selectedArtists);
+            console.log('Total selected artists:', selectedArtists.length);
+            console.log('Primary artist ID:', primaryArtistSelect ? primaryArtistSelect.value : 'None');
+            
+            // Create fresh FormData and log it
+            const formData = new FormData(songCreateForm);
+            
+            console.log('All form data entries:');
+            const artistIdsInForm = [];
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+                if (key === 'ArtistIds') {
+                    artistIdsInForm.push(value);
+                }
+            }
+            
+            console.log('ArtistIds in form data:', artistIdsInForm);
+            
+            // Double-check by manually querying checkboxes
+            const manuallyChecked = [];
+            const allArtistCheckboxes = songCreateForm.querySelectorAll('input[name="ArtistIds"]:checked');
+            allArtistCheckboxes.forEach(cb => {
+                manuallyChecked.push(cb.value);
+            });
+            console.log('Manually queried checked checkboxes:', manuallyChecked);
+            
+            // Ensure at least one artist is selected
+            if (selectedArtists.length === 0) {
+                console.warn('No artists selected!');
+                alert('Please select at least one artist.');
+                e.preventDefault();
+                return;
+            }
+            
+            // Basic validation
+            const titleInput = songCreateForm.querySelector('input[name="Title"]');
+            const durationInput = songCreateForm.querySelector('input[name="Duration"]');
+            const title = titleInput ? titleInput.value.trim() : '';
+            const duration = durationInput ? durationInput.value.trim() : '';
+            let isValid = true;
+
+            if (!title) {
+                isValid = false;
+                alert('Song title is required.');
+                if (titleInput) titleInput.focus();
+            }
+
+            if (isValid && !duration) {
+                isValid = false;
+                alert('Song duration is required.');
+                if (durationInput) durationInput.focus();
+            }
+
+            if (!isValid) {
+                e.preventDefault();
+                return;
+            }
+
+            // Show loading state
+            const submitButton = songCreateForm.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.dataset.originalText = submitButton.innerHTML;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Creating...';
+                submitButton.disabled = true;
+            }
+        });
+    }
+});
+</script>
+
+<style>
+/* Visually indicate primary artist, but do not disable */
+.artist-checkbox.primary-artist {
+    outline: 2px solid #dc3545;
+    box-shadow: 0 0 0 2px #dc354533;
+    background: #fff0f0;
 }
+.artist-checkbox.primary-artist + label {
+    color: #dc3545;
+    font-weight: bold;
+}
+.artist-checkbox.primary-artist + label:after {
+    content: " (Primary - Cannot be unchecked)";
+    font-size: 0.75em;
+    color: #dc3545;
+    font-weight: normal;
+}
+</style>

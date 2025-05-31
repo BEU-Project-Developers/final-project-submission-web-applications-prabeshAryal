@@ -313,24 +313,39 @@
         <div class="details-section">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="mb-0">Top Songs</h3>
-                <button class="btn btn-play-all">
-                    <i class="bi bi-play-fill me-1"></i> Play All
-                </button>
+                <div>
+                    <button class="btn btn-play-all" onclick="playAllArtistSongs()">
+                        <i class="bi bi-play-fill me-1"></i> Play All
+                    </button>
+                </div>
             </div>
             <ul class="song-list">
                 @if (Model.Songs != null && Model.Songs.Any())
                 {
-                    @for (int i = 0; i < Model.Songs.Count(); i++)
+                    for (int i = 0; i < Model.Songs.Count(); i++)
                     {
                         var song = Model.Songs.ElementAt(i);
                         <li class="song-list-item">
                             <div class="song-info">
                                 <span class="song-index">@(i+1)</span>
-                                <span class="song-title">@song.Title</span>
-                            </div>                            <div class="song-actions">
+                                <div>
+                                    <div class="song-title">@song.Title</div>
+                                    @if (song.Artists != null && song.Artists.Count > 1)
+                                    {
+                                        <small class="text-muted">
+                                            feat. @string.Join(", ", song.Artists.Where(a => a.Id != Model.Id).Select(a => a.Name))
+                                        </small>
+                                    }
+                                </div>
+                            </div>
+                            <div class="song-actions">
                                 <span class="song-duration">@(song.Duration?.ToString(@"m\:ss") ?? "--:--")</span>
-                                <button class="btn" title="Play Song" data-play-song data-song-title="@song.Title" data-artist-name="@Model.Name" data-audio-url="@song.AudioUrl"><i class="bi bi-play-fill"></i></button>
-                                <button class="btn" title="Add to Playlist" data-song-id="@song.Id" onclick="showAddToPlaylistModal(@song.Id, '@song.Title')"><i class="bi bi-plus"></i></button>
+                                <button class="btn play-btn" title="Play Song" onclick="playSingleArtistSong(@i)">
+                                    <i class="bi bi-play-fill"></i>
+                                </button>
+                                <button class="btn" title="Add to Playlist" data-song-id="@song.Id" data-song-title="@song.Title" onclick="showAddToPlaylistModal(@song.Id, '@song.Title')">
+                                    <i class="bi bi-plus"></i>
+                                </button>
                             </div>
                         </li>
                     }
@@ -362,9 +377,16 @@
                                 <div class="album-info">
                                     <div class="album-title" title="@album.Title">@album.Title</div>
                                     <div class="album-details">@(album.ReleaseDate?.Year.ToString() ?? "Unknown")</div>
-                                </div>
-                                <div class="album-actions">
-                                    <button class="btn btn-play" data-play-album='@Html.Raw(Json.Serialize(Model.Songs.Select(s => new { id = s.Id, title = s.Title, artistName = s.ArtistName ?? Model.Name, audioUrl = s.AudioUrl, coverImageUrl = s.CoverImageUrl })))' title="Play all songs from this album">
+                                </div>                                <div class="album-actions">
+                                    <button class="btn btn-play" 
+                                            data-play-album='@Html.Raw(Json.Serialize(Model.Songs.Select(s => new { 
+                                                id = s.Id, 
+                                                title = s.Title, 
+                                                artistName = s.Artists != null && s.Artists.Any() ? string.Join(", ", s.Artists.Select(a => a.Name)) : s.ArtistName ?? Model.Name, 
+                                                audioUrl = !string.IsNullOrEmpty(s.AudioUrl) ? $"/api/Files/audio/{System.IO.Path.GetFileName(s.AudioUrl)}" : "", 
+                                                coverImageUrl = s.CoverImageUrl 
+                                            })))' 
+                                            title="Play all songs from this album">
                                         <i class="bi bi-play-fill"></i> Play All
                                     </button>
                                     <button class="btn btn-action" id="artistFollowButton" data-artist-id="@Model.Id">
@@ -388,27 +410,123 @@
 
 @section Scripts {
     <script>
-        function showAddToPlaylistModal(songId, songTitle) {
-            // Simple prompt for playlist ID (replace with modal for production)
-            const playlistId = prompt(`Add '${songTitle}' to which Playlist? Enter Playlist ID:`);
-            if (playlistId) {
-                fetch(`/api/Playlists/${playlistId}/songs`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': getAntiForgeryToken()
-                    },
-                    body: JSON.stringify({ songId: songId })
-                })
-                .then(response => {
-                    if (response.ok) {
-                        alert('Song added to playlist!');
-                    } else {
-                        response.text().then(text => alert('Failed to add song to playlist: ' + text));
-                    }
-                })
-                .catch(error => alert('Error adding to playlist: ' + error));
+        // Helper: get all songs as JS array
+        const artistSongs = @Html.Raw(Json.Serialize(Model.Songs.Select(s => new {
+            id = s.Id,
+            title = s.Title,
+            artistName = s.Artists != null && s.Artists.Any() ? string.Join(", ", s.Artists.Select(a => a.Name)) : Model.Name,
+            albumName = s.AlbumTitle ?? "",
+            audioUrl = !string.IsNullOrEmpty(s.AudioUrl) ? s.AudioUrl : "",
+            coverImageUrl = s.CoverImageUrl,
+            duration = s.Duration != null ? s.Duration.ToString() : "--:--"
+        })));
+        function playAllArtistSongs() {
+            if (!window.musicPlayer || typeof window.musicPlayer.playSong !== 'function') {
+                alert('Music player not available');
+                return;
             }
+            if (artistSongs.length > 0) {
+                window.musicPlayer.playSong(artistSongs[0], artistSongs, 0);
+            } else {
+                alert('No songs found for this artist.');
+            }
+        }
+        function playSingleArtistSong(index) {
+            if (!window.musicPlayer || typeof window.musicPlayer.playSong !== 'function') {
+                alert('Music player not available');
+                return;
+            }
+            if (artistSongs.length > index) {
+                window.musicPlayer.playSong(artistSongs[index], artistSongs, index);
+            } else {
+                alert('Song not found.');
+            }
+        }
+        function showAddToPlaylistModal(songId, songTitle) {
+            fetch('/Playlists/GetUserPlaylists', {
+                method: 'GET',
+                headers: {
+                    'RequestVerificationToken': getAntiForgeryToken()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const playlists = data.data || [];
+                if (playlists.length === 0) {
+                    alert('You don\'t have any playlists yet. Create a playlist first!');
+                    return;
+                }
+                const modalHtml = `
+                    <div id="playlistModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+                        <div style="background: var(--ytm-bg-primary); border-radius: 8px; padding: 2rem; max-width: 400px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                            <h3 style="color: var(--ytm-text-primary); margin-bottom: 1rem;">Add Song to Playlist</h3>
+                            <p style="color: var(--ytm-text-secondary); margin-bottom: 1.5rem;">Select a playlist to add <b>${songTitle}</b>:</p>
+                            <div id="playlistList" style="max-height: 300px; overflow-y: auto; margin-bottom: 1.5rem;">
+                                ${playlists.map(playlist => `
+                                    <div class="playlist-item" data-playlist-id="${playlist.id}" style="
+                                        display: flex; align-items: center; padding: 0.75rem; margin-bottom: 0.5rem; 
+                                        border: 1px solid var(--ytm-border-color); border-radius: 4px; cursor: pointer;
+                                        background: var(--ytm-bg-secondary); transition: background-color 0.2s;
+                                    " onmouseover="this.style.backgroundColor='var(--ytm-bg-tertiary)'" onmouseout="this.style.backgroundColor='var(--ytm-bg-secondary)'">
+                                        ${playlist.coverImageUrl ? `<img src="${playlist.coverImageUrl}" alt="${playlist.name}" style="width: 40px; height: 40px; border-radius: 4px; margin-right: 0.75rem;">` : '<div style="width: 40px; height: 40px; background: var(--ytm-bg-tertiary); border-radius: 4px; margin-right: 0.75rem; display: flex; align-items: center; justify-content: center;"><i class="bi bi-music-note-list" style="color: var(--ytm-text-secondary);"></i></div>'}
+                                        <div>
+                                            <div style="color: var(--ytm-text-primary); font-weight: 500;">${playlist.name}</div>
+                                            <div style="color: var(--ytm-text-secondary); font-size: 0.9rem;">${playlist.songCount} songs</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                                <button id="cancelPlaylistModal" style="
+                                    background: transparent; border: 1px solid var(--ytm-border-color); color: var(--ytm-text-secondary); 
+                                    padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                document.getElementById('cancelPlaylistModal').addEventListener('click', closePlaylistModal);
+                document.querySelectorAll('.playlist-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const playlistId = this.dataset.playlistId;
+                        addSongToPlaylist(songId, playlistId, songTitle);
+                    });
+                });
+                document.getElementById('playlistModal').addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closePlaylistModal();
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching playlists:', error);
+                alert('Error loading playlists. Please try again.');
+            });
+        }
+        function closePlaylistModal() {
+            const modal = document.getElementById('playlistModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        function addSongToPlaylist(songId, playlistId, songTitle) {
+            fetch('/Playlists/AddSongToPlaylistAjax', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getAntiForgeryToken()
+                },
+                body: JSON.stringify({ playlistId: playlistId, songId: songId })
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert(`'${songTitle}' added to playlist!`);
+                    closePlaylistModal();
+                } else {
+                    response.text().then(text => alert('Failed to add song to playlist: ' + text));
+                }
+            })
+            .catch(error => alert('Error adding to playlist: ' + error));
         }
         document.addEventListener('DOMContentLoaded', function () {
             const artistFollowButton = document.getElementById('artistFollowButton');

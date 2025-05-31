@@ -11,8 +11,7 @@ namespace MusicAppBackend.Models
         [Required]
         [StringLength(100)]
         public string Title { get; set; } = string.Empty;
-        
-        public int? ArtistId { get; set; }
+          public int? ArtistId { get; set; } // Keep for backward compatibility
         
         public int? AlbumId { get; set; }
         
@@ -36,7 +35,7 @@ namespace MusicAppBackend.Models
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         
         // Navigation properties
-        public virtual Artist? Artist { get; set; }
+        public virtual Artist? Artist { get; set; } // Keep for backward compatibility
         
         public virtual Album? Album { get; set; }
         
@@ -45,5 +44,8 @@ namespace MusicAppBackend.Models
         public virtual ICollection<PlaylistSong> PlaylistSongs { get; set; } = new List<PlaylistSong>();
         
         public virtual ICollection<UserFavorite> UserFavorites { get; set; } = new List<UserFavorite>();
+
+        // New many-to-many relationship
+        public virtual ICollection<SongArtist> SongArtists { get; set; } = new List<SongArtist>();
     }
 } 

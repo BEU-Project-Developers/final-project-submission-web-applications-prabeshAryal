@@ -28,6 +28,9 @@ namespace MusicApp.Models
 
         public string? ProfileImageUrl { get; set; }
 
+        [MaxLength(1000)]
+        public string Bio { get; set; } = string.Empty;
+
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public DateTime? LastLoginAt { get; set; }

@@ -8,7 +8,11 @@ namespace MusicApp.ViewModels
         [StringLength(100)]
         public string Title { get; set; } = string.Empty;
         
-        public int? ArtistId { get; set; }
+        public int? ArtistId { get; set; } // Keep for backward compatibility
+        
+        public List<int>? ArtistIds { get; set; } // New field for multiple artists
+        
+        public int? PrimaryArtistId { get; set; } // To designate primary artist
         
         public int? AlbumId { get; set; }
         

@@ -6,7 +6,11 @@ namespace MusicApp.ViewModels
     {
         [Required(ErrorMessage = "Username or Email is required")]
         [Display(Name = "Username or Email")]
+<<<<<<< HEAD
         public string Identifier { get; set; }
+=======
+        public string UsernameOrEmail { get; set; }
+>>>>>>> main
 
         [Required(ErrorMessage = "Password is required")]
         [DataType(DataType.Password)]

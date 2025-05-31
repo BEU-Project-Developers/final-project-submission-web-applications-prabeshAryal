@@ -36,16 +36,36 @@ namespace MusicAppBackend.Controllers
                 return BadRequest(new { message = result.Message });
             }
 
-            _logger.LogInformation("User successfully registered with email: {Email}", register.Email);
-            return Ok(new { message = result.Message, user = result.User });
+            // Generate token for the newly registered user
+            var loginResult = await _authService.LoginAsync(new LoginDTO 
+            { 
+                UsernameOrEmail = register.Email, 
+                Password = register.Password 
+            });
+
+            if (!loginResult.Success)
+            {
+                _logger.LogWarning("Auto-login after registration failed for email: {Email}", register.Email);
+                // Still return success for registration but without token
+                return Ok(new { message = result.Message, user = result.User });
+            }
+
+            _logger.LogInformation("User successfully registered with email: {Email} and auto-logged in", register.Email);
+            return Ok(new TokenResponseDTO
+            {
+                Token = loginResult.Token!,
+                RefreshToken = loginResult.RefreshToken!,
+                User = loginResult.User!,
+                Message = result.Message // Add the registration success message
+            });
         }        [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO login)
         {
-            _logger.LogInformation("Login attempt for email: {Email}", login.Email);
+            _logger.LogInformation("Login attempt for: {UsernameOrEmail}", login.UsernameOrEmail);
             
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Login failed due to invalid model state for email: {Email}", login.Email);
+                _logger.LogWarning("Login failed due to invalid model state for: {UsernameOrEmail}", login.UsernameOrEmail);
                 return BadRequest(ModelState);
             }
 
@@ -53,11 +73,11 @@ namespace MusicAppBackend.Controllers
 
             if (!result.Success)
             {
-                _logger.LogWarning("Login failed for email: {Email}. Reason: {Message}", login.Email, result.Message);
+                _logger.LogWarning("Login failed for: {UsernameOrEmail}. Reason: {Message}", login.UsernameOrEmail, result.Message);
                 return Unauthorized(new { message = result.Message });
             }
 
-            _logger.LogInformation("User successfully logged in with email: {Email}", login.Email);
+            _logger.LogInformation("User successfully logged in with: {UsernameOrEmail}", login.UsernameOrEmail);
             return Ok(new TokenResponseDTO
             {
                 Token = result.Token!,
@@ -113,4 +133,4 @@ namespace MusicAppBackend.Controllers
             return Ok(new { message = "Token revoked successfully" });
         }
     }
-} 
+}

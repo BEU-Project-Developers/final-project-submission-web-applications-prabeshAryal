@@ -397,7 +397,22 @@
                     <form id="loginForm" class="auth-form d-none">
                         <input type="hidden" name="ReturnUrl" value="@ViewBag.ReturnUrl" />
                         <div id="loginFormAlert" class="alert alert-danger d-none" role="alert"></div>
+<<<<<<< HEAD
                         @await Html.PartialAsync("~/Views/Account/_LoginFormPartial.cshtml", new MusicApp.ViewModels.LoginViewModel())
+=======
+                        <div class="mb-3">
+                            <label for="loginUsernameOrEmail" class="form-label">Username or Email</label>
+                            <input type="text" class="form-control" id="loginUsernameOrEmail" name="UsernameOrEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="loginPassword" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="loginPassword" name="Password" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="loginRememberMe" name="RememberMe">
+                            <label class="form-check-label" for="loginRememberMe">Remember me</label>
+                        </div>
+>>>>>>> main
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary" id="loginSubmitBtn">Sign In</button>
                             <button class="btn btn-primary d-none" type="button" id="loginLoadingBtn" disabled>
@@ -644,6 +659,7 @@
                 loginLoadingBtn.classList.add('d-none');
             }
             
+<<<<<<< HEAD
             const formData = new FormData(this);
             
             try {
@@ -652,6 +668,54 @@
                     body: formData,
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
+=======
+            // Helper function to show auth errors in the common alert area
+            function showAuthError(message) {
+                authAlert.textContent = message;
+                authAlert.classList.remove('d-none');
+            }
+
+            // Handle login form submission
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault(); // Call this first to stop default form submission
+                authAlert.classList.add('d-none'); // Hide the common alert
+                
+                // Show loading button and hide submit button
+                const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+                const loginLoadingBtn = document.getElementById('loginLoadingBtn');
+                const loginFormAlert = document.getElementById('loginFormAlert');
+                
+                loginSubmitBtn.classList.add('d-none');
+                loginLoadingBtn.classList.remove('d-none');
+                loginFormAlert.classList.add('d-none');
+                
+                const formData = new FormData(this);
+                
+                try {
+                    const response = await fetch('@Url.Action("Login", "Account")', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    console.log('Login response status:', response.status);
+                    console.log('Login response headers:', [...response.headers.entries()]);
+
+                    // Get the response content as text first
+                    const responseText = await response.text();
+                    console.log('Login response text:', responseText);
+                    
+                    // Try to parse as JSON if possible
+                    let data;
+                    try {
+                        data = responseText ? JSON.parse(responseText) : { success: false, message: 'Empty response from server' };
+                        console.log('Parsed JSON data:', data);
+                    } catch (jsonError) {
+                        console.error('Error parsing response JSON:', jsonError, 'Response text:', responseText);
+                        data = { success: false, message: 'Error processing server response' };
+>>>>>>> main
                     }
                 });
                 
@@ -732,10 +796,78 @@
                 
                 let data;
                 try {
+<<<<<<< HEAD
                     data = responseText ? JSON.parse(responseText) : { success: false, message: 'Empty response from server' };
                 } catch (jsonError) {
                     console.error('Error parsing register response JSON:', jsonError);
                     data = { success: false, message: 'Error processing server response' };
+=======
+                    const response = await fetch('@Url.Action("Register", "Account")', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    console.log('Register response status:', response.status);
+                    console.log('Register response headers:', [...response.headers.entries()]);
+
+                    // Get the response content as text first
+                    const responseText = await response.text();
+                    console.log('Register response text:', responseText);
+                    
+                    // Try to parse as JSON if possible
+                    let data;
+                    try {
+                        data = responseText ? JSON.parse(responseText) : { success: false, message: 'Empty response from server' };
+                        console.log('Parsed JSON data:', data);
+                    } catch (jsonError) {
+                        console.error('Error parsing response JSON:', jsonError, 'Response text:', responseText);
+                        data = { success: false, message: 'Error processing server response' };
+                    }
+
+                    // Handle the response
+                    console.log('Processing registration response:', { ok: response.ok, data });
+
+                    // Add strict check for success property or check for user object
+                    if (response.ok && ((data && data.success === true) || (data && data.user))) {
+                        console.log('Registration successful, reloading page');
+                        // Delay the reload slightly to allow any response processing to complete
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 100);
+                    } else {
+                        // Show error message
+                        let errorMsg = 'Registration failed. ';
+                        
+                        if (data && data.message) {
+                            errorMsg += data.message;
+                        } else if (!response.ok) {
+                            errorMsg += `Server returned ${response.status} ${response.statusText}`;
+                        } else {
+                            errorMsg += 'Please try again.';
+                        }
+                        
+                        console.log('Showing error message:', errorMsg);
+                        registerFormAlert.textContent = errorMsg;
+                        registerFormAlert.classList.remove('d-none');
+                        
+                        // Reset buttons
+                        registerSubmitBtn.classList.remove('d-none');
+                        registerLoadingBtn.classList.add('d-none');
+                    }
+                } catch (error) {
+                    console.error('Registration request error:', error);
+                    
+                    // Show error message
+                    registerFormAlert.textContent = 'An error occurred. Please try again.';
+                    registerFormAlert.classList.remove('d-none');
+                    
+                    // Reset buttons
+                    registerSubmitBtn.classList.remove('d-none');
+                    registerLoadingBtn.classList.add('d-none');
+>>>>>>> main
                 }
                 
                 if (response.ok && data && data.success) {
