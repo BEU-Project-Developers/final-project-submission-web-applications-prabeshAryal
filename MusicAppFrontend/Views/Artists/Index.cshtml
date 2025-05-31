@@ -150,9 +150,19 @@ else
                                      onerror="this.src='https://placehold.co/300x300/374151/9CA3AF?text=Artist';" />
                                   <!-- Play button overlay -->
                                 <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center">
-                                    <button class="w-12 h-12 bg-[var(--ytm-accent-red)] rounded-full flex items-center justify-center hover:bg-[var(--ytm-accent-red-hover)] transition-colors"
-                                            onclick="event.stopPropagation(); window.location.href='@Url.Action("Details", new { id = artist.Id })'">
+                                    <button class="w-12 h-12 bg-[var(--ytm-accent-red)] rounded-full flex items-center justify-center hover:bg-[var(--ytm-accent-red-hover)] transition-colors play-artist-btn"
+                                            data-artist-id="@artist.Id"
+                                            data-artist-name="@artist.Name"
+                                            title="Play all songs by @artist.Name"
+                                            onclick="event.stopPropagation(); playArtistSongs(@artist.Id, '@artist.Name')">
                                         <i class="fas fa-play text-white ml-1"></i>
+                                    </button>
+                                    <button class="w-12 h-12 bg-[var(--ytm-accent-red)] rounded-full flex items-center justify-center hover:bg-[var(--ytm-accent-red-hover)] transition-colors add-to-playlist-btn ml-2"
+                                            data-artist-id="@artist.Id"
+                                            data-artist-name="@artist.Name"
+                                            title="Add all songs by @artist.Name to playlist"
+                                            onclick="event.stopPropagation(); showAddArtistSongsToPlaylistModal(@artist.Id, '@artist.Name')">
+                                        <i class="bi bi-plus text-white ml-1"></i>
                                     </button>
                                 </div>
                             </div>
@@ -200,4 +210,115 @@ else
             }
         </div>
     </div>
+}
+
+@section Scripts {
+<script>
+    async function playArtistSongs(artistId, artistName) {
+        try {
+            const response = await fetch(`/api/Artists/${artistId}/songs`);
+            if (!response.ok) throw new Error('Could not fetch songs for artist');
+            const songs = await response.json();
+            if (!window.musicPlayer || typeof window.musicPlayer.playSong !== 'function') {
+                alert('Music player not available');
+                return;
+            }
+            if (songs.length > 0) {
+                window.musicPlayer.playSong(songs[0], songs, 0);
+            } else {
+                alert('No songs found for this artist.');
+            }
+        } catch (err) {
+            alert('Error playing artist songs: ' + err.message);
+        }
+    }
+    function showAddArtistSongsToPlaylistModal(artistId, artistName) {
+        fetch(`/api/Artists/${artistId}/songs`)
+            .then(response => response.json())
+            .then(songs => {
+                if (!songs.length) {
+                    alert('No songs found for this artist.');
+                    return;
+                }
+                fetch('/Playlists/GetUserPlaylists', {
+                    method: 'GET',
+                    headers: { 'RequestVerificationToken': getAntiForgeryToken() }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const playlists = data.data || [];
+                    if (!playlists.length) {
+                        alert('You don\'t have any playlists yet. Create a playlist first!');
+                        return;
+                    }
+                    const modalHtml = `
+                        <div id="playlistModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+                            <div style="background: var(--ytm-bg-primary); border-radius: 8px; padding: 2rem; max-width: 400px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                                <h3 style="color: var(--ytm-text-primary); margin-bottom: 1rem;">Add All Songs by ${artistName} to Playlist</h3>
+                                <div id="playlistList" style="max-height: 300px; overflow-y: auto; margin-bottom: 1.5rem;">
+                                    ${playlists.map(playlist => `
+                                        <div class="playlist-item" data-playlist-id="${playlist.id}" style="display: flex; align-items: center; padding: 0.75rem; margin-bottom: 0.5rem; border: 1px solid var(--ytm-border-color); border-radius: 4px; cursor: pointer; background: var(--ytm-bg-secondary); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--ytm-bg-tertiary)'" onmouseout="this.style.backgroundColor='var(--ytm-bg-secondary)'">
+                                            ${playlist.coverImageUrl ? `<img src="${playlist.coverImageUrl}" alt="${playlist.name}" style="width: 40px; height: 40px; border-radius: 4px; margin-right: 0.75rem;">` : '<div style="width: 40px; height: 40px; background: var(--ytm-bg-tertiary); border-radius: 4px; margin-right: 0.75rem; display: flex; align-items: center; justify-content: center;"><i class="bi bi-music-note-list" style="color: var(--ytm-text-secondary);"></i></div>'}
+                                            <div>
+                                                <div style="color: var(--ytm-text-primary); font-weight: 500;">${playlist.name}</div>
+                                                <div style="color: var(--ytm-text-secondary); font-size: 0.9rem;">${playlist.songCount} songs</div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                                    <button id="cancelPlaylistModal" style="background: transparent; border: 1px solid var(--ytm-border-color); color: var(--ytm-text-secondary); padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">Cancel</button>
+                                </div>
+                            </div>
+                        </div>`;
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    document.getElementById('cancelPlaylistModal').addEventListener('click', closePlaylistModal);
+                    document.querySelectorAll('.playlist-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            const playlistId = this.dataset.playlistId;
+                            addAllArtistSongsToPlaylist(artistId, playlistId, artistName);
+                        });
+                    });
+                    document.getElementById('playlistModal').addEventListener('click', function(e) {
+                        if (e.target === this) closePlaylistModal();
+                    });
+                });
+            });
+    }
+    function closePlaylistModal() {
+        const modal = document.getElementById('playlistModal');
+        if (modal) modal.remove();
+    }
+    function addAllArtistSongsToPlaylist(artistId, playlistId, artistName) {
+        fetch(`/api/Artists/${artistId}/songs`)
+            .then(response => response.json())
+            .then(songs => {
+                if (!songs.length) {
+                    alert('No songs found for this artist.');
+                    closePlaylistModal();
+                    return;
+                }
+                Promise.all(songs.map(song => fetch(`/api/Playlists/${playlistId}/songs`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': getAntiForgeryToken()
+                    },
+                    body: JSON.stringify({ songId: song.id })
+                })))
+                .then(() => {
+                    alert(`All songs by ${artistName} added to playlist!`);
+                    closePlaylistModal();
+                })
+                .catch(error => {
+                    alert('Error adding songs to playlist: ' + error.message);
+                    closePlaylistModal();
+                });
+            });
+    }
+    function getAntiForgeryToken() {
+        const tokenField = document.querySelector('input[name="__RequestVerificationToken"]');
+        return tokenField ? tokenField.value : '';
+    }
+</script>
 }

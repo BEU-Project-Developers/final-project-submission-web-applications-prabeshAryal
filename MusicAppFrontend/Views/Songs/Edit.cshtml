@@ -47,6 +47,7 @@
             <!-- Form -->
             <form id="songEditForm" asp-action="Edit" method="post" enctype="multipart/form-data" class="space-y-6">
                 <input type="hidden" asp-for="Id" />
+                <input type="hidden" name="PrimaryArtistId" id="PrimaryArtistId" value="@(Model.Artists?.FirstOrDefault(a => a.IsPrimaryArtist)?.Id ?? Model.ArtistId)" />
                 
                 <!-- Required Fields Section -->
                 <div class="bg-[var(--ytm-bg-secondary)] rounded-xl shadow-lg border border-[var(--ytm-border-color)]">
@@ -65,23 +66,53 @@
                             </label>
                             <input asp-for="Title" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] placeholder-[var(--ytm-text-secondary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition" placeholder="Enter song title" />
                             <span asp-validation-for="Title" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
-                        </div>
-
-                        <!-- Artist and Album Row -->
+                        </div>                        <!-- Artist and Album Row -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label asp-for="ArtistId" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Artist</label>
-                                <select asp-for="ArtistId" class="w-full px-4 py-3 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition">
-                                    <option value="">Select an Artist</option>
-                                    @if (ViewBag.Artists != null)
-                                    {
-                                        @foreach (var artist in ViewBag.Artists)
-                                        {
-                                            <option value="@artist.Id" selected="@(Model.ArtistId == artist.Id)">@artist.Name</option>
-                                        }
-                                    }
-                                </select>
-                                <span asp-validation-for="ArtistId" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
+                                <label class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Artists</label>
+                                <div id="artist-selection" class="space-y-3">
+                                    <!-- Primary Artist Selection -->
+                                    <div>
+                                        <label asp-for="ArtistId" class="block text-xs font-medium text-[var(--ytm-text-secondary)] mb-1">Primary Artist</label>
+                                        <select asp-for="ArtistId" class="w-full px-3 py-2 rounded-lg bg-[var(--ytm-bg-input)] border border-[var(--ytm-border-color)] text-[var(--ytm-text-primary)] focus:ring-2 focus:ring-[var(--ytm-accent-red)] focus:border-[var(--ytm-accent-red)] transition text-sm">
+                                            <option value="">Select Primary Artist</option>
+                                            @if (ViewBag.Artists != null)
+                                            {
+                                                @foreach (var artist in ViewBag.Artists)
+                                                {
+                                                    <option value="@artist.Id" selected="@(Model.ArtistId == artist.Id)">@artist.Name</option>
+                                                }
+                                            }
+                                        </select>
+                                        <span asp-validation-for="ArtistId" class="text-[var(--ytm-accent-red)] text-sm block mt-1"></span>
+                                    </div>
+                                    
+                                    <!-- Multiple Artists Selection -->
+                                    <div>
+                                        <label class="block text-xs font-medium text-[var(--ytm-text-secondary)] mb-1">Additional Artists</label>
+                                        <div class="border border-[var(--ytm-border-color)] rounded-lg p-3 bg-[var(--ytm-bg-input)] max-h-32 overflow-y-auto">
+                                            @if (ViewBag.Artists != null)
+                                            {
+                                                @foreach (var artist in ViewBag.Artists)
+                                                {
+                                                    <div class="flex items-center mb-1">
+                                                        <input class="artist-checkbox mr-2" type="checkbox" 
+                                                               name="ArtistIds" value="@artist.Id" id="edit_artist_@artist.Id"
+                                                               @(Model.Artists?.Any(a => a.Id == artist.Id) == true ? "checked" : "")>
+                                                        <label class="text-xs text-[var(--ytm-text-primary)]" for="edit_artist_@artist.Id">
+                                                            @artist.Name
+                                                            @if (Model.Artists?.FirstOrDefault(a => a.Id == artist.Id)?.IsPrimaryArtist == true)
+                                                            {
+                                                                <span class="text-[var(--ytm-accent-red)] ml-1">(Primary)</span>
+                                                            }
+                                                        </label>
+                                                    </div>
+                                                }
+                                            }
+                                        </div>
+                                        <p class="text-xs text-[var(--ytm-text-secondary)] mt-1">Select multiple artists if this is a collaboration</p>
+                                    </div>
+                                </div>
                             </div>
                             <div>
                                 <label asp-for="AlbumId" class="block text-sm font-medium text-[var(--ytm-text-primary)] mb-2">Album</label>
@@ -234,6 +265,54 @@
 @section Scripts {
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Artist selection logic
+        const primaryArtistSelect = document.querySelector('select[name="ArtistId"]');
+        const artistCheckboxes = document.querySelectorAll('.artist-checkbox');
+        const primaryArtistIdInput = document.getElementById('PrimaryArtistId');
+        // Handle primary artist selection
+        if (primaryArtistSelect) {
+            primaryArtistSelect.addEventListener('change', function() {
+                const selectedPrimaryId = this.value;
+                // Update checkboxes based on primary artist selection
+                artistCheckboxes.forEach(checkbox => {
+                    if (checkbox.value === selectedPrimaryId && selectedPrimaryId) {
+                        checkbox.checked = true;
+                        checkbox.disabled = true; // Disable the checkbox for primary artist
+                    } else {
+                        checkbox.disabled = false;
+                    }
+                });
+                updateArtistLabels();
+                // Update hidden field
+                if (primaryArtistIdInput) primaryArtistIdInput.value = selectedPrimaryId;
+            });
+        }
+        // Handle checkbox changes
+        artistCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateArtistLabels();
+            });
+        });
+        function updateArtistLabels() {
+            const primaryArtistId = primaryArtistSelect?.value;
+            artistCheckboxes.forEach(checkbox => {
+                const label = checkbox.nextElementSibling;
+                if (label) {
+                    const artistName = label.textContent.replace(' (Primary)', '').trim();
+                    if (checkbox.value === primaryArtistId && primaryArtistId) {
+                        label.innerHTML = `${artistName} <span class="text-[var(--ytm-accent-red)] ml-1">(Primary)</span>`;
+                    } else {
+                        label.textContent = artistName;
+                    }
+                }
+            });
+            // Update hidden field
+            if (primaryArtistIdInput) primaryArtistIdInput.value = primaryArtistId;
+        }
+        // Initialize on page load
+        updateArtistLabels();
+        
+        // Existing form functionality
         const toggle = document.getElementById('optionalFieldsToggle');
         const optionalFields = document.getElementById('optionalFields');
         const toggleLabel = document.getElementById('toggleLabel');
@@ -335,7 +414,7 @@
                 }
             });
         }
-    });
+    }); // End of DOMContentLoaded
 
     // Add CSS animations
     const style = document.createElement('style');
@@ -359,8 +438,7 @@
         }
     `;
     document.head.appendChild(style);
-</script>
 }
-
-@* Include validation scripts *@
+</script>
 <partial name="_ValidationScriptsPartial" />
+}

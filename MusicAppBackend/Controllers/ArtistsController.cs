@@ -107,9 +107,7 @@ namespace MusicAppBackend.Controllers
 
                 return CreatePaginatedResponse(artists, page, pageSize, totalCount);
             }, "GetArtists");
-        }
-
-        // GET: api/Artists/5
+        }        // GET: api/Artists/5
         [HttpGet("{id}")]
         public async Task<ActionResult<object>> GetArtist(int id)
         {
@@ -120,7 +118,35 @@ namespace MusicAppBackend.Controllers
             if (artist == null)
             {
                 return NotFound();
-            }
+            }            // Get songs for this artist (both from old ArtistId and new many-to-many relationship)
+            var songs = await _context.Songs
+                .Where(s => s.ArtistId == id || s.SongArtists.Any(sa => sa.ArtistId == id))
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Title,
+                    s.Duration,
+                    AudioUrl = !string.IsNullOrEmpty(s.AudioUrl) ? _fileStorage.GetFileUrl(s.AudioUrl) : null,
+                    CoverImageUrl = !string.IsNullOrEmpty(s.CoverImageUrl) ?
+                        _fileStorage.GetFileUrl(s.CoverImageUrl) : null,
+                    s.Genre,
+                    s.ReleaseDate,
+                    s.PlayCount,
+                    Album = s.Album != null ? new
+                    {
+                        s.Album.Id,
+                        s.Album.Title
+                    } : null,
+                    Artists = s.SongArtists.Select(sa => new
+                    {
+                        sa.Artist.Id,
+                        sa.Artist.Name,
+                        sa.IsPrimaryArtist
+                    }).ToList()
+                })
+                .OrderByDescending(s => s.PlayCount)
+                .ThenByDescending(s => s.ReleaseDate)
+                .ToListAsync();
 
             return new
             {
@@ -138,11 +164,12 @@ namespace MusicAppBackend.Controllers
                 {
                     a.Id,
                     a.Title,
-                    CoverImageUrl = !string.IsNullOrEmpty(a.CoverImageUrl) ? 
+                    CoverImageUrl = !string.IsNullOrEmpty(a.CoverImageUrl) ?
                         _fileStorage.GetFileUrl(a.CoverImageUrl) : null,
                     a.Year,
                     a.ReleaseDate
-                }).OrderByDescending(a => a.ReleaseDate).ToList()
+                }).OrderByDescending(a => a.ReleaseDate).ToList(),
+                Songs = songs
             };
         }
 

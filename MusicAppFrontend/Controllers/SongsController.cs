@@ -103,14 +103,15 @@ namespace MusicApp.Controllers
                 ViewBag.Artists = artists?.Data ?? new List<ArtistDto>();
                 ViewBag.Albums = albums?.Data ?? new List<AlbumDto>();
                 return View(model);
-            }
-
-            return await SafeApiAction(async () =>
+            }            return await SafeApiAction(async () =>
             {
-                // Map to backend DTO
-                var songCreateDto = new {
+                // Map to backend DTO with multiple artists support
+                var songCreateDto = new SongCreateDTO
+                {
                     Title = model.Title,
-                    ArtistId = model.ArtistId,
+                    ArtistId = model.ArtistId, // Keep backward compatibility
+                    ArtistIds = model.ArtistIds?.Any() == true ? model.ArtistIds : (model.ArtistId.HasValue ? new List<int> { model.ArtistId.Value } : new List<int>()),
+                    PrimaryArtistId = model.PrimaryArtistId ?? model.ArtistId,
                     AlbumId = model.AlbumId,
                     Duration = model.Duration,
                     TrackNumber = model.TrackNumber,
@@ -245,12 +246,15 @@ namespace MusicApp.Controllers
             }
 
             return await SafeApiAction(async () =>
-            {
-                _logger.LogInformation("SongsController.Edit POST: Attempting to update song with id: {Id}", id);
+            {                _logger.LogInformation("SongsController.Edit POST: Attempting to update song with id: {Id}", id);
                 var updateDto = new SongUpdateDTO
                 {
                     Title = model.Title,
-                    ArtistId = model.ArtistId,
+                    ArtistId = model.ArtistId, // Keep backward compatibility
+                    ArtistIds = model.Artists?.Any() == true ? 
+                        model.Artists.Select(a => a.Id).ToList() : 
+                        (model.ArtistId.HasValue ? new List<int> { model.ArtistId.Value } : new List<int>()),
+                    PrimaryArtistId = model.Artists?.FirstOrDefault(a => a.IsPrimaryArtist)?.Id ?? model.ArtistId,
                     AlbumId = model.AlbumId,
                     Duration = model.Duration,
                     AudioUrl = model.AudioUrl,

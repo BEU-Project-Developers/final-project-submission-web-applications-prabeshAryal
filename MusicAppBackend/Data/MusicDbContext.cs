@@ -19,7 +19,9 @@ namespace MusicAppBackend.Data
         public DbSet<UserFavorite> UserFavorites { get; set; } = null!;
         public DbSet<Artist> Artists { get; set; } = null!;
         public DbSet<Album> Albums { get; set; } = null!;
-        public DbSet<Song> Songs { get; set; } = null!;        public DbSet<Playlist> Playlists { get; set; } = null!;
+        public DbSet<Song> Songs { get; set; } = null!;
+        public DbSet<SongArtist> SongArtists { get; set; } = null!;
+        public DbSet<Playlist> Playlists { get; set; } = null!;
         public DbSet<PlaylistSong> PlaylistSongs { get; set; } = null!;
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
         public DbSet<UserSongPlay> UserSongPlays { get; set; } = null!;
@@ -91,15 +93,29 @@ namespace MusicAppBackend.Data
                 .WithMany(a => a.Songs)
                 .HasForeignKey(s => s.AlbumId)
                 .OnDelete(DeleteBehavior.SetNull)
-                .IsRequired(false);  // AlbumId is nullable
-
-            // Configure Song-Artist (many-to-one)
+                .IsRequired(false);  // AlbumId is nullable            // Configure Song-Artist (many-to-one)
             modelBuilder.Entity<Song>()
                 .HasOne(s => s.Artist)
                 .WithMany()
                 .HasForeignKey(s => s.ArtistId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .IsRequired(false);  // ArtistId is nullable
+
+            // Configure Song-Artist many-to-many relationship
+            modelBuilder.Entity<SongArtist>()
+                .HasKey(sa => new { sa.SongId, sa.ArtistId });
+
+            modelBuilder.Entity<SongArtist>()
+                .HasOne(sa => sa.Song)
+                .WithMany(s => s.SongArtists)
+                .HasForeignKey(sa => sa.SongId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SongArtist>()
+                .HasOne(sa => sa.Artist)
+                .WithMany(a => a.SongArtists)
+                .HasForeignKey(sa => sa.ArtistId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Configure User-Playlists (one-to-many)
             modelBuilder.Entity<Playlist>()

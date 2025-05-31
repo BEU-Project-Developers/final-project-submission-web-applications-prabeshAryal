@@ -36,17 +36,19 @@ namespace MusicAppBackend.Controllers
             [FromQuery] bool desc = false,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
-        {
-            try
+        {            try
             {
                 IQueryable<Song> query = _context.Songs
                     .Include(s => s.Artist)
-                    .Include(s => s.Album);
+                    .Include(s => s.Album)
+                    .Include(s => s.SongArtists)
+                        .ThenInclude(sa => sa.Artist);
 
                 // Apply filters
                 if (artistId.HasValue)
                 {
-                    query = query.Where(s => s.ArtistId == artistId);
+                    // Support both single artist and multiple artists
+                    query = query.Where(s => s.ArtistId == artistId || s.SongArtists.Any(sa => sa.ArtistId == artistId));
                 }
 
                 if (albumId.HasValue)
@@ -98,23 +100,55 @@ namespace MusicAppBackend.Controllers
                 {
                     // Default sort
                     query = query.OrderByDescending(s => s.PlayCount);
-                }
-
-                // Apply pagination
+                }                // Apply pagination
                 var totalCount = await query.CountAsync();
                 var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-                var songs = await query
+                var songsData = await query
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(s => new
+                    .ToListAsync();
+
+                var songs = songsData.Select(s =>
+                {
+                    // Get artists information - support both single artist (backward compatibility) and multiple artists
+                    var artists = new List<object>();
+                    
+                    // If we have SongArtist relationships, use those
+                    if (s.SongArtists.Any())
+                    {
+                        artists = s.SongArtists
+                            .OrderByDescending(sa => sa.IsPrimaryArtist)
+                            .ThenBy(sa => sa.Artist.Name)
+                            .Select(sa => new {
+                                Id = sa.ArtistId,
+                                Name = sa.Artist.Name,
+                                IsPrimaryArtist = sa.IsPrimaryArtist
+                            })
+                            .ToList<object>();
+                    }
+                    // Fallback to single artist if no SongArtist relationships exist
+                    else if (s.Artist != null)
+                    {
+                        artists.Add(new {
+                            Id = s.ArtistId,
+                            Name = s.Artist.Name,
+                            IsPrimaryArtist = true
+                        });
+                    }
+
+                    // Get primary artist for backward compatibility
+                    var primaryArtist = s.SongArtists.FirstOrDefault(sa => sa.IsPrimaryArtist)?.Artist ?? s.Artist;
+
+                    return new
                     {
                         s.Id,
                         s.Title,
-                        s.ArtistId,
-                        ArtistName = s.Artist != null ? s.Artist.Name : null,
+                        s.ArtistId, // Keep for backward compatibility
+                        ArtistName = primaryArtist?.Name, // Keep for backward compatibility
+                        Artists = artists, // New multiple artists field
                         s.AlbumId,
-                        AlbumTitle = s.Album != null ? s.Album.Title : null,
+                        AlbumTitle = s.Album?.Title,
                         s.Duration,
                         AudioUrl = !string.IsNullOrEmpty(s.AudioUrl) ? 
                             _fileStorage.GetFileUrl(s.AudioUrl) : null,
@@ -126,8 +160,8 @@ namespace MusicAppBackend.Controllers
                         s.Genre,
                         s.ReleaseDate,
                         s.PlayCount
-                    })
-                    .ToListAsync();
+                    };
+                }).ToList();
 
                 return Ok(new
                 {
@@ -142,15 +176,15 @@ namespace MusicAppBackend.Controllers
             {
                 return StatusCode(500, $"An error occurred while retrieving songs: {ex.Message}");
             }
-        }
-
-        // GET: api/Songs/5
+        }        // GET: api/Songs/5
         [HttpGet("{id}")]
         public async Task<ActionResult<object>> GetSong(int id)
         {
             var song = await _context.Songs
                 .Include(s => s.Artist)
                 .Include(s => s.Album)
+                .Include(s => s.SongArtists)
+                    .ThenInclude(sa => sa.Artist)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (song == null)
@@ -158,12 +192,42 @@ namespace MusicAppBackend.Controllers
                 return NotFound();
             }
 
+            // Get artists information - support both single artist (backward compatibility) and multiple artists
+            var artists = new List<object>();
+            
+            // If we have SongArtist relationships, use those
+            if (song.SongArtists.Any())
+            {
+                artists = song.SongArtists
+                    .OrderByDescending(sa => sa.IsPrimaryArtist)
+                    .ThenBy(sa => sa.Artist.Name)
+                    .Select(sa => new {
+                        Id = sa.ArtistId,
+                        Name = sa.Artist.Name,
+                        IsPrimaryArtist = sa.IsPrimaryArtist
+                    })
+                    .ToList<object>();
+            }
+            // Fallback to single artist if no SongArtist relationships exist
+            else if (song.Artist != null)
+            {
+                artists.Add(new {
+                    Id = song.ArtistId,
+                    Name = song.Artist.Name,
+                    IsPrimaryArtist = true
+                });
+            }
+
+            // Get primary artist for backward compatibility
+            var primaryArtist = song.SongArtists.FirstOrDefault(sa => sa.IsPrimaryArtist)?.Artist ?? song.Artist;
+
             return new
             {
                 song.Id,
                 song.Title,
-                song.ArtistId,
-                ArtistName = song.Artist?.Name,
+                song.ArtistId, // Keep for backward compatibility
+                ArtistName = primaryArtist?.Name, // Keep for backward compatibility
+                Artists = artists, // New multiple artists field
                 song.AlbumId,
                 AlbumTitle = song.Album?.Title,
                 song.Duration,
@@ -176,7 +240,8 @@ namespace MusicAppBackend.Controllers
                 song.TrackNumber,
                 song.Genre,
                 song.ReleaseDate,
-                song.PlayCount            };
+                song.PlayCount
+            };
         }
 
         // GET: api/Songs/5/similar
@@ -234,20 +299,31 @@ namespace MusicAppBackend.Controllers
             {
                 return StatusCode(500, $"An error occurred while retrieving similar songs: {ex.Message}");
             }
-        }
-
-        // POST: api/Songs
+        }        // POST: api/Songs
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Song>> CreateSong([FromBody] SongCreateDTO songDto)
         {
-            // Validate artist and album if provided
-            if (songDto.ArtistId.HasValue)
+            // Validate artist(s) and album if provided
+            List<int> artistIds = new List<int>();
+            
+            // Handle both old single artist and new multiple artists approach
+            if (songDto.ArtistIds != null && songDto.ArtistIds.Any())
             {
-                var artist = await _context.Artists.FindAsync(songDto.ArtistId.Value);
+                artistIds = songDto.ArtistIds;
+            }
+            else if (songDto.ArtistId.HasValue)
+            {
+                artistIds.Add(songDto.ArtistId.Value);
+            }
+
+            // Validate all artists exist
+            foreach (var artistId in artistIds)
+            {
+                var artist = await _context.Artists.FindAsync(artistId);
                 if (artist == null)
                 {
-                    return BadRequest("Artist not found");
+                    return BadRequest($"Artist with ID {artistId} not found");
                 }
             }
 
@@ -263,7 +339,7 @@ namespace MusicAppBackend.Controllers
             var song = new Song
             {
                 Title = songDto.Title,
-                ArtistId = songDto.ArtistId,
+                ArtistId = songDto.ArtistId, // Keep for backward compatibility
                 AlbumId = songDto.AlbumId,
                 Duration = songDto.Duration,
                 TrackNumber = songDto.TrackNumber,
@@ -272,8 +348,30 @@ namespace MusicAppBackend.Controllers
                 PlayCount = 0,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
-            };            _context.Songs.Add(song);
+            };
+
+            _context.Songs.Add(song);
             await _context.SaveChangesAsync();
+
+            // Create SongArtist relationships
+            if (artistIds.Any())
+            {
+                var primaryArtistId = songDto.PrimaryArtistId ?? artistIds.First();
+                
+                foreach (var artistId in artistIds)
+                {
+                    var songArtist = new SongArtist
+                    {
+                        SongId = song.Id,
+                        ArtistId = artistId,
+                        IsPrimaryArtist = artistId == primaryArtistId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.SongArtists.Add(songArtist);
+                }
+                
+                await _context.SaveChangesAsync();
+            }
 
             // Return a simple DTO to avoid circular references
             return CreatedAtAction(nameof(GetSong), new { id = song.Id }, new
@@ -290,9 +388,7 @@ namespace MusicAppBackend.Controllers
                 song.CreatedAt,
                 song.UpdatedAt
             });
-        }
-
-        // PUT: api/Songs/5
+        }        // PUT: api/Songs/5
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateSong(int id, [FromBody] SongUpdateDTO songDto)
@@ -305,7 +401,7 @@ namespace MusicAppBackend.Controllers
 
             // Update properties from DTO
             song.Title = songDto.Title ?? song.Title;
-            song.ArtistId = songDto.ArtistId ?? song.ArtistId;
+            song.ArtistId = songDto.ArtistId ?? song.ArtistId; // Keep for backward compatibility
             song.AlbumId = songDto.AlbumId ?? song.AlbumId;
             song.Duration = songDto.Duration ?? song.Duration;
             song.TrackNumber = songDto.TrackNumber ?? song.TrackNumber;
@@ -313,13 +409,47 @@ namespace MusicAppBackend.Controllers
             song.ReleaseDate = songDto.ReleaseDate ?? song.ReleaseDate;
             song.UpdatedAt = DateTime.UtcNow;
 
-            // Validate artist and album if provided
-            if (song.ArtistId.HasValue)
+            // Handle multiple artists update if provided
+            if (songDto.ArtistIds != null)
             {
-                var artist = await _context.Artists.FindAsync(song.ArtistId.Value);
-                if (artist == null)
+                // Remove existing artist relationships
+                var existingRelationships = await _context.SongArtists
+                    .Where(sa => sa.SongId == id)
+                    .ToListAsync();
+                _context.SongArtists.RemoveRange(existingRelationships);
+
+                // Add new artist relationships
+                var primaryArtistId = songDto.PrimaryArtistId ?? songDto.ArtistIds.FirstOrDefault();
+                
+                foreach (var artistId in songDto.ArtistIds)
                 {
-                    return BadRequest("Artist not found");
+                    // Validate artist exists
+                    var artist = await _context.Artists.FindAsync(artistId);
+                    if (artist == null)
+                    {
+                        return BadRequest($"Artist with ID {artistId} not found");
+                    }
+
+                    var songArtist = new SongArtist
+                    {
+                        SongId = id,
+                        ArtistId = artistId,
+                        IsPrimaryArtist = artistId == primaryArtistId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.SongArtists.Add(songArtist);
+                }
+            }
+            else
+            {
+                // Validate single artist if provided (backward compatibility)
+                if (song.ArtistId.HasValue)
+                {
+                    var artist = await _context.Artists.FindAsync(song.ArtistId.Value);
+                    if (artist == null)
+                    {
+                        return BadRequest("Artist not found");
+                    }
                 }
             }
 
@@ -628,12 +758,12 @@ namespace MusicAppBackend.Controllers
         {
             return await _context.Songs.AnyAsync(s => s.Id == id);
         }
-    }
-
-    public class SongCreateDTO
+    }    public class SongCreateDTO
     {
         public string Title { get; set; } = string.Empty;
-        public int? ArtistId { get; set; }
+        public int? ArtistId { get; set; } // Keep for backward compatibility
+        public List<int>? ArtistIds { get; set; } // New field for multiple artists
+        public int? PrimaryArtistId { get; set; } // To designate primary artist
         public int? AlbumId { get; set; }
         public TimeSpan Duration { get; set; }
         public int? TrackNumber { get; set; }
@@ -642,7 +772,9 @@ namespace MusicAppBackend.Controllers
     }    public class SongUpdateDTO
     {
         public string? Title { get; set; }
-        public int? ArtistId { get; set; }
+        public int? ArtistId { get; set; } // Keep for backward compatibility
+        public List<int>? ArtistIds { get; set; } // New field for multiple artists
+        public int? PrimaryArtistId { get; set; } // To designate primary artist
         public int? AlbumId { get; set; }
         public TimeSpan? Duration { get; set; }
         public string? AudioUrl { get; set; }

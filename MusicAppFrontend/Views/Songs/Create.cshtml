@@ -28,22 +28,48 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="row">
+                          <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label asp-for="ArtistId" class="form-label">Artist</label>
-                                    <select asp-for="ArtistId" class="form-control">
-                                        <option value="">Select an Artist (Optional)</option>
-                                        @if (ViewBag.Artists != null)
-                                        {
-                                            @foreach (var artist in ViewBag.Artists)
-                                            {
-                                                <option value="@artist.Id">@artist.Name</option>
-                                            }
-                                        }
-                                    </select>
-                                    <span asp-validation-for="ArtistId" class="text-danger"></span>
+                                    <label class="form-label">Artists</label>
+                                    <div id="artist-selection">
+                                        <!-- Primary Artist Selection -->
+                                        <div class="mb-2">
+                                            <label asp-for="ArtistId" class="form-label text-sm">Primary Artist</label>
+                                            <select asp-for="ArtistId" class="form-control">
+                                                <option value="">Select Primary Artist (Optional)</option>
+                                                @if (ViewBag.Artists != null)
+                                                {
+                                                    @foreach (var artist in ViewBag.Artists)
+                                                    {
+                                                        <option value="@artist.Id">@artist.Name</option>
+                                                    }
+                                                }
+                                            </select>
+                                            <span asp-validation-for="ArtistId" class="text-danger"></span>
+                                        </div>
+                                        
+                                        <!-- Multiple Artists Selection -->
+                                        <div class="mb-2">
+                                            <label class="form-label text-sm">Additional Artists</label>
+                                            <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                                @if (ViewBag.Artists != null)
+                                                {
+                                                    @foreach (var artist in ViewBag.Artists)
+                                                    {
+                                                        <div class="form-check">
+                                                            <input class="form-check-input artist-checkbox" type="checkbox" 
+                                                                   name="ArtistIds" value="@artist.Id" id="artist_@artist.Id">
+                                                            <label class="form-check-label text-sm" for="artist_@artist.Id">
+                                                                @artist.Name
+                                                            </label>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                            <small class="text-muted">Select multiple artists if this is a collaboration</small>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -103,4 +129,50 @@
 {
     <div class="alert alert-danger mt-3">@ViewBag.ErrorMessage</div>
 }
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const primaryArtistSelect = document.querySelector('select[name="ArtistId"]');
+    const artistCheckboxes = document.querySelectorAll('.artist-checkbox');
+    
+    // Handle primary artist selection
+    primaryArtistSelect.addEventListener('change', function() {
+        const selectedPrimaryId = this.value;
+        
+        // Update checkboxes based on primary artist selection
+        artistCheckboxes.forEach(checkbox => {
+            if (checkbox.value === selectedPrimaryId && selectedPrimaryId) {
+                checkbox.checked = true;
+                checkbox.disabled = true; // Disable the checkbox for primary artist
+            } else {
+                checkbox.disabled = false;
+            }
+        });
+        
+        // Set PrimaryArtistId hidden field
+        updatePrimaryArtistId();
+    });
+    
+    // Handle checkbox changes
+    artistCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updatePrimaryArtistId();
+        });
+    });
+    
+    function updatePrimaryArtistId() {
+        const primaryArtistId = primaryArtistSelect.value;
+        let primaryArtistInput = document.querySelector('input[name="PrimaryArtistId"]');
+        
+        if (!primaryArtistInput) {
+            primaryArtistInput = document.createElement('input');
+            primaryArtistInput.type = 'hidden';
+            primaryArtistInput.name = 'PrimaryArtistId';
+            document.querySelector('form').appendChild(primaryArtistInput);
+        }
+        
+        primaryArtistInput.value = primaryArtistId;
+    }
+});
+</script>
 }

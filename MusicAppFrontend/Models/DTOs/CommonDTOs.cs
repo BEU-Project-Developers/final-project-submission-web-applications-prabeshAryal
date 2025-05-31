@@ -18,17 +18,18 @@ namespace MusicApp.Models.DTOs
         public string? Message { get; set; }
         public T? Data { get; set; }
     }
-    
-    public class ArtistDto
+      public class ArtistDto
     {
         public int Id { get; set; }
         public string? Name { get; set; }
         public string? Bio { get; set; }
-        public string? ImageUrl { get; set; }        public string? Country { get; set; }
+        public string? ImageUrl { get; set; }
+        public string? Country { get; set; }
         public string? Genre { get; set; }
         public DateTime? FormedDate { get; set; }
         public int? MonthlyListeners { get; set; }
         public bool IsActive { get; set; } // Added for admin edit
+        public bool IsPrimaryArtist { get; set; } = false; // Added for multiple artist support
         public List<AlbumDto> Albums { get; set; } = new List<AlbumDto>();
         public List<SongDto> Songs { get; set; } = new List<SongDto>();
         public int FollowersCount { get; set; }
@@ -70,8 +71,9 @@ namespace MusicApp.Models.DTOs
     {
         public int Id { get; set; }
         public string? Title { get; set; }
-        public int? ArtistId { get; set; }
-        public string? ArtistName { get; set; }
+        public int? ArtistId { get; set; } // Keep for backward compatibility
+        public string? ArtistName { get; set; } // Keep for backward compatibility
+        public List<ArtistDto>? Artists { get; set; } = new List<ArtistDto>(); // New field for multiple artists
         public int? AlbumId { get; set; }
         public string? AlbumTitle { get; set; }
         public TimeSpan? Duration { get; set; }
@@ -85,7 +87,9 @@ namespace MusicApp.Models.DTOs
     }    public class SongUpdateDTO
     {
         public string? Title { get; set; }
-        public int? ArtistId { get; set; }
+        public int? ArtistId { get; set; } // Keep for backward compatibility
+        public List<int>? ArtistIds { get; set; } // New field for multiple artists
+        public int? PrimaryArtistId { get; set; } // To designate primary artist
         public int? AlbumId { get; set; }
         public TimeSpan? Duration { get; set; }
         public string? AudioUrl { get; set; }
@@ -94,6 +98,19 @@ namespace MusicApp.Models.DTOs
         public string? Genre { get; set; }
         public DateTime? ReleaseDate { get; set; }
         public int? PlayCount { get; set; }
+    }
+
+    public class SongCreateDTO
+    {
+        public string Title { get; set; } = string.Empty;
+        public int? ArtistId { get; set; } // Keep for backward compatibility
+        public List<int>? ArtistIds { get; set; } // New field for multiple artists
+        public int? PrimaryArtistId { get; set; } // To designate primary artist
+        public int? AlbumId { get; set; }
+        public TimeSpan Duration { get; set; }
+        public int? TrackNumber { get; set; }
+        public string? Genre { get; set; }
+        public DateTime? ReleaseDate { get; set; }
     }
       public class PlaylistDto
     {
