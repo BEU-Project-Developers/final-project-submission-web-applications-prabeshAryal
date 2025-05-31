@@ -18,7 +18,7 @@ namespace MusicAppBackend.Services
     public interface IAuthService
     {
         Task<(bool Success, string Message, UserDTO? User, string? Token, string? RefreshToken)> LoginAsync(LoginDTO login);
-        Task<(bool Success, string Message, UserDTO? User)> RegisterAsync(RegisterDTO register);
+        Task<(bool Success, string Message, UserDTO? User, string? Token, string? RefreshToken)> RegisterAsync(RegisterDTO register);
         Task<bool> AssignRoleAsync(int userId, string roleName);
         Task<string> GenerateJwtTokenAsync(User user);
         Task<string> GenerateRefreshTokenAsync(int userId);
@@ -41,10 +41,11 @@ namespace MusicAppBackend.Services
 
         public async Task<(bool Success, string Message, UserDTO? User, string? Token, string? RefreshToken)> LoginAsync(LoginDTO login)
         {
-            var user = await _context.Users
-                .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
-                .FirstOrDefaultAsync(u => u.Email == login.Email);
+            // Use regex to check if identifier is email
+            var isEmail = System.Text.RegularExpressions.Regex.IsMatch(login.Identifier ?? string.Empty, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+            var user = isEmail
+                ? await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Email == login.Identifier)
+                : await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Username == login.Identifier);
 
             if (user == null)
             {
@@ -80,62 +81,73 @@ namespace MusicAppBackend.Services
             return (true, "Login successful", userDto, token, refreshToken);
         }
 
-        public async Task<(bool Success, string Message, UserDTO? User)> RegisterAsync(RegisterDTO register)
+        public async Task<(bool Success, string Message, UserDTO? User, string? Token, string? RefreshToken)> RegisterAsync(RegisterDTO register)
         {
-            if (await _context.Users.AnyAsync(u => u.Email == register.Email))
+            try
             {
-                return (false, "Email already exists", null);
-            }
+                if (await _context.Users.AnyAsync(u => u.Email == register.Email))
+                {
+                    return (false, "Email already exists", null, null, null);
+                }
 
-            if (await _context.Users.AnyAsync(u => u.Username == register.Username))
-            {
-                return (false, "Username already exists", null);
-            }
+                if (await _context.Users.AnyAsync(u => u.Username == register.Username))
+                {
+                    return (false, "Username already exists", null, null, null);
+                }
 
-            var user = new User
-            {
-                Email = register.Email,
-                Username = register.Username,
-                FirstName = register.FirstName,
-                LastName = register.LastName,
-                PasswordHash = HashPassword(register.Password),
-                CreatedAt = DateTime.UtcNow,
-                LastLoginAt = DateTime.UtcNow
-            };
+                var user = new User
+                {
+                    Email = register.Email,
+                    Username = register.Username,
+                    FirstName = register.FirstName,
+                    LastName = register.LastName,
+                    PasswordHash = HashPassword(register.Password),
+                    CreatedAt = DateTime.UtcNow,
+                    LastLoginAt = DateTime.UtcNow
+                };
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            // Assign default user role
-            var userRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "User");
-            if (userRole == null)
-            {
-                // Create user role if it doesn't exist
-                userRole = new Role { Name = "User", Description = "Regular user" };
-                _context.Roles.Add(userRole);
+                _context.Users.Add(user);
                 await _context.SaveChangesAsync();
+
+                // Assign default user role
+                var userRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "User");
+                if (userRole == null)
+                {
+                    userRole = new Role { Name = "User", Description = "Regular user" };
+                    _context.Roles.Add(userRole);
+                    await _context.SaveChangesAsync();
+                }
+
+                _context.UserRoles.Add(new UserRole
+                {
+                    UserId = user.Id,
+                    RoleId = userRole.Id
+                });
+
+                await _context.SaveChangesAsync();
+
+                // Generate tokens
+                var token = await GenerateJwtTokenAsync(user);
+                var refreshToken = await GenerateRefreshTokenAsync(user.Id);
+
+                // Create UserDTO
+                var userDto = new UserDTO
+                {
+                    Id = user.Id,
+                    Username = user.Username,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    ProfileImageUrl = user.ProfileImageUrl,
+                    Roles = new List<string> { "User" }
+                };
+
+                return (true, "Registration successful", userDto, token, refreshToken);
             }
-
-            _context.UserRoles.Add(new UserRole
+            catch (Exception ex)
             {
-                UserId = user.Id,
-                RoleId = userRole.Id
-            });
-
-            await _context.SaveChangesAsync();
-
-            var userDto = new UserDTO
-            {
-                Id = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                ProfileImageUrl = user.ProfileImageUrl,
-                Roles = new List<string> { "User" }
-            };
-
-            return (true, "Registration successful", userDto);
+                return (false, $"Registration failed: {ex.Message}", null, null, null);
+            }
         }
 
         public async Task<bool> AssignRoleAsync(int userId, string roleName)
@@ -274,4 +286,4 @@ namespace MusicAppBackend.Services
             return BCrypt.Net.BCrypt.Verify(password, passwordHash);
         }
     }
-} 
+}

@@ -504,7 +504,7 @@ document.addEventListener('DOMContentLoaded', function () {
             
             // Get form data
             const formData = {
-                email: document.getElementById('loginEmail').value,
+                identifier: document.getElementById('loginIdentifier').value,
                 password: document.getElementById('loginPassword').value,
                 rememberMe: document.getElementById('loginRememberMe').checked
             };

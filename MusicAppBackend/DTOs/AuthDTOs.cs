@@ -6,8 +6,8 @@ namespace MusicAppBackend.DTOs
     public class LoginDTO
     {
         [Required]
-        [EmailAddress]
-        public string Email { get; set; } = string.Empty;
+        [Display(Name = "Username or Email")]
+        public string Identifier { get; set; } = string.Empty;
         
         [Required]
         public string Password { get; set; } = string.Empty;
@@ -61,4 +61,4 @@ namespace MusicAppBackend.DTOs
         public string RefreshToken { get; set; } = string.Empty;
         public UserDTO User { get; set; } = null!;
     }
-} 
+}

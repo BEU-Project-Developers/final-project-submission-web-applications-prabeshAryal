@@ -1,0 +1,38 @@
+@model MusicApp.ViewModels.RegisterViewModel
+
+@* Removed ViewBag.RegisterStatus display here. Errors for specific fields will be shown by asp-validation-for.
+   General errors (like "Email already exists") will be shown by asp-validation-summary="ModelOnly" in Register.cshtml.
+*@
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="FirstName" class="form-label"></label>
+        <input asp-for="FirstName" class="form-control" placeholder="Enter first name" />
+        <span asp-validation-for="FirstName" class="text-danger"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="LastName" class="form-label"></label>
+        <input asp-for="LastName" class="form-control" placeholder="Enter last name" />
+        <span asp-validation-for="LastName" class="text-danger"></span>
+    </div>
+</div>
+<div class="mb-3">
+    <label asp-for="Username" class="form-label"></label>
+    <input asp-for="Username" class="form-control" placeholder="Choose a username" />
+    <span asp-validation-for="Username" class="text-danger"></span>
+</div>
+<div class="mb-3">
+    <label asp-for="Email" class="form-label"></label>
+    <input asp-for="Email" class="form-control" placeholder="Enter your email" />
+    <span asp-validation-for="Email" class="text-danger"></span>
+</div>
+<div class="mb-3">
+    <label asp-for="Password" class="form-label"></label>
+    <input asp-for="Password" id="Password" class="form-control" placeholder="Create a password" />
+    <span asp-validation-for="Password" class="text-danger"></span>
+</div>
+<div class="mb-3">
+    <label asp-for="ConfirmPassword" class="form-label"></label>
+    <input asp-for="ConfirmPassword" id="ConfirmPassword" class="form-control" placeholder="Confirm your password" />
+    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+</div>

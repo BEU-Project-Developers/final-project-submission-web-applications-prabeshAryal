@@ -1,0 +1,17 @@
+@model MusicApp.ViewModels.LoginViewModel
+
+<div class="mb-3">
+    <label asp-for="Identifier" class="form-label">Username or Email</label>
+    <input asp-for="Identifier" class="form-control" id="loginIdentifier" autocomplete="off" />
+    <span asp-validation-for="Identifier" class="text-danger"></span>
+</div>
+<div class="mb-3">
+    <label asp-for="Password" class="form-label">Password</label>
+    <input asp-for="Password" class="form-control" type="password" />
+    <span asp-validation-for="Password" class="text-danger"></span>
+</div>
+<div class="mb-3 form-check">
+    <input type="hidden" asp-for="RememberMe" value="false" />
+    <input asp-for="RememberMe" class="form-check-input" type="checkbox" value="true" />
+    <label asp-for="RememberMe" class="form-check-label">Remember me</label>
+</div>

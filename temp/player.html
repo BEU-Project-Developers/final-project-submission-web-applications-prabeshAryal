@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Sticky Music Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar (optional, for a more polished look) */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2c2c2c;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+        /* Basic body styling */
+        body {
+            font-family: 'Inter', sans-serif; /* A modern, clean font */
+        }
+
+        /* Style for the range input (volume and progress) */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        /* Track styling for WebKit browsers (Chrome, Safari) */
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 6px;
+            background: #4a5568; /* gray-700 */
+            border-radius: 3px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -4px; /* Adjust to center thumb on track */
+            background-color: #ef4444; /* red-500 */
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            border: 2px solid #fff; /* white border for contrast */
+        }
+
+        /* Track styling for Firefox */
+        input[type="range"]::-moz-range-track {
+            height: 6px;
+            background: #4a5568; /* gray-700 */
+            border-radius: 3px;
+            border: none;
+        }
+        input[type="range"]::-moz-range-thumb {
+            background-color: #ef4444; /* red-500 */
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            border: 2px solid #fff; /* white border for contrast */
+        }
+
+        /* Focus styles for accessibility */
+        input[type="range"]:focus::-webkit-slider-thumb {
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5); /* red-500 with opacity */
+        }
+        input[type="range"]:focus::-moz-range-thumb {
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5); /* red-500 with opacity */
+        }
+
+        /* Ensure play/pause buttons have consistent size */
+        .controls button {
+            width: 40px; /* Adjust as needed */
+            height: 40px; /* Adjust as needed */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'custom-black': '#121212',
+                        'custom-gray': '#181818',
+                        'custom-light-gray': '#282828',
+                        'custom-red': '#FF0000', // YouTube Music's red
+                        'text-primary': '#FFFFFF',
+                        'text-secondary': '#AAAAAA',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-custom-black text-text-primary flex flex-col min-h-screen">
+
+    <!-- Main Content Area (where song list or other content would go) -->
+    <main class="flex-grow p-4 md:p-8">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-3xl font-bold mb-6 text-center">My Music</h1>
+            <!-- Example of a song item - you would generate this dynamically -->
+            <div class="bg-custom-gray p-4 rounded-lg shadow-md flex items-center space-x-4 hover:bg-custom-light-gray transition-colors duration-200 cursor-pointer" onclick="playSongFromPlaylist(0)">
+                <img id="albumArt" src="78428a6d-e76f-459a-bbac-7b9614dda04d.jpg" alt="Album Art" class="w-20 h-20 rounded object-cover">
+                <div>
+                    <h2 class="text-xl font-semibold text-text-primary" id="playlistSongTitle">Bardali</h2>
+                    <p class="text-text-secondary" id="playlistArtistName">Sushant KC</p>
+                </div>
+            </div>
+            <!-- Add more song items here -->
+        </div>
+    </main>
+
+    <!-- Sticky Music Player -->
+    <div class="sticky bottom-0 left-0 right-0 bg-custom-light-gray shadow-t-lg p-3 md:p-4 z-50">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
+            <!-- Song Info & Album Art (Left) -->
+            <div class="flex items-center space-x-3 w-full sm:w-1/3">
+                <img id="playerAlbumArt" src="78428a6d-e76f-459a-bbac-7b9614dda04d.jpg" alt="Album Art" class="w-12 h-12 md:w-14 md:h-14 rounded object-cover">
+                <div>
+                    <div id="songTitle" class="text-sm md:text-base font-semibold text-text-primary truncate" title="Song Title">Loading...</div>
+                    <div id="artistName" class="text-xs md:text-sm text-text-secondary truncate" title="Artist Name">Artist</div>
+                </div>
+            </div>
+
+            <!-- Controls & Progress Bar (Center) -->
+            <div class="flex flex-col items-center w-full sm:w-1/3 space-y-2">
+                <div class="controls flex items-center space-x-2 md:space-x-3">
+                    <button id="prevBtn" title="Previous" class="text-text-secondary hover:text-text-primary transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-5 h-5 md:w-6 md:h-6"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+                    </button>
+                    <button id="playBtn" title="Play" class="text-text-primary bg-custom-red hover:bg-red-600 rounded-full p-2 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6 md:w-7 md:h-7"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
+                    <button id="pauseBtn" title="Pause" style="display:none;" class="text-text-primary bg-custom-red hover:bg-red-600 rounded-full p-2 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6 md:w-7 md:h-7"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </button>
+                    <button id="nextBtn" title="Next" class="text-text-secondary hover:text-text-primary transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-5 h-5 md:w-6 md:h-6"><path d="M6 6l8.5 6L6 18V6zm10 0h2v12h-2V6z"/></svg>
+                    </button>
+                </div>
+                <div class="progress-container flex items-center w-full max-w-xs md:max-w-sm space-x-2">
+                    <span id="currentTime" class="text-xs text-text-secondary w-10 text-right">0:00</span>
+                    <input type="range" id="progressBar" value="0" min="0" max="100" class="w-full h-1.5 accent-custom-red appearance-none bg-gray-600 rounded-lg cursor-pointer">
+                    <span id="duration" class="text-xs text-text-secondary w-10 text-left">0:00</span>
+                </div>
+            </div>
+
+            <!-- Volume Control (Right) -->
+            <div class="flex items-center space-x-2 w-full sm:w-1/3 justify-end">
+                <svg id="volumeIcon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-5 h-5 md:w-6 md:h-6 text-text-secondary hover:text-text-primary cursor-pointer">
+                    <path d="M3 9v6h4l5 5V4L9 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                </svg>
+                <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.7" class="w-20 md:w-24 h-1.5 accent-custom-red appearance-none bg-gray-600 rounded-lg cursor-pointer">
+            </div>
+        </div>
+        <audio id="audio" preload="metadata"></audio>
+    </div>
+
+    <script>
+        const playlist = [
+            {
+                title: "Bardali",
+                artist: "Sushant KC",
+                src: "Bardali [Karaoke] -Sushant KC.mp3",
+                cover: "78428a6d-e76f-459a-bbac-7b9614dda04d.jpg"
+            },
+            // Add more songs here with their respective details
+            // Example:
+            // {
+            //     title: "Another Song Title",
+            //     artist: "Another Artist",
+            //     src: "path/to/your/song2.mp3",
+            //     cover: "path/to/your/cover2.jpg"
+            // }
+        ];
+
+        let currentSongIndex = 0;
+        const audio = document.getElementById('audio');
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        const songTitleEl = document.getElementById('songTitle');
+        const artistNameEl = document.getElementById('artistName');
+        const playerAlbumArtEl = document.getElementById('playerAlbumArt');
+
+        // For the main playlist display (optional, if you have one)
+        const playlistSongTitleEl = document.getElementById('playlistSongTitle');
+        const playlistArtistNameEl = document.getElementById('playlistArtistName');
+        const albumArtEl = document.getElementById('albumArt');
+
+
+        const progressBar = document.getElementById('progressBar'); // This is now the range input
+        const currentTimeEl = document.getElementById('currentTime');
+        const durationEl = document.getElementById('duration');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeIcon = document.getElementById('volumeIcon');
+
+        function loadSong(songIndex) {
+            const song = playlist[songIndex];
+            audio.src = song.src;
+            songTitleEl.textContent = song.title;
+            songTitleEl.title = song.title; // for tooltip on hover
+            artistNameEl.textContent = song.artist;
+            artistNameEl.title = song.artist;
+            playerAlbumArtEl.src = song.cover;
+
+            // Update main playlist display if it exists
+            if (playlistSongTitleEl) playlistSongTitleEl.textContent = song.title;
+            if (playlistArtistNameEl) playlistArtistNameEl.textContent = song.artist;
+            if (albumArtEl) albumArtEl.src = song.cover;
+
+
+            // Reset progress bar for new song
+            progressBar.value = 0;
+            currentTimeEl.textContent = formatTime(0);
+            // Duration will be updated by 'loadedmetadata' event
+
+            // We don't auto-play on load unless specified
+            // If you want to auto-play after loading a new song (e.g. after next/prev)
+            // you would call playSong() here.
+        }
+
+        function playSong() {
+            audio.play().then(() => {
+                playBtn.style.display = 'none';
+                pauseBtn.style.display = 'flex'; // Make sure it's flex or block as per your button styling
+            }).catch(error => console.error("Error playing audio:", error));
+        }
+
+        function pauseSong() {
+            audio.pause();
+            playBtn.style.display = 'flex';
+            pauseBtn.style.display = 'none';
+        }
+
+        function prevSong() {
+            currentSongIndex = (currentSongIndex - 1 + playlist.length) % playlist.length;
+            loadSong(currentSongIndex);
+            playSong(); // Autoplay previous song
+        }
+
+        function nextSong() {
+            currentSongIndex = (currentSongIndex + 1) % playlist.length;
+            loadSong(currentSongIndex);
+            playSong(); // Autoplay next song
+        }
+
+        function formatTime(seconds) {
+            if (isNaN(seconds) || seconds === Infinity) {
+                return '0:00';
+            }
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        audio.addEventListener('loadedmetadata', () => {
+            durationEl.textContent = formatTime(audio.duration);
+            progressBar.max = audio.duration; // Set max of range input to song duration
+        });
+
+        audio.addEventListener('timeupdate', () => {
+            currentTimeEl.textContent = formatTime(audio.currentTime);
+            if (!isNaN(audio.duration)) {
+                progressBar.value = audio.currentTime;
+            }
+        });
+
+        audio.addEventListener('ended', nextSong);
+
+        progressBar.addEventListener('input', () => {
+            audio.currentTime = progressBar.value;
+        });
+
+        playBtn.addEventListener('click', playSong);
+        pauseBtn.addEventListener('click', pauseSong);
+        prevBtn.addEventListener('click', prevSong);
+        nextBtn.addEventListener('click', nextSong);
+
+        volumeSlider.addEventListener('input', () => {
+            audio.volume = volumeSlider.value;
+            updateVolumeIcon(volumeSlider.value);
+        });
+        
+        function updateVolumeIcon(volume) {
+            if (volume == 0) {
+                volumeIcon.innerHTML = '<path d="M16.5 12A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/>'; // Muted icon
+            } else if (volume < 0.5) {
+                volumeIcon.innerHTML = '<path d="M3 9v6h4l5 5V4L7 9H3zm7 .83L8.17 11H7v2h1.17L10 14.17V9.83zM14.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>'; // Low volume
+            } else {
+                volumeIcon.innerHTML = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>'; // High volume
+            }
+        }
+
+        volumeIcon.addEventListener('click', () => {
+            if (audio.muted) {
+                audio.muted = false;
+                volumeSlider.value = audio.volume > 0 ? audio.volume : 0.1; // Restore or set to low if was 0
+            } else {
+                audio.muted = true;
+                volumeSlider.value = 0;
+            }
+            updateVolumeIcon(volumeSlider.value);
+        });
+        
+        // Function to play a song when an item in the main content area is clicked
+        function playSongFromPlaylist(index) {
+            currentSongIndex = index;
+            loadSong(currentSongIndex);
+            playSong();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSong(currentSongIndex);
+            audio.volume = parseFloat(volumeSlider.value); // Ensure it's a number
+            updateVolumeIcon(audio.volume);
+
+            // Set initial display for play/pause buttons
+            if (audio.paused) {
+                playBtn.style.display = 'flex';
+                pauseBtn.style.display = 'none';
+            } else {
+                playBtn.style.display = 'none';
+                pauseBtn.style.display = 'flex';
+            }
+        });
+
+    </script>
+</body>
+</html>

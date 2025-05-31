@@ -379,34 +379,8 @@
                     @* Register Form (Now Default) *@
                     <form id="registerForm" class="auth-form">
                         <input type="hidden" name="ReturnUrl" value="@ViewBag.ReturnUrl" />
-                        @* Add register alert div for error display *@
                         <div id="registerFormAlert" class="alert alert-danger d-none" role="alert"></div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="registerFirstName" class="form-label">First Name</label>
-                                <input type="text" class="form-control" id="registerFirstName" name="FirstName" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="registerLastName" class="form-label">Last Name</label>
-                                <input type="text" class="form-control" id="registerLastName" name="LastName" required>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="registerUsername" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="registerUsername" name="Username" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="registerEmail" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="registerEmail" name="Email" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="registerPassword" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="registerPassword" name="Password" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="registerConfirmPassword" class="form-label">Confirm Password</label>
-                            <input type="password" class="form-control" id="registerConfirmPassword" name="ConfirmPassword" required>
-                        </div>
+                        @await Html.PartialAsync("~/Views/Account/_RegisterFormPartial.cshtml", new MusicApp.ViewModels.RegisterViewModel { FirstName = string.Empty, LastName = string.Empty, Username = string.Empty, Email = string.Empty, Password = string.Empty, ConfirmPassword = string.Empty })
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary" id="registerSubmitBtn">Create Account</button>
                             <button class="btn btn-primary d-none" type="button" id="registerLoadingBtn" disabled>
@@ -422,20 +396,8 @@
                     @* Login Form (Now Secondary) *@
                     <form id="loginForm" class="auth-form d-none">
                         <input type="hidden" name="ReturnUrl" value="@ViewBag.ReturnUrl" />
-                        @* Add login alert div for error display *@
                         <div id="loginFormAlert" class="alert alert-danger d-none" role="alert"></div>
-                        <div class="mb-3">
-                            <label for="loginEmail" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="loginEmail" name="Email" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="loginPassword" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="loginPassword" name="Password" required>
-                        </div>
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="loginRememberMe" name="RememberMe">
-                            <label class="form-check-label" for="loginRememberMe">Remember me</label>
-                        </div>
+                        @await Html.PartialAsync("~/Views/Account/_LoginFormPartial.cshtml", new MusicApp.ViewModels.LoginViewModel())
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary" id="loginSubmitBtn">Sign In</button>
                             <button class="btn btn-primary d-none" type="button" id="loginLoadingBtn" disabled>
@@ -620,219 +582,191 @@
 
     @* Update auth modal JavaScript *@
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const authModal = document.getElementById('authModal');
-            const loginForm = document.getElementById('loginForm');
-            const registerForm = document.getElementById('registerForm');
-            const authAlert = document.getElementById('authAlert');
-            const modalTitle = document.querySelector('#authModal .modal-title');
+        // Initialize auth modal
+        const authModal = document.getElementById('authModal');
+        const modalTitle = authModal.querySelector('.modal-title');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const authAlert = document.getElementById('authAlert');
 
-            // Initialize with register form visible
-            switchAuthMode('register');
-
-            // Handle auth mode switching
-            document.querySelectorAll('.auth-switch').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const mode = this.dataset.authMode;
-                    switchAuthMode(mode);
-                });
-            });
-
-            // Handle modal open with specific mode
-            authModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                const mode = button.dataset.authMode || 'register'; // Default to register
+        // Add event listeners for auth mode switching
+        document.querySelectorAll('.auth-switch').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const mode = this.dataset.authMode;
                 switchAuthMode(mode);
             });
+        });
 
-            function switchAuthMode(mode) {
-                if (mode === 'login') {
-                    loginForm.classList.remove('d-none');
-                    registerForm.classList.add('d-none');
-                    modalTitle.textContent = 'Sign In';
-                } else {
-                    loginForm.classList.add('d-none');
-                    registerForm.classList.remove('d-none');
-                    modalTitle.textContent = 'Create Account';
-                }
-                authAlert.classList.add('d-none');
-                
-                // Hide form-specific alerts too
-                document.getElementById('loginFormAlert').classList.add('d-none');
-                document.getElementById('registerFormAlert').classList.add('d-none');
+        // Handle modal open with specific mode
+        authModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const mode = button.dataset.authMode || 'register'; // Default to register
+            switchAuthMode(mode);
+        });
+
+        function switchAuthMode(mode) {
+            if (mode === 'login') {
+                loginForm.classList.remove('d-none');
+                registerForm.classList.add('d-none');
+                modalTitle.textContent = 'Sign In';
+            } else {
+                loginForm.classList.add('d-none');
+                registerForm.classList.remove('d-none');
+                modalTitle.textContent = 'Create Account';
+            }
+            authAlert.classList.add('d-none');
+            
+            // Hide form-specific alerts too
+            document.getElementById('loginFormAlert').classList.add('d-none');
+            document.getElementById('registerFormAlert').classList.add('d-none');
+        }
+        
+        // Handle login form submission
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault(); // ALWAYS prevent default first thing
+            
+            // Clear all previous alerts
+            authAlert.classList.add('d-none');
+            
+            // Show loading button and hide submit button
+            const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+            const loginLoadingBtn = document.getElementById('loginLoadingBtn');
+            const loginFormAlert = document.getElementById('loginFormAlert');
+            
+            loginSubmitBtn.classList.add('d-none');
+            loginLoadingBtn.classList.remove('d-none');
+            loginFormAlert.classList.add('d-none');
+            
+            // Function to reset buttons - we'll call this in all cases
+            function resetLoginButtons() {
+                loginSubmitBtn.classList.remove('d-none');
+                loginLoadingBtn.classList.add('d-none');
             }
             
-            // Helper function to show auth errors in the common alert area
-            function showAuthError(message) {
-                authAlert.textContent = message;
-                authAlert.classList.remove('d-none');
-            }
-
-            // Handle login form submission
-            loginForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                authAlert.classList.add('d-none'); // Hide the common alert
-                
-                // Show loading button and hide submit button
-                const loginSubmitBtn = document.getElementById('loginSubmitBtn');
-                const loginLoadingBtn = document.getElementById('loginLoadingBtn');
-                const loginFormAlert = document.getElementById('loginFormAlert');
-                
-                loginSubmitBtn.classList.add('d-none');
-                loginLoadingBtn.classList.remove('d-none');
-                loginFormAlert.classList.add('d-none');
-                
-                const formData = new FormData(this);
-                
-                try {
-                    const response = await fetch('@Url.Action("Login", "Account")', {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-
-                    console.log('Login response status:', response.status);
-                    console.log('Login response headers:', [...response.headers.entries()]);
-
-                    // Get the response content as text first
-                    const responseText = await response.text();
-                    console.log('Login response text:', responseText);
-                    
-                    // Try to parse as JSON if possible
-                    let data;
-                    try {
-                        data = responseText ? JSON.parse(responseText) : { success: false, message: 'Empty response from server' };
-                        console.log('Parsed JSON data:', data);
-                    } catch (jsonError) {
-                        console.error('Error parsing response JSON:', jsonError, 'Response text:', responseText);
-                        data = { success: false, message: 'Error processing server response' };
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch('@Url.Action("Login", "Account")', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
-
-                    // Handle the response
-                    if (response.ok && data && data.success) {
-                        window.location.reload();
-                    } else {
-                        // Show error message
-                        let errorMsg = 'Login failed. ';
-                        
-                        if (data && data.message) {
-                            errorMsg += data.message;
-                        } else if (!response.ok) {
-                            errorMsg += `Server returned ${response.status} ${response.statusText}`;
-                        } else {
-                            errorMsg += 'Please try again.';
-                        }
-                        
-                        loginFormAlert.textContent = errorMsg;
-                        loginFormAlert.classList.remove('d-none');
-                        
-                        // Reset buttons
-                        loginSubmitBtn.classList.remove('d-none');
-                        loginLoadingBtn.classList.add('d-none');
-                    }
-                } catch (error) {
-                    console.error('Login request error:', error);
-                    
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Redirect on successful login
+                    window.location.href = data.redirectUrl || '/';
+                } else {
                     // Show error message
-                    loginFormAlert.textContent = 'An error occurred. Please try again.';
+                    loginFormAlert.textContent = data.message || 'Login failed. Please try again.';
                     loginFormAlert.classList.remove('d-none');
-                    
-                    // Reset buttons
-                    loginSubmitBtn.classList.remove('d-none');
-                    loginLoadingBtn.classList.add('d-none');
+                    resetLoginButtons();
                 }
-            });
+            } catch (error) {
+                console.error('Login error:', error);
+                loginFormAlert.textContent = 'An error occurred. Please try again.';
+                loginFormAlert.classList.remove('d-none');
+                resetLoginButtons();
+            }
+        });
 
-            // Handle register form submission
-            registerForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                authAlert.classList.add('d-none'); // Hide the common alert
-                
-                // Show loading button and hide submit button
-                const registerSubmitBtn = document.getElementById('registerSubmitBtn');
-                const registerLoadingBtn = document.getElementById('registerLoadingBtn');
-                const registerFormAlert = document.getElementById('registerFormAlert');
-                
-                registerSubmitBtn.classList.add('d-none');
-                registerLoadingBtn.classList.remove('d-none');
-                registerFormAlert.classList.add('d-none');
-                
-                // Validate password match
-                const password = document.getElementById('registerPassword').value;
-                const confirmPassword = document.getElementById('registerConfirmPassword').value;
+        // Handle register form submission
+        registerForm.addEventListener('submit', async function(e) {
+            e.preventDefault(); // ALWAYS prevent default first thing
+            
+            // Clear all previous alerts
+            authAlert.classList.add('d-none');
+            
+            // Show loading button and hide submit button
+            const registerSubmitBtn = document.getElementById('registerSubmitBtn');
+            const registerLoadingBtn = document.getElementById('registerLoadingBtn');
+            const registerFormAlert = document.getElementById('registerFormAlert');
+            
+            registerSubmitBtn.classList.add('d-none');
+            registerLoadingBtn.classList.remove('d-none');
+            registerFormAlert.classList.add('d-none');
+            
+            // Function to reset buttons - we'll call this in all cases
+            function resetRegisterButtons() {
+                registerSubmitBtn.classList.remove('d-none');
+                registerLoadingBtn.classList.add('d-none');
+            }
+            
+            try {
+                // Form validation
+                const password = document.getElementById('Password').value;
+                const confirmPassword = document.getElementById('ConfirmPassword').value;
                 if (password !== confirmPassword) {
                     registerFormAlert.textContent = 'Passwords do not match.';
-                    registerFormAlert.classList.remove('d-none');
-                    registerSubmitBtn.classList.remove('d-none');
-                    registerLoadingBtn.classList.add('d-none');
+                    registerFormAlert.classList.remove('d-none', 'alert-success');
+                    registerFormAlert.classList.add('alert-danger');
+                    resetRegisterButtons();
+                    return;
+                }
+                
+                // Validate password length (client-side)
+                if (password.length < 6) {
+                    registerFormAlert.textContent = 'Password must be at least 6 characters.';
+                    registerFormAlert.classList.remove('d-none', 'alert-success');
+                    registerFormAlert.classList.add('alert-danger');
+                    resetRegisterButtons();
                     return;
                 }
                 
                 const formData = new FormData(this);
                 
+                const response = await fetch('@Url.Action("Register", "Account")', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const responseText = await response.text();
+                console.log('Register response text:', responseText);
+                
+                let data;
                 try {
-                    const response = await fetch('@Url.Action("Register", "Account")', {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-
-                    console.log('Register response status:', response.status);
-                    console.log('Register response headers:', [...response.headers.entries()]);
-
-                    // Get the response content as text first
-                    const responseText = await response.text();
-                    console.log('Register response text:', responseText);
-                    
-                    // Try to parse as JSON if possible
-                    let data;
-                    try {
-                        data = responseText ? JSON.parse(responseText) : { success: false, message: 'Empty response from server' };
-                        console.log('Parsed JSON data:', data);
-                    } catch (jsonError) {
-                        console.error('Error parsing response JSON:', jsonError, 'Response text:', responseText);
-                        data = { success: false, message: 'Error processing server response' };
-                    }
-
-                    // Handle the response
-                    if (response.ok && data && data.success) {
-                        window.location.reload();
-                    } else {
-                        // Show error message
-                        let errorMsg = 'Registration failed. ';
-                        
-                        if (data && data.message) {
-                            errorMsg += data.message;
-                        } else if (!response.ok) {
-                            errorMsg += `Server returned ${response.status} ${response.statusText}`;
-                        } else {
-                            errorMsg += 'Please try again.';
-                        }
-                        
-                        registerFormAlert.textContent = errorMsg;
-                        registerFormAlert.classList.remove('d-none');
-                        
-                        // Reset buttons
-                        registerSubmitBtn.classList.remove('d-none');
-                        registerLoadingBtn.classList.add('d-none');
-                    }
-                } catch (error) {
-                    console.error('Registration request error:', error);
-                    
-                    // Show error message
-                    registerFormAlert.textContent = 'An error occurred. Please try again.';
-                    registerFormAlert.classList.remove('d-none');
-                    
-                    // Reset buttons
-                    registerSubmitBtn.classList.remove('d-none');
-                    registerLoadingBtn.classList.add('d-none');
+                    data = responseText ? JSON.parse(responseText) : { success: false, message: 'Empty response from server' };
+                } catch (jsonError) {
+                    console.error('Error parsing register response JSON:', jsonError);
+                    data = { success: false, message: 'Error processing server response' };
                 }
-            });
+                
+                if (response.ok && data && data.success) {
+                    // Registration successful: show message and switch to login form
+                    registerFormAlert.textContent = data.message || 'Registration successful! You can now sign in.';
+                    registerFormAlert.classList.remove('d-none', 'alert-danger');
+                    registerFormAlert.classList.add('alert-success');
+                    resetRegisterButtons();
+                    
+                    // Clear the form
+                    registerForm.reset();
+                    
+                    // Switch to login form after a short delay
+                    setTimeout(() => {
+                        switchAuthMode('login');
+                    }, 1200);
+                } else {
+                    // Show error message
+                    let errorMsg = data && data.message ? data.message : 'Registration failed. Please try again.';
+                    registerFormAlert.textContent = errorMsg;
+                    registerFormAlert.classList.remove('d-none', 'alert-success');
+                    registerFormAlert.classList.add('alert-danger');
+                    resetRegisterButtons();
+                }
+            } catch (error) {
+                console.error('Register request error:', error);
+                registerFormAlert.textContent = 'An error occurred. Please try again.';
+                registerFormAlert.classList.remove('d-none', 'alert-success');
+                registerFormAlert.classList.add('alert-danger');
+                resetRegisterButtons();
+            }
         });
     </script>
 </body>

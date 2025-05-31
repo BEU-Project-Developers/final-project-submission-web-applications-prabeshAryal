@@ -10,26 +10,23 @@ namespace MusicApp.Models
 
         [Required]
         [StringLength(50)]
-        public string FirstName { get; set; }
+        public required string FirstName { get; set; }
 
         [Required]
         [StringLength(50)]
-        public string LastName { get; set; }
+        public required string LastName { get; set; }
 
         [Required]
         [StringLength(50)]
-        public string Username { get; set; }
+        public required string Username { get; set; }
 
         [Required]
         [EmailAddress]
         [StringLength(100)]
-        public string Email { get; set; }
+        public required string Email { get; set; }        [StringLength(100)]
+        public string? PasswordHash { get; set; }
 
-        [Required]
-        [StringLength(100)]
-        public string PasswordHash { get; set; }
-
-        public string ProfileImageUrl { get; set; }
+        public string? ProfileImageUrl { get; set; }
 
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
@@ -42,4 +39,4 @@ namespace MusicApp.Models
         public ICollection<UserFollower> Following { get; set; } = new List<UserFollower>();
         public ICollection<UserFavorite> Favorites { get; set; } = new List<UserFavorite>();
     }
-} 
+}
