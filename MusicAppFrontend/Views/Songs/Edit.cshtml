@@ -302,69 +302,39 @@
             } else if (primaryArtistIdInput) {
                  primaryArtistIdInput.value = ""; // Clear if no primary artist selected
             }
-        }        function initializeArtistSelectionState() {
+        }
+
+        function initializeArtistSelectionState() {
             const selectedPrimaryId = primaryArtistSelect ? primaryArtistSelect.value : null;
-            
-            // Store current checked states before modifying
-            const currentCheckedStates = {};
-            artistCheckboxes.forEach(checkbox => {
-                currentCheckedStates[checkbox.value] = checkbox.checked;
-            });
-            
-            console.log('Initializing artist selection state. Primary ID:', selectedPrimaryId);
-            console.log('Current checked states:', currentCheckedStates);
-            
             artistCheckboxes.forEach(checkbox => {
                 if (checkbox.value === selectedPrimaryId && selectedPrimaryId) {
-                    checkbox.checked = true; // Primary artist must be checked
-                    checkbox.disabled = true; // Primary artist cannot be unchecked
-                    console.log(`Set primary artist ${checkbox.value} as checked and disabled`);
+                    checkbox.checked = true;
+                    checkbox.disabled = true;
                 } else {
                     checkbox.disabled = false;
-                    // Preserve existing checked state for non-primary artists
-                    // Use explicit check for undefined to preserve false states
-                    if (currentCheckedStates.hasOwnProperty(checkbox.value)) {
-                        checkbox.checked = currentCheckedStates[checkbox.value];
-                    }
-                    console.log(`Non-primary artist ${checkbox.value}: checked=${checkbox.checked}, disabled=${checkbox.disabled}`);
                 }
             });
             updateArtistLabels();
-        }        if (primaryArtistSelect) {
+        }
+
+        if (primaryArtistSelect) {
             primaryArtistSelect.addEventListener('change', function() {
                 const selectedPrimaryId = this.value;
-                
-                console.log('Primary artist changed to:', selectedPrimaryId);
-                
-                // Store current checked states before modifying
-                const currentCheckedStates = {};
-                artistCheckboxes.forEach(checkbox => {
-                    currentCheckedStates[checkbox.value] = checkbox.checked;
-                });
-                
-                console.log('Current checked states before change:', currentCheckedStates);
-                
                 artistCheckboxes.forEach(checkbox => {
                     if (checkbox.value === selectedPrimaryId && selectedPrimaryId) {
-                        checkbox.checked = true; // Primary artist must be checked
-                        checkbox.disabled = true; // Primary artist cannot be unchecked
-                        console.log(`Set new primary artist ${checkbox.value} as checked and disabled`);
+                        checkbox.checked = true;
+                        checkbox.disabled = true;
                     } else {
                         checkbox.disabled = false;
-                        // Preserve existing checked state for non-primary artists
-                        // Use explicit check for undefined to preserve false states
-                        if (currentCheckedStates.hasOwnProperty(checkbox.value)) {
-                            checkbox.checked = currentCheckedStates[checkbox.value];
-                        }
-                        console.log(`Non-primary artist ${checkbox.value}: checked=${checkbox.checked}, disabled=${checkbox.disabled}`);
                     }
                 });
                 updateArtistLabels();
                 if (primaryArtistIdInput) primaryArtistIdInput.value = selectedPrimaryId;
             });
-        }artistCheckboxes.forEach(checkbox => {
+        }
+
+        artistCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
-                console.log(`Artist checkbox changed: ${this.value}, checked: ${this.checked}`);
                 // If a primary artist is selected and this checkbox matches it, it shouldn't be uncheckable.
                 // This logic is mostly handled by disabling it. If it's somehow enabled and unchecked,
                 // the primary select should ideally clear. For simplicity, we rely on the disabled state.
@@ -373,39 +343,21 @@
         });
         
         initializeArtistSelectionState(); // Initial setup
-        
-        // Debug: Log initial artist states
-        console.log('Initial artist selection states:');
-        artistCheckboxes.forEach(checkbox => {
-            console.log(`Artist ${checkbox.value}: checked=${checkbox.checked}, disabled=${checkbox.disabled}`);
-        });        // --- Optional Fields Toggle Functionality ---
-        function syncOptionalFieldsVisibility() {
-            if (toggle && optionalFields && toggleLabel) {
-                console.log('Syncing toggle visibility. Toggle checked:', toggle.checked);
-                
-                if (toggle.checked) {
+
+        // --- Optional Fields Toggle Functionality ---
+        if (toggle && optionalFields && toggleLabel) {
+            toggle.addEventListener('change', function() {
+                if (this.checked) {
                     optionalFields.classList.remove('hidden');
-                    optionalFields.style.display = 'block';
-                    optionalFields.style.visibility = 'visible';
-                    requestAnimationFrame(() => {
+                    requestAnimationFrame(() => { // Ensure display change is processed before animation
                         optionalFields.classList.add('animate-fadeIn');
                     });
                     toggleLabel.textContent = 'Hide Advanced Options';
-                    console.log('Optional fields shown');
                 } else {
                     optionalFields.classList.remove('animate-fadeIn');
                     optionalFields.classList.add('hidden');
-                    optionalFields.style.display = 'none';
                     toggleLabel.textContent = 'Show Advanced Options';
-                    console.log('Optional fields hidden');
                 }
-            }
-        }
-        
-        if (toggle && optionalFields && toggleLabel) {
-            toggle.addEventListener('change', function() {
-                console.log('Toggle changed. New state:', this.checked);
-                syncOptionalFieldsVisibility();
             });
 
             // Auto-expand optional fields if any have values on initial load
@@ -425,28 +377,33 @@
             });
 
             if (hasOptionalValues) {
-                console.log('Auto-expanding optional fields due to existing values');
                 toggle.checked = true;
-                syncOptionalFieldsVisibility();
-            } else {
-                // Ensure initial state is correct
-                syncOptionalFieldsVisibility();
+                optionalFields.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    optionalFields.classList.add('animate-fadeIn');
+                });
+                toggleLabel.textContent = 'Hide Advanced Options';
             }
-        }        // --- Reset Form Functionality ---
+        }
+
+        // --- Reset Form Functionality ---
         if (resetButton && songEditForm) {
             resetButton.addEventListener('click', function() {
                 showCustomConfirm('Are you sure you want to reset all changes? This will revert all fields to their original values.', function() {
                     songEditForm.reset(); // Resets form field values to their initial state
 
                     // Explicitly reset toggle and optional fields visibility
-                    if (toggle) {
-                        toggle.checked = false;
-                        syncOptionalFieldsVisibility();
+                    if (toggle) toggle.checked = false;
+                    if (optionalFields) {
+                        optionalFields.classList.remove('animate-fadeIn');
+                        optionalFields.classList.add('hidden');
                     }
+                    if (toggleLabel) toggleLabel.textContent = 'Show Advanced Options';
 
                     // Re-initialize artist selection states
                     initializeArtistSelectionState();
                     if(primaryArtistIdInput && primaryArtistSelect) primaryArtistIdInput.value = primaryArtistSelect.value;
+
 
                     // Clear client-side cover image preview
                     if (coverImagePreviewContainer) {
@@ -457,60 +414,17 @@
                         currentCoverImage.style.display = ''; 
                     }
 
+
                     // Re-check if optional fields should be auto-expanded after reset (likely not, as values are cleared)
                     // but if there were default values from server that are not empty, this could be re-evaluated.
                     // For simplicity, current reset always hides them.
                 });
             });
-        }// --- Form Validation and Submission ---        if (songEditForm) {
+        }
+
+        // --- Form Validation and Submission ---
+        if (songEditForm) {
             songEditForm.addEventListener('submit', function(e) {
-                console.log('=== FORM SUBMISSION DEBUG ===');
-                
-                // Debug: Log all selected artists before submission
-                console.log('Form submission - Artist checkbox states:');
-                const selectedArtists = [];
-                
-                artistCheckboxes.forEach(checkbox => {
-                    console.log(`Artist ${checkbox.value}: checked=${checkbox.checked}, disabled=${checkbox.disabled}, name=${checkbox.name}`);
-                    if (checkbox.checked) {
-                        selectedArtists.push(checkbox.value);
-                    }
-                });
-                
-                console.log('Selected artists:', selectedArtists);
-                console.log('Total selected artists:', selectedArtists.length);
-                console.log('Primary artist ID:', primaryArtistIdInput ? primaryArtistIdInput.value : 'None');
-                
-                // Create fresh FormData and log it
-                const formData = new FormData(songEditForm);
-                
-                console.log('All form data entries:');
-                const artistIdsInForm = [];
-                for (let [key, value] of formData.entries()) {
-                    console.log(`${key}: ${value}`);
-                    if (key === 'ArtistIds') {
-                        artistIdsInForm.push(value);
-                    }
-                }
-                
-                console.log('ArtistIds in form data:', artistIdsInForm);
-                
-                // Double-check by manually querying checkboxes
-                const manuallyChecked = [];
-                const allArtistCheckboxes = songEditForm.querySelectorAll('input[name="ArtistIds"]:checked');
-                allArtistCheckboxes.forEach(cb => {
-                    manuallyChecked.push(cb.value);
-                });
-                console.log('Manually queried checked checkboxes:', manuallyChecked);
-                
-                // Ensure at least one artist is selected
-                if (selectedArtists.length === 0) {
-                    console.warn('No artists selected!');
-                    showCustomAlert('Please select at least one artist.');
-                    e.preventDefault();
-                    return;
-                }
-                
                 const titleInput = songEditForm.querySelector('input[name="Title"]');
                 const durationInput = songEditForm.querySelector('input[name="Duration"]');
                 const title = titleInput ? titleInput.value.trim() : '';

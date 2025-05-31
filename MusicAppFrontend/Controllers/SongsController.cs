@@ -85,7 +85,7 @@ namespace MusicApp.Controllers
             return View();
         }        [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Title,ArtistId,AlbumId,Duration,TrackNumber,Genre,ReleaseDate")] SongCreateViewModel model)
+        public async Task<IActionResult> Create([Bind("Title,ArtistId,AlbumId,Duration,TrackNumber,Genre,ReleaseDate")] SongCreateViewModel model, int[] ArtistIds)
         {            if (!ModelState.IsValid)
             {
                 var artists = await SafeApiCall(
@@ -105,13 +105,33 @@ namespace MusicApp.Controllers
                 return View(model);
             }            return await SafeApiAction(async () =>
             {
+                // Get PrimaryArtistId from the form data
+                int? primaryArtistId = null;
+                if (Request.Form.ContainsKey("PrimaryArtistId") && int.TryParse(Request.Form["PrimaryArtistId"], out var parsedPrimaryId))
+                {
+                    primaryArtistId = parsedPrimaryId;
+                }
+                
+                // Use the ArtistIds from the form submission
+                var artistIds = ArtistIds?.ToList() ?? new List<int>();
+                
+                // Ensure primary artist is included in the list if not already present
+                if (primaryArtistId.HasValue && !artistIds.Contains(primaryArtistId.Value))
+                {
+                    artistIds.Add(primaryArtistId.Value);
+                }
+                
+                // Log received data for debugging
+                _logger.LogInformation("Create song - Received ArtistIds: {ArtistIds}, PrimaryArtistId: {PrimaryArtistId}", 
+                    string.Join(", ", artistIds), primaryArtistId);
+
                 // Map to backend DTO with multiple artists support
                 var songCreateDto = new SongCreateDTO
                 {
                     Title = model.Title,
                     ArtistId = model.ArtistId, // Keep backward compatibility
-                    ArtistIds = model.ArtistIds?.Any() == true ? model.ArtistIds : (model.ArtistId.HasValue ? new List<int> { model.ArtistId.Value } : new List<int>()),
-                    PrimaryArtistId = model.PrimaryArtistId ?? model.ArtistId,
+                    ArtistIds = artistIds.Any() ? artistIds : (model.ArtistId.HasValue ? new List<int> { model.ArtistId.Value } : new List<int>()),
+                    PrimaryArtistId = primaryArtistId ?? model.ArtistId,
                     AlbumId = model.AlbumId,
                     Duration = model.Duration,
                     TrackNumber = model.TrackNumber,
