@@ -132,7 +132,7 @@ using (var scope = app.Services.CreateScope())
             logger.LogInformation("Successfully connected to the database.");
             
             // Initialize database and seed data
-            try
+            /*try
             {
                 logger.LogInformation("Initializing database with seed data...");
                 await DbInitializer.Initialize(app.Services);
@@ -141,7 +141,7 @@ using (var scope = app.Services.CreateScope())
             catch (Exception ex)
             {
                 logger.LogWarning(ex, "Database initialization failed. The application will start without initial data.");
-            }
+            }*/
         }
         else
         {
