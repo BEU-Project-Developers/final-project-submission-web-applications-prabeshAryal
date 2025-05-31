@@ -1,211 +1,336 @@
 @model MusicApp.ViewModels.ProfileViewModel
 @{
-    ViewData["Title"] = "Dashboard";
-    Random randomGen = new Random();
-    string GetRandomImageUrl(int width, int height)
-    {
-        int randomId = randomGen.Next(1, 1085);
-        return $"https://picsum.photos/id/{randomId}/{width}/{height}";
-    }
+    ViewData["Title"] = "Profile";
 }
 
-<div class="container mt-4">
-    <div class="row">
-        <!-- Profile Sidebar -->
-        <div class="col-lg-3 mb-4">
-            <div class="card border-0 shadow">
-                <div class="card-body text-center">
-                    <img src="@(string.IsNullOrEmpty(Model.User?.ProfileImageUrl) ? "/assets/default-profile.png" : Model.User.ProfileImageUrl)" 
-                         class="rounded-circle mb-3" width="120" height="120" alt="Profile Image"
-                         onerror="this.onerror=null; this.src='/assets/default-profile.png';">
-                    <h4>@Model.Username</h4>
-                    <p class="text-muted">@Model.MembershipStatus</p>
-
-                    <div class="d-grid gap-2 mt-3">
-                        <a href="@Url.Action("Profile", "Account")" class="btn btn-primary">
-                            <i class="bi bi-pencil"></i> Edit Profile
-                        </a>
-                    </div>
-
-                    <hr>
-
-                    <div class="d-flex justify-content-around text-center">
-                        <div>
-                            <h5>@Model.PlaylistsCount</h5>
-                            <small class="text-muted">Playlists</small>
-                        </div>
-                        <div>
-                            <h5>@Model.FollowersCount</h5>
-                            <small class="text-muted">Followers</small>
-                        </div>
-                        <div>
-                            <h5>@Model.FollowingCount</h5>
-                            <small class="text-muted">Following</small>
-                        </div>
-                    </div>
-                </div>
-            </div>            <div class="list-group mt-4 shadow-sm">
-                <a href="#" class="list-group-item list-group-item-action active">
-                    <i class="bi bi-speedometer2 me-2"></i> Dashboard
-                </a>
-                <a href="@Url.Action("Profile", "Account")" class="list-group-item list-group-item-action">
-                    <i class="bi bi-person me-2"></i> Profile Overview
-                </a>
-                <a href="@Url.Action("ListeningHistory", "Account")" class="list-group-item list-group-item-action">
-                    <i class="bi bi-clock-history me-2"></i> Listening History
-                </a>
-                <a href="@Url.Action("Index", "Playlists")" class="list-group-item list-group-item-action">
-                    <i class="bi bi-music-note-list me-2"></i> My Playlists
-                </a>
-                <form asp-controller="Account" asp-action="Logout" method="post">
-                    <button type="submit" class="list-group-item list-group-item-action w-100 text-start border-0">
-                        <i class="bi bi-box-arrow-right me-2"></i> Logout
-                    </button>
-                </form>
+<div class="container mx-auto p-4 max-w-4xl">
+    <!-- Profile Header -->
+    <div class="sleek-card mb-8 flex flex-col sm:flex-row items-center space-y-6 sm:space-y-0 sm:space-x-8">
+        <img src="@(string.IsNullOrEmpty(Model.ProfileImageUrl) ? "/assets/default-profile.png" : Model.ProfileImageUrl)"
+            alt="Profile Picture"
+            class="profile-avatar w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-ytm-accent-red object-cover shadow-md flex-shrink-0"
+            onerror="this.onerror=null; this.src='/assets/default-profile.png';">
+        <div class="text-center sm:text-left">
+            <h1 class="text-3xl lg:text-4xl font-bold text-ytm-text-primary">@Model.FullName</h1>
+            <p class="text-lg text-ytm-accent-red font-medium mt-1">@@@Model.Username</p>
+            <div class="mt-3 flex items-center justify-center sm:justify-start text-ytm-text-secondary">
+                <i class="bi bi-envelope me-2"></i>
+                <span>@Model.Email</span>
             </div>
-        </div>
-
-        <!-- Dashboard Content -->
-        <div class="col-lg-9">
-            <!-- Profile Stats -->
-            <div class="row mb-4">
-                <div class="col-md-4 mb-3">
-                    <div class="card bg-primary text-white h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-white-50">Total Listening Time</h6>
-                                    <h3 class="mb-0">@Model.TotalListeningTime</h3>
-                                </div>
-                                <i class="bi bi-clock-history fs-1 text-white-50"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <div class="card bg-success text-white h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-white-50">Top Genre</h6>
-                                    <h3 class="mb-0">@Model.TopGenre</h3>
-                                </div>
-                                <i class="bi bi-music-note-beamed fs-1 text-white-50"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <div class="card bg-info text-white h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="text-white-50">Favorite Artist</h6>
-                                    <h3 class="mb-0">@Model.FavoriteArtist</h3>
-                                </div>
-                                <i class="bi bi-mic fs-1 text-white-50"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
+                @if (User.IsInRole("Admin"))
+                {
+                    <span class="badge bg-danger">Admin</span>
+                }
+                else
+                {
+                    <span class="badge bg-primary">Member</span>
+                }
+                <span class="badge bg-secondary">Joined @Model.User?.CreatedAt.ToString("MMM yyyy")</span>
             </div>
-
-            <!-- Recently Played -->
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Recently Played</h5>
-                    <a href="#" class="btn btn-sm btn-outline-secondary">View All</a>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        @foreach (var track in Model.RecentlyPlayedTracks)
-                        {
-                            <div class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between align-items-center">
-                                    <div class="d-flex align-items-center">
-                                        <img src="@(string.IsNullOrEmpty(track.CoverImageUrl) ? GetRandomImageUrl(50, 50) : track.CoverImageUrl)" 
-                                             width="50" height="50" class="me-3" alt="Song Cover"
-                                             onerror="this.src='https://placehold.co/50x50/212121/AAAAAA?text=Song';">                                        <div>
-                                            <h6 class="mb-0">@track.SongTitle</h6>
-                                            <small class="text-muted">@track.ArtistName • @track.AlbumName</small>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <small class="text-muted me-3">@track.Duration</small>
-                                        <button class="btn btn-sm btn-outline-secondary rounded-circle">
-                                            <i class="bi bi-play-fill"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <!-- Top Artists -->
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header">
-                    <h5 class="mb-0">Top Artists</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row row-cols-2 row-cols-md-4 g-3">
-                        @foreach (var artist in Model.TopArtists)
-                        {
-                            <div class="col text-center">
-                                <img src="@(string.IsNullOrEmpty(artist.ArtistImageUrl) ? GetRandomImageUrl(80, 80) : artist.ArtistImageUrl)" 
-                                     class="rounded-circle mb-2" width="80" height="80" alt="@artist.ArtistName"
-                                     onerror="this.src='https://placehold.co/80x80/212121/AAAAAA?text=Artist';">
-                                <h6>@artist.ArtistName</h6>
-                                <p class="text-muted small">@artist.PlayCount plays</p>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <!-- Activity Feed -->
-            <div class="card shadow-sm">
-                <div class="card-header">
-                    <h5 class="mb-0">Recent Activity</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        @foreach (var activity in Model.ActivityFeedItems)
-                        {
-                            <div class="list-group-item">
-                                <div class="d-flex">
-                                    <div class="me-3">
-                                        <span class="badge rounded-circle p-2" style="background-color: @(activity.Type == "playlist_created" ? "var(--bs-primary)" : 
-                                                                                activity.Type == "song_liked" ? "var(--bs-danger)" : 
-                                                                                activity.Type == "artist_followed" ? "var(--bs-success)" : 
-                                                                                activity.Type == "album_added" ? "var(--bs-info)" : 
-                                                                                "var(--bs-secondary)")">
-                                            <i class="@(activity.Type == "playlist_created" ? "bi bi-music-note-list" : 
-                                                       activity.Type == "song_liked" ? "bi bi-heart-fill" : 
-                                                       activity.Type == "artist_followed" ? "bi bi-person-plus-fill" : 
-                                                       activity.Type == "album_added" ? "bi bi-disc-fill" : 
-                                                       "bi bi-activity")"></i>
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <p class="mb-1">@Html.Raw(activity.Description)</p>
-                                        <small class="text-muted">@(DateTime.Now - activity.Timestamp > TimeSpan.FromDays(365) ? $"{(int)((DateTime.Now - activity.Timestamp).TotalDays / 365)} years ago" :
-                                                              DateTime.Now - activity.Timestamp > TimeSpan.FromDays(30) ? $"{(int)((DateTime.Now - activity.Timestamp).TotalDays / 30)} months ago" :
-                                                              DateTime.Now - activity.Timestamp > TimeSpan.FromDays(1) ? $"{(int)(DateTime.Now - activity.Timestamp).TotalDays} days ago" :
-                                                              DateTime.Now - activity.Timestamp > TimeSpan.FromHours(1) ? $"{(int)(DateTime.Now - activity.Timestamp).TotalHours} hours ago" :
-                                                              DateTime.Now - activity.Timestamp > TimeSpan.FromMinutes(1) ? $"{(int)(DateTime.Now - activity.Timestamp).TotalMinutes} minutes ago" :
-                                                              "just now")</small>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-                <div class="card-footer text-center">
-                    <a href="#" class="text-decoration-none">View All Activity</a>
-                </div>
+            @if (!string.IsNullOrWhiteSpace(Model.Bio))
+            {
+                <div class="mt-4 text-ytm-text-secondary italic text-base max-w-xl">@Model.Bio</div>
+            }
+            <div class="mt-4">
+                <a href="@Url.Action("Profile", "Account")" class="button-primary py-2 px-5 rounded-lg font-semibold">
+                    <i class="bi bi-gear me-1"></i> Edit Profile / Settings
+                </a>
             </div>
         </div>
     </div>
+
+    <!-- Statistics Row -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <div class="sleek-card text-center">
+            <div class="text-ytm-text-secondary mb-1">Total Listening Time</div>
+            <div class="text-2xl font-bold">@Model.TotalListeningTime</div>
+        </div>
+        <div class="sleek-card text-center">
+            <div class="text-ytm-text-secondary mb-1">Top Genre</div>
+            <div class="text-2xl font-bold">@Model.TopGenre</div>
+        </div>
+        <div class="sleek-card text-center">
+            <div class="text-ytm-text-secondary mb-1">Favorite Artist</div>
+            <div class="text-2xl font-bold">@Model.FavoriteArtist</div>
+        </div>
+    </div>
+
+    <!-- Recently Played -->
+    <div class="sleek-card mb-8">
+        <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="bi bi-clock-history me-2 text-accent"></i> Recently Played
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">            @foreach (var track in Model.RecentlyPlayedTracks.Take(6))
+            {
+                <div class="flex items-center gap-4 bg-ytm-bg-tertiary rounded-lg p-3">
+                    <img src="@(string.IsNullOrEmpty(track.AlbumCoverUrl) ? "/assets/default-cover.png" : track.AlbumCoverUrl)"
+                        width="56" height="56" class="rounded shadow" alt="Song Cover"
+                        onerror="this.src='/assets/default-cover.png';">
+                    <div>
+                        <div class="font-semibold">@track.SongTitle</div>
+                        <div class="text-ytm-text-secondary text-sm">@track.ArtistName</div>
+                        <div class="text-ytm-text-secondary text-xs">@track.Duration</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Top Artists -->
+    <div class="sleek-card mb-8">
+        <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="bi bi-stars me-2 text-accent"></i> Top Artists
+        </h2>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            @foreach (var artist in Model.TopArtists.Take(4))
+            {
+                <div class="text-center">
+                    <img src="@(string.IsNullOrEmpty(artist.ArtistImageUrl) ? "/assets/default-artist.png" : artist.ArtistImageUrl)"
+                        width="64" height="64" class="rounded-full mx-auto mb-2 shadow" alt="Artist"
+                        onerror="this.src='/assets/default-artist.png';">
+                    <div class="font-semibold">@artist.ArtistName</div>
+                    <div class="text-ytm-text-secondary text-sm">@artist.PlayCount plays</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Activity Feed -->
+    <div class="sleek-card mb-8">
+        <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="bi bi-activity me-2 text-accent"></i> Recent Activity
+        </h2>
+        <div class="divide-y divide-ytm-border">
+            @foreach (var activity in Model.ActivityFeedItems.Take(6))
+            {
+                <div class="py-3 flex items-center gap-3">
+                    <span class="badge rounded-circle p-2 bg-secondary">
+                        <i class="@(activity.IconClass)"></i>
+                    </span>
+                    <div>
+                        <div>@Html.Raw(activity.Description)</div>
+                        <div class="text-ytm-text-secondary text-xs">@activity.TimeAgo</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Playlists Preview -->
+    <div class="sleek-card mb-8">
+        <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="bi bi-music-note-list me-2 text-accent"></i> My Playlists
+        </h2>
+        <div class="playlist-grid">
+            @foreach (var playlist in Model.User?.Playlists?.OrderByDescending(p => p.CreatedAt).Take(3) ??
+                        Enumerable.Empty<MusicApp.Models.Playlist>())
+            {
+                <div class="playlist-card group" data-playlist-id="@playlist.Id">
+                    <a href="@Url.Action("Details", "Playlists", new { id = playlist.Id })" class="playlist-link">
+                        <div class="playlist-cover-container">
+                            <img src="@(string.IsNullOrEmpty(playlist.CoverImageUrl) ? "/assets/default-cover.png" : playlist.CoverImageUrl)"
+                                class="playlist-cover" alt="@playlist.Name" onerror="this.src='/assets/default-cover.png';">
+                            <div class="playlist-overlay">
+                                <div class="overlay-actions">
+                                    <button class="play-button primary"
+                                        onclick="event.preventDefault(); playPlaylist(@playlist.Id)"><i
+                                            class="bi bi-play-fill"></i></button>
+                                    <button class="shuffle-button"
+                                        onclick="event.preventDefault(); shufflePlaylist(@playlist.Id)" title="Shuffle"><i
+                                            class="bi bi-shuffle"></i></button>
+                                </div>
+                            </div>
+                            <div class="playlist-shadow"></div>
+                        </div>
+                        <div class="playlist-info">
+                            <h3 class="playlist-title">@playlist.Name</h3>
+                            @if (!string.IsNullOrEmpty(playlist.Description))
+                            {
+                                <p class="playlist-description">@playlist.Description</p>
+                            }
+                            <div class="playlist-meta">
+                                <div class="flex items-center space-x-4 text-sm">
+                                    <span class="flex items-center space-x-1">
+                                        <i class="bi bi-music-note-list text-xs"></i>
+                                        <span>@(playlist.Songs?.Count ?? 0) songs</span>
+                                    </span>
+                                    <span class="flex items-center space-x-1">
+                                        <i class="bi bi-person text-xs"></i>
+                                        <span>@playlist.User?.Username</span>
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between mt-2">
+                                    <span class="playlist-date">@playlist.CreatedAt.ToString("MMM d, yyyy")</span>
+                                    <span class="playlist-privacy-badge @(playlist.IsPublic ? "public" : "private")">
+                                        <i class="bi bi-@(playlist.IsPublic ? "globe" : "lock")"></i>
+                                        @(playlist.IsPublic ? "Public" : "Private")
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+        <div class="mt-6 text-center">
+            <a href="@Url.Action("Index", "Playlists")"
+                class="button-primary font-semibold py-2 px-6 rounded-lg transition-colors duration-300 flex items-center justify-center mx-auto hover:bg-opacity-90">
+                View All Playlists <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+        </div>
+    </div>
 </div>
+
+<style>
+    .sleek-card {
+        background-color: var(--ytm-bg-secondary);
+        border-radius: 0.75rem;
+        box-shadow: 0 0 0 1px var(--ytm-border-color), 0px 5px 15px rgba(0, 0, 0, 0.2);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .profile-avatar {
+        min-width: 8rem;
+        min-height: 8rem;
+    }
+
+    .button-primary {
+        background-color: var(--ytm-accent-red);
+        color: var(--ytm-text-primary);
+        border: none;
+    }
+
+    .button-primary:hover {
+        background-color: #D60000;
+    }
+
+    .playlist-card-image {
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+    }
+
+    .text-accent {
+        color: var(--ytm-accent-red);
+    }
+
+    .playlist-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .playlist-card {
+        position: relative;
+        background-color: var(--ytm-bg-tertiary);
+        border-radius: 0.5rem;
+        overflow: hidden;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .playlist-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .playlist-cover-container {
+        position: relative;
+        width: 100%;
+        padding-top: 100%;
+        /* 1:1 Aspect Ratio */
+    }
+
+    .playlist-cover {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .playlist-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .playlist-card:hover .playlist-overlay {
+        opacity: 1;
+    }
+
+    .overlay-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .play-button,
+    .shuffle-button {
+        background: var(--ytm-accent-red);
+        color: white;
+        border: none;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    .play-button:hover,
+    .shuffle-button:hover {
+        background: #D60000;
+    }
+
+    .playlist-info {
+        padding: 1rem;
+    }
+
+    .playlist-title {
+        font-size: 1.125rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: var(--ytm-text-primary);
+    }
+
+    .playlist-description {
+        font-size: 0.875rem;
+        color: var(--ytm-text-secondary);
+        margin-bottom: 0.5rem;
+    }
+
+    .playlist-meta {
+        font-size: 0.875rem;
+        color: var(--ytm-text-secondary);
+    }
+
+    .playlist-date {
+        white-space: nowrap;
+    }
+
+    .playlist-privacy-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.125rem 0.5rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        margin-left: auto;
+    }
+
+    .playlist-privacy-badge.public {
+        background: rgba(0, 128, 0, 0.1);
+        color: green;
+    }
+
+    .playlist-privacy-badge.private {
+        background: rgba(255, 0, 0, 0.1);
+        color: red;
+    }
+</style>

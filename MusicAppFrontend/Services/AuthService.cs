@@ -395,23 +395,63 @@ namespace MusicApp.Services
             var userId = await GetLocalStorageAsync("userId");
             return userId ?? null;
         }
-    }    public class LoginResponse
+
+        public async Task UpdateUserClaimsAsync(AuthUserDto user)
+        {
+            if (_httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true)
+            {
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim("FirstName", user.FirstName),
+                    new Claim("LastName", user.LastName),
+                    new Claim("ProfileImageUrl", user.ProfileImageUrl ?? string.Empty),
+                    new Claim("Bio", user.Bio ?? string.Empty)
+                };
+
+                if (user.Roles != null)
+                {
+                    foreach (var role in user.Roles)
+                    {
+                        claims.Add(new Claim(ClaimTypes.Role, role));
+                    }
+                }
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7),
+                    AllowRefresh = true
+                };
+
+                await _httpContextAccessor.HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity),
+                    authProperties);
+
+                _logger.LogInformation("Updated user claims for user: {Username}", user.Username);
+            }
+        }    }    public class LoginResponse
     {
-        public string Token { get; set; }
-        public string RefreshToken { get; set; }
-        public AuthUserDto User { get; set; }
+        public string Token { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
+        public AuthUserDto User { get; set; } = new AuthUserDto();
         // Removed Success and Message properties to match backend TokenResponseDTO
     }
 
     public class AuthUserDto
     {
         public int Id { get; set; }
-        public string Username { get; set; }
-        public string Email { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string ProfileImageUrl { get; set; }
-        public List<string> Roles { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string ProfileImageUrl { get; set; } = string.Empty;
+        public string? Bio { get; set; } // Added missing Bio property
+        public List<string> Roles { get; set; } = new List<string>();
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

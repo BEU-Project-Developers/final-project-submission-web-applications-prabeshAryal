@@ -164,6 +164,7 @@ namespace MusicApp.Models.DTOs
         public int FollowersCount { get; set; }
         public int FollowingCount { get; set; }
         public List<string> Roles { get; set; } = new List<string>();
+        public string? Bio { get; set; } // <-- Add this line
     }
     
     public class SongListItemDto

@@ -279,8 +279,7 @@ namespace MusicApp.Services
                 _logger?.LogError(ex, "Unexpected error in PostAsync for {Endpoint}: {ErrorMessage}", endpoint, ex.Message);
                 throw new InvalidOperationException($"Unexpected error occurred while calling API: {ex.Message}", ex);
             }
-        }
-          public async Task<T> PutAsync<T>(string endpoint, object data)
+        }          public async Task<T> PutAsync<T>(string endpoint, object data)
         {
             try
             {
@@ -288,13 +287,17 @@ namespace MusicApp.Services
                 var json = JsonSerializer.Serialize(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 
-                // Log the Authorization header
-                _logger?.LogInformation("Authorization Header: {AuthHeader}", client.DefaultRequestHeaders.Authorization);
-
-                var response = await client.PutAsync(endpoint, content);
+                _logger?.LogInformation("PutAsync: Sending PUT request to {Endpoint}", endpoint);
+                _logger?.LogInformation("PutAsync: Request data: {Data}", json);
+                _logger?.LogInformation("PutAsync: Authorization Header: {AuthHeader}", client.DefaultRequestHeaders.Authorization);                var response = await client.PutAsync(endpoint, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+                
+                _logger?.LogInformation("PutAsync: Response status: {StatusCode}", response.StatusCode);
+                _logger?.LogInformation("PutAsync: Response content: {ResponseContent}", responseContent);
                 
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
+                    _logger?.LogWarning("PutAsync: Unauthorized response received");
                     await HandleUnauthorized();
                     return default;
                 }
@@ -307,14 +310,13 @@ namespace MusicApp.Services
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
                     _logger?.LogError("PUT request failed for {Endpoint} with status {StatusCode}: {Content}", 
-                        endpoint, response.StatusCode, errorContent);
+                        endpoint, response.StatusCode, responseContent);
                     
                     // Try to parse error response
                     try
                     {
-                        var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(errorContent, 
+                        var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(responseContent, 
                             new JsonSerializerOptions 
                             { 
                                 PropertyNameCaseInsensitive = true,
@@ -330,8 +332,6 @@ namespace MusicApp.Services
                     
                     throw new HttpRequestException($"API request failed with status code {response.StatusCode}", null, response.StatusCode);
                 }
-                
-                var responseContent = await response.Content.ReadAsStringAsync();
                 
                 // Handle empty responses gracefully
                 if (string.IsNullOrWhiteSpace(responseContent))
@@ -447,9 +447,12 @@ namespace MusicApp.Services
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsStreamAsync();
         }
-        
-        public async Task<string?> UploadFileAsync(string endpoint, IFormFile file, string paramName = "file")
+          public async Task<string?> UploadFileAsync(string endpoint, IFormFile file, string paramName = "file")
         {
+            _logger?.LogInformation("UploadFileAsync: Starting file upload to {Endpoint}", endpoint);
+            _logger?.LogInformation("UploadFileAsync: File name: {FileName}, Size: {Size}, ContentType: {ContentType}", 
+                file.FileName, file.Length, file.ContentType);
+            
             var client = await GetHttpClientAsync();
             using var content = new MultipartFormDataContent();
             
@@ -459,17 +462,23 @@ namespace MusicApp.Services
             
             content.Add(streamContent, paramName, file.FileName);
             
+            _logger?.LogInformation("UploadFileAsync: Sending POST request with multipart content");
             var response = await client.PostAsync(endpoint, content);
+            
+            _logger?.LogInformation("UploadFileAsync: Response status: {StatusCode}", response.StatusCode);
             
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
+                _logger?.LogWarning("UploadFileAsync: Unauthorized response received");
                 await HandleUnauthorized();
                 return null;
             }
             
             response.EnsureSuccessStatusCode();
               var responseContent = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<FileUploadResultDto>(responseContent, 
+            _logger?.LogInformation("UploadFileAsync: Response content: {ResponseContent}", responseContent);
+            
+            var result = JsonSerializer.Deserialize<FileUploadResultDto>(responseContent,
                 new JsonSerializerOptions 
                 { 
                     PropertyNameCaseInsensitive = true,
