@@ -41,11 +41,11 @@ namespace MusicAppBackend.Controllers
         }        [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO login)
         {
-            _logger.LogInformation("Login attempt for email: {Email}", login.Email);
+            _logger.LogInformation("Login attempt with identifier: {UserIdentifier}", login.UserIdentifier);
             
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Login failed due to invalid model state for email: {Email}", login.Email);
+                _logger.LogWarning("Login failed due to invalid model state for identifier: {UserIdentifier}", login.UserIdentifier);
                 return BadRequest(ModelState);
             }
 
@@ -53,17 +53,12 @@ namespace MusicAppBackend.Controllers
 
             if (!result.Success)
             {
-                _logger.LogWarning("Login failed for email: {Email}. Reason: {Message}", login.Email, result.Message);
-                return Unauthorized(new { message = result.Message });
+                _logger.LogWarning("Login failed for identifier: {UserIdentifier}. Reason: {Message}", login.UserIdentifier, result.Message);
+                return BadRequest(new { message = result.Message });
             }
 
-            _logger.LogInformation("User successfully logged in with email: {Email}", login.Email);
-            return Ok(new TokenResponseDTO
-            {
-                Token = result.Token!,
-                RefreshToken = result.RefreshToken!,
-                User = result.User!
-            });
+            _logger.LogInformation("User successfully logged in with identifier: {UserIdentifier}", login.UserIdentifier);
+            return Ok(new { token = result.Token, refreshToken = result.RefreshToken, user = result.User });
         }        [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDTO refreshTokenDto)
         {
@@ -113,4 +108,4 @@ namespace MusicAppBackend.Controllers
             return Ok(new { message = "Token revoked successfully" });
         }
     }
-} 
+}

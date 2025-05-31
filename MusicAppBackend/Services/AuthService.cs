@@ -42,29 +42,24 @@ namespace MusicAppBackend.Services
         public async Task<(bool Success, string Message, UserDTO? User, string? Token, string? RefreshToken)> LoginAsync(LoginDTO login)
         {
             var user = await _context.Users
-                .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
-                .FirstOrDefaultAsync(u => u.Email == login.Email);
+                .FirstOrDefaultAsync(u => u.Email == login.UserIdentifier || u.Username == login.UserIdentifier);
 
             if (user == null)
             {
-                return (false, "User not found", null, null, null);
+                return (false, "Invalid login credentials", null, null, null);
             }
 
             if (!VerifyPassword(login.Password, user.PasswordHash))
             {
-                return (false, "Invalid password", null, null, null);
+                return (false, "Invalid login credentials", null, null, null);
             }
 
-            // Update last login time
+            // Update last login
             user.LastLoginAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            // Generate JWT token
             var token = await GenerateJwtTokenAsync(user);
             var refreshToken = await GenerateRefreshTokenAsync(user.Id);
-
-            var roles = user.UserRoles.Select(ur => ur.Role.Name).ToList();
 
             var userDto = new UserDTO
             {
@@ -74,7 +69,13 @@ namespace MusicAppBackend.Services
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 ProfileImageUrl = user.ProfileImageUrl,
-                Roles = roles
+                Roles = await _context.UserRoles
+                    .Where(ur => ur.UserId == user.Id)
+                    .Join(_context.Roles,
+                        ur => ur.RoleId,
+                        r => r.Id,
+                        (ur, r) => r.Name)
+                    .ToListAsync()
             };
 
             return (true, "Login successful", userDto, token, refreshToken);
@@ -274,4 +275,4 @@ namespace MusicAppBackend.Services
             return BCrypt.Net.BCrypt.Verify(password, passwordHash);
         }
     }
-} 
+}
