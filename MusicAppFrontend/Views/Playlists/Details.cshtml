@@ -252,17 +252,19 @@
             <h1>@Model.Name</h1>
             <p><i class="bi bi-card-text me-2"></i>@Model.Description</p>
             <p><i class="bi bi-person me-2"></i>Created by: @(Model.IsOwner ? "You" : "Unknown")</p>
-            <p><i class="bi bi-music-note-list me-2"></i>@Model.Songs.Count song(s)</p>
-            <div class="action-buttons">
+            <p><i class="bi bi-music-note-list me-2"></i>@Model.Songs.Count song(s)</p>            <div class="action-buttons">
                 <button class="btn btn-success" onclick="playAllSongs()">
                     <i class="bi bi-play-fill me-2"></i>Play All
                 </button>
                 <button class="btn btn-primary" onclick="shufflePlaylist()">
                     <i class="bi bi-shuffle me-2"></i>Shuffle All
                 </button>
-                <button class="btn btn-dark" onclick="openAddSongsModal()">
-                    <i class="bi bi-plus-circle me-2"></i>Add Songs
-                </button>
+                @if (Model.IsOwner)
+                {
+                    <button class="btn btn-dark" onclick="openAddSongsModal()">
+                        <i class="bi bi-plus-circle me-2"></i>Add Songs
+                    </button>
+                }
             </div>
         </div>
     </div>
@@ -272,8 +274,7 @@
         <h3><i class="bi bi-music-note-list me-2"></i>Songs in this Playlist</h3>
         @if (Model.Songs != null && Model.Songs.Any())
         {
-            <div class="table-responsive">
-                <table class="table table-hover song-table">
+            <div class="table-responsive">                <table class="table table-hover song-table">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -282,7 +283,10 @@
                             <th>Artist</th>
                             <th>Album</th>
                             <th>Duration</th>
-                            <th>Actions</th>
+                            @if (Model.IsOwner)
+                            {
+                                <th>Actions</th>
+                            }
                         </tr>
                     </thead>
                     <tbody id="playlist-songs-tbody">
@@ -304,27 +308,35 @@
                                 </td>
                                 <td onclick="playSong('@song.SongId')" class="fw-semibold">@song.Title</td>
                                 <td onclick="playSong('@song.SongId')" class="text-muted">@song.ArtistName</td>
-                                <td onclick="playSong('@song.SongId')" class="text-muted">@song.AlbumName</td>
-                                <td class="text-muted">@song.Duration</td>
-                                <td class="actions-cell">
-                                    <button class="btn btn-sm btn-outline-danger" 
-                                            onclick="removeSongFromPlaylist('@song.SongId', event)"
-                                            title="Remove from playlist">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </td>
+                                <td onclick="playSong('@song.SongId')" class="text-muted">@song.AlbumName</td>                                <td class="text-muted">@song.Duration</td>
+                                @if (Model.IsOwner)
+                                {
+                                    <td class="actions-cell">
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="removeSongFromPlaylist('@song.SongId', event)"
+                                                title="Remove from playlist">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                }
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
-        }
-        else
+        }        else
         {
             <div class="empty-playlist">
                 <i class="bi bi-music-note-list"></i>
                 <h5>This playlist is currently empty</h5>
-                <p>Add some songs using the Add Songs button above to get started!</p>
+                @if (Model.IsOwner)
+                {
+                    <p>Add some songs using the Add Songs button above to get started!</p>
+                }
+                else
+                {
+                    <p>This playlist has no songs yet.</p>
+                }
             </div>
         }
     </div>
@@ -518,6 +530,14 @@
             }
         }        async function removeSongFromPlaylist(songId, event) {
             event.stopPropagation();
+            
+            // Check if user is the owner of the playlist
+            const isOwner = @(Model.IsOwner.ToString().ToLower());
+            if (!isOwner) {
+                showNotification("You don't have permission to modify this playlist.", 'error');
+                return;
+            }
+            
             if (!confirm('Are you sure you want to remove this song from the playlist?')) {
                 return;
             }
@@ -619,6 +639,13 @@
             container.innerHTML = resultsHtml;
             container.style.display = 'block';
         }        async function addSongToPlaylist(songId) {
+            // Check if user is the owner of the playlist
+            const isOwner = @(Model.IsOwner.ToString().ToLower());
+            if (!isOwner) {
+                showNotification("You don't have permission to modify this playlist.", 'error');
+                return false;
+            }
+            
             try {
                 const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
                 const response = await fetch('/Playlists/AddSongToPlaylistAjax', {
@@ -636,6 +663,7 @@
                 if (response.ok) {
                     showNotification('Song added to playlist successfully!', 'success');
                     setTimeout(() => window.location.reload(), 1000);
+                    return true;
                 } else {
                     const errorData = await response.text();
                     throw new Error(`Failed to add song: ${response.status} - ${errorData}`);
@@ -643,6 +671,7 @@
             } catch (error) {
                 console.error('Error adding song to playlist:', error);
                 showNotification(`Error adding song: ${error.message}`, 'error');
+                return false;
             }
         }
 
@@ -752,11 +781,10 @@
                 console.error('Error searching songs:', error);
                 showNotification(`Search error: ${error.message}`, 'error');
             }
-        }
-
-        // Display search results in the modal
+        }        // Display search results in the modal
         function displayModalSearchResults(songs) {
             const container = document.getElementById('modal-search-results-container');
+            const isOwner = @(Model.IsOwner.ToString().ToLower());
             
             if (!songs || songs.length === 0) {
                 container.innerHTML = '<div class="text-center p-4 text-muted"><i class="bi bi-search me-2"></i>No songs found</div>';
@@ -776,18 +804,25 @@
                             <div class="text-muted small">${song.artistName} - ${song.albumTitle || 'Unknown Album'}</div>
                         </div>
                     </div>
+                    ${isOwner ? `
                     <button class="btn btn-sm btn-dark" onclick="addSongFromModal(${song.id}, event)" title="Add to playlist">
                         <i class="bi bi-plus"></i> Add
                     </button>
+                    ` : ''}
                 </div>
             `).join('');
             
             container.innerHTML = resultsHtml;
             container.style.display = 'block';
-        }
-
-        // Add song from modal and show feedback
+        }// Add song from modal and show feedback
         async function addSongFromModal(songId, event) {
+            // Check if user is the owner of the playlist
+            const isOwner = @(Model.IsOwner.ToString().ToLower());
+            if (!isOwner) {
+                showNotification("You don't have permission to modify this playlist.", 'error');
+                return;
+            }
+            
             try {
                 const result = await addSongToPlaylist(songId);
                 // Only update UI if song was actually added (not duplicate)
