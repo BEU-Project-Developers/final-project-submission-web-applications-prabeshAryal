@@ -4,7 +4,7 @@
     ViewData["Title"] = "Songs";
     int currentPage = Model?.CurrentPage ?? 1;
     int totalPages = Model?.TotalPages ?? 1;
-    int pageSize = Model?.PageSize ?? 20;
+    int pageSize = Model?.PageSize ?? (User.IsInRole("Admin") ? 20 : 21); // 3 rows of 7 = 21
 }
 
 @if (User.IsInRole("Admin"))
@@ -155,124 +155,151 @@
 }
 else
 {
-    <!-- User Song Grid/Table View (implement as needed) -->
+    <!-- Grammy Disk Style Grid Layout for Users -->
     <div class="min-h-screen bg-[var(--ytm-bg-primary)] text-[var(--ytm-text-primary)] p-6">
-        <h1 class="text-3xl font-bold mb-6">Songs</h1>
-        <div class="bg-[var(--ytm-bg-secondary)] rounded-lg shadow-xl overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-[var(--ytm-bg-tertiary]">
-                        <tr>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Title</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Artist</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Album</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Duration</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-[var(--ytm-text-secondary)]">Genre</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-[var(--ytm-border-color)]">                        @foreach (var song in Model.Data)
-                        {
-                            <tr class="hover:bg-[var(--ytm-bg-tertiary)] transition-colors group">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <button class="play-btn opacity-0 group-hover:opacity-100 transition-opacity" 
-                                                data-play-song='@Html.Raw(Json.Serialize(new { 
-                                                    id = song.Id, 
-                                                    title = song.Title, 
-                                                    artistName = song.Artists != null && song.Artists.Any() ? string.Join(", ", song.Artists.Select(a => a.Name)) : song.ArtistName, 
-                                                    audioUrl = song.AudioUrl, 
-                                                    coverImageUrl = song.CoverImageUrl 
-                                                }))'
-                                                data-playlist='@Html.Raw(Json.Serialize(Model.Data.Select(s => new { 
-                                                    id = s.Id, 
-                                                    title = s.Title, 
-                                                    artistName = s.Artists != null && s.Artists.Any() ? string.Join(", ", s.Artists.Select(a => a.Name)) : s.ArtistName, 
-                                                    audioUrl = s.AudioUrl, 
-                                                    coverImageUrl = s.CoverImageUrl 
-                                                })))'
-                                                data-index="@Model.Data.ToList().IndexOf(song)"
-                                                title="Play song">
-                                            <i class="bi bi-play-fill text-[var(--ytm-accent-red)] text-xl"></i>
-                                        </button>
-                                        <div class="font-medium text-[var(--ytm-text-primary)] cursor-pointer" 
-                                             onclick="window.location.href='@Url.Action("Details", new { id = song.Id })'">
-                                            @song.Title                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-[var(--ytm-text-secondary)]">
-                                        @if (song.Artists != null && song.Artists.Any())
-                                        {
-                                            @for (int i = 0; i < song.Artists.Count; i++)
-                                            {
-                                                var artist = song.Artists[i];
-                                                <a asp-controller="Artists" asp-action="Details" asp-route-id="@artist.Id" 
-                                                   class="hover:text-[var(--ytm-text-primary)] transition-colors">
-                                                    @artist.Name
-                                                </a>@(i < song.Artists.Count - 1 ? ", " : "")
-                                            }
-                                        }
-                                        else
-                                        {
-                                            @if (!string.IsNullOrEmpty(song.ArtistName))
-                                            {
-                                                <a asp-controller="Artists" asp-action="Details" asp-route-id="@song.ArtistId" 
-                                                   class="hover:text-[var(--ytm-text-primary)] transition-colors">
-                                                    @song.ArtistName
-                                                </a>
-                                            }
-                                            else
-                                            {
-                                                @:-
-                                            }
-                                        }
-                                    </div>
-                                </td><td class="px-6 py-4">
-                                    <div class="text-[var(--ytm-text-secondary)]">@(song.AlbumTitle ?? "-")</div>
-                                </td>                                <td class="px-6 py-4">
-                                    <div class="text-[var(--ytm-text-secondary)]">
-                                        @if (song.Duration.HasValue && song.Duration.Value != TimeSpan.Zero)
-                                        {
-                                            @song.Duration.Value.ToString(@"mm\:ss")
-                                        }
-                                        else
-                                        {
-                                            @:--:--
-                                        }
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-[var(--ytm-text-secondary)]">@(song.Genre ?? "-")</div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+        <h1 class="text-3xl font-bold mb-8">Songs Collection</h1>        @if (Model.Data?.Any() ?? false)
+        {
+            <!-- Grammy Disk Grid -->
+            <div class="grid grid-cols-7 gap-4 mb-12 justify-items-center">
+                @foreach (var song in Model.Data)
+                {
+                    <div class="group relative w-36 h-fit">                        <!-- Album Cover/Disk Container -->
+                        <div class="relative w-36 h-36 rounded-full overflow-hidden bg-gradient-to-br from-gray-200 via-gray-100 to-white transform transition-all duration-300 hover:scale-105 hover:shadow-lg">
+                            <!-- Very subtle vinyl record rings for disk effect -->
+                            <div class="absolute inset-3 rounded-full border border-gray-300 opacity-10"></div>
+                            <div class="absolute inset-8 rounded-full border border-gray-200 opacity-8"></div>
+                            
+                            <!-- Album Cover Image -->
+                            @if (!string.IsNullOrEmpty(song.CoverImageUrl))
+                            {
+                                <img src="@song.CoverImageUrl" 
+                                     alt="@song.Title" 
+                                     class="w-full h-full object-cover rounded-full"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            }
+                            <!-- Fallback Icon -->
+                            <div class="@(!string.IsNullOrEmpty(song.CoverImageUrl) ? "hidden" : "") w-full h-full flex items-center justify-center bg-gradient-to-br from-[var(--ytm-bg-secondary)] to-[var(--ytm-bg-tertiary)] rounded-full">
+                                <i class="fas fa-music text-2xl text-[var(--ytm-text-secondary)] opacity-60"></i>
+                            </div>
+                              <!-- Center Hole (like a vinyl record) - made smaller and more subtle -->
+                            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[var(--ytm-bg-primary)] rounded-full border border-gray-300 z-10 opacity-60">
+                                <div class="w-full h-full rounded-full bg-gradient-to-br from-gray-500 to-gray-600"></div>
+                            </div>
+                              <!-- Play Button Overlay - cleaner, less intrusive -->
+                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-full z-20 bg-black bg-opacity-10 backdrop-blur-sm">
+                                <button class="play-btn w-10 h-10 bg-[var(--ytm-accent-red)] rounded-full flex items-center justify-center transform transition-all duration-200 hover:scale-110 hover:bg-red-600 shadow-lg" 
+                                        data-play-song='@Html.Raw(Json.Serialize(new { 
+                                            id = song.Id, 
+                                            title = song.Title, 
+                                            artistName = song.Artists != null && song.Artists.Any() ? string.Join(", ", song.Artists.Select(a => a.Name)) : song.ArtistName, 
+                                            audioUrl = song.AudioUrl, 
+                                            coverImageUrl = song.CoverImageUrl 
+                                        }))'
+                                        data-playlist='@Html.Raw(Json.Serialize(Model.Data.Select(s => new { 
+                                            id = s.Id, 
+                                            title = s.Title, 
+                                            artistName = s.Artists != null && s.Artists.Any() ? string.Join(", ", s.Artists.Select(a => a.Name)) : s.ArtistName, 
+                                            audioUrl = s.AudioUrl, 
+                                            coverImageUrl = s.CoverImageUrl 
+                                        })))'
+                                        data-index="@Model.Data.ToList().IndexOf(song)"
+                                        title="Play @song.Title">
+                                    <i class="fas fa-play text-white text-sm ml-0.5"></i>
+                                </button>
+                            </div>
+                              <!-- Genre Badge - more subtle -->
+                            @if (!string.IsNullOrEmpty(song.Genre))
+                            {
+                                <div class="absolute top-1 right-1 opacity-0 group-hover:opacity-90 transition-opacity duration-300 z-10">
+                                    <span class="bg-white bg-opacity-80 text-gray-700 text-xs px-1.5 py-0.5 rounded-full backdrop-blur-sm shadow-sm">
+                                        @song.Genre
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                        
+                        <!-- Song Info -->
+                        <div class="mt-2 text-center space-y-0.5 px-1">
+                            <!-- Song Title -->
+                            <h3 class="font-medium text-[var(--ytm-text-primary)] text-xs leading-tight cursor-pointer hover:text-[var(--ytm-accent-red)] transition-colors truncate" 
+                                onclick="window.location.href='@Url.Action("Details", new { id = song.Id })'"
+                                title="@song.Title">
+                                @song.Title
+                            </h3>
+                            
+                            <!-- Artist -->
+                            <div class="text-xs text-[var(--ytm-text-secondary)] truncate" title="@(song.Artists != null && song.Artists.Any() ? string.Join(", ", song.Artists.Select(a => a.Name)) : song.ArtistName)">
+                                @if (song.Artists != null && song.Artists.Any())
+                                {
+                                    @for (int i = 0; i < song.Artists.Count; i++)
+                                    {
+                                        var artist = song.Artists[i];
+                                        <a asp-controller="Artists" asp-action="Details" asp-route-id="@artist.Id" 
+                                           class="hover:text-[var(--ytm-text-primary)] transition-colors">
+                                            @artist.Name
+                                        </a>@(i < song.Artists.Count - 1 ? ", " : "")
+                                    }
+                                }
+                                else if (!string.IsNullOrEmpty(song.ArtistName))
+                                {
+                                    <a asp-controller="Artists" asp-action="Details" asp-route-id="@song.ArtistId" 
+                                       class="hover:text-[var(--ytm-text-primary)] transition-colors">
+                                        @song.ArtistName
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span>Unknown Artist</span>
+                                }
+                            </div>
+                            
+                            <!-- Duration -->
+                            @if (song.Duration.HasValue && song.Duration.Value != TimeSpan.Zero)
+                            {
+                                <div class="text-xs text-[var(--ytm-text-secondary)] opacity-75">
+                                    @song.Duration.Value.ToString(@"mm\:ss")
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
             </div>
-        </div>
-        <!-- Pagination Controls -->
+        }        else
+        {
+            <!-- Empty State -->
+            <div class="text-center py-16">
+                <div class="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
+                    <i class="fas fa-music text-2xl text-[var(--ytm-text-secondary)] opacity-50"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-[var(--ytm-text-primary)] mb-2">No Songs Found</h3>
+                <p class="text-[var(--ytm-text-secondary)]">Check back later for new music!</p>
+            </div>
+        }          <!-- Pagination Controls -->
         @if (totalPages > 1)
         {
-            <nav class="flex justify-center mt-10">
-                <ul class="inline-flex -space-x-px">
-                    <li>
-                        <a asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 ml-0 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-l-lg @(currentPage == 1 ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary)]")">Prev</a>
+            <nav class="flex justify-center mt-16">
+                <ul class="inline-flex -space-x-px">                    <li>
+                        <a asp-action="Index" asp-route-page="@(currentPage - 1)" asp-route-pageSize="@pageSize" 
+                           class="px-4 py-2 ml-0 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-l-lg transition-colors @(currentPage == 1 ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary)] hover:text-[var(--ytm-text-primary)]")">
+                            <i class="fas fa-chevron-left mr-1"></i>Prev
+                        </a>
                     </li>
                     @for (int i = 1; i <= totalPages; i++)
                     {
                         <li>
-                            <a asp-action="Index" asp-route-page="@i" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight border border-[var(--ytm-border-color)] @(i == currentPage ? "bg-[var(--ytm-accent-red)] text-[var(--ytm-text-primary)]" : "bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-secondary)] hover:bg-[var(--ytm-bg-secondary)]")">@i</a>
+                            <a asp-action="Index" asp-route-page="@i" asp-route-pageSize="@pageSize" 
+                               class="px-4 py-2 leading-tight border border-[var(--ytm-border-color)] transition-colors @(i == currentPage ? "bg-[var(--ytm-accent-red)] text-[var(--ytm-text-primary)] font-semibold" : "bg-[var(--ytm-bg-tertiary)] text-[var(--ytm-text-secondary)] hover:bg-[var(--ytm-bg-secondary)] hover:text-[var(--ytm-text-primary)]")">
+                                @i
+                            </a>
                         </li>
-                    }
-                    <li>
-                        <a asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-pageSize="@pageSize" class="px-3 py-2 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-r-lg @(currentPage == totalPages ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary)]")">Next</a>
+                    }                    <li>
+                        <a asp-action="Index" asp-route-page="@(currentPage + 1)" asp-route-pageSize="@pageSize" 
+                           class="px-4 py-2 leading-tight text-[var(--ytm-text-secondary)] bg-[var(--ytm-bg-tertiary)] border border-[var(--ytm-border-color)] rounded-r-lg transition-colors @(currentPage == totalPages ? "pointer-events-none opacity-50" : "hover:bg-[var(--ytm-bg-secondary)] hover:text-[var(--ytm-text-primary)]")">
+                            Next<i class="fas fa-chevron-right ml-1"></i>
+                        </a>
                     </li>
                 </ul>
             </nav>
-        }
-        @if (!(Model.Data?.Any() ?? false))
-        {
-            <div class="mt-8 px-4 py-3 rounded-lg bg-[var(--ytm-bg-secondary)] text-[var(--ytm-text-secondary)] border border-[var(--ytm-border-color)]">No songs found. Check back later!</div>
         }
     </div>
 }
