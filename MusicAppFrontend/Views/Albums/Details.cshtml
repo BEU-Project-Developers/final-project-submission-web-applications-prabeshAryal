@@ -8,64 +8,94 @@
 
 @Html.AntiForgeryToken()
 
-<style>
+<style>    /* Main container for focused content layout */
+    .album-details-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        min-height: 100vh;
+    }
+
     .album-header {
         display: flex;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         border-radius: 12px;
         overflow: hidden;
         background-color: var(--ytm-bg-secondary);
+        padding: 1.5rem;
+        gap: 1.5rem;
     }
 
     .album-cover {
-        flex: 0 0 300px;
-        height: 300px;
+        flex: 0 0 200px;
+        height: 200px;
         object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
     }
 
     .album-info {
         flex: 1;
-        padding: 2rem;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        min-width: 0;
     }
 
     .album-title {
-        font-size: 2.5rem;
+        font-size: 2rem;
         font-weight: 700;
         color: var(--ytm-text-primary);
         margin-bottom: 0.5rem;
+        line-height: 1.2;
     }
 
     .album-artist {
-        font-size: 1.2rem;
-        color: var(--ytm-text-secondary);
+        font-size: 1.1rem;
         margin-bottom: 1rem;
+    }
+
+    .album-artist a {
+        color: var(--ytm-text-secondary);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .album-artist a:hover {
+        color: var(--ytm-text-primary);
     }
 
     .album-meta {
         display: flex;
         flex-wrap: wrap;
-        gap: 1.5rem;
+        gap: 1rem;
         margin-bottom: 1.5rem;
     }
 
     .meta-item {
         color: var(--ytm-text-secondary);
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .meta-item i {
+        font-size: 0.8rem;
     }
 
     .album-description {
         color: var(--ytm-text-secondary);
         margin-bottom: 1.5rem;
-        max-width: 80ch;
-        line-height: 1.6;
+        max-width: 60ch;
+        line-height: 1.5;
+        font-size: 0.9rem;
     }
 
     .album-actions {
         display: flex;
-        gap: 1rem;
+        gap: 0.75rem;
+        flex-wrap: wrap;
     }
 
     .btn-play {
@@ -93,29 +123,29 @@
     .btn-action:hover {
         background-color: var(--ytm-bg-tertiary);
         color: var(--ytm-text-primary);
-    }
-
-    /* Track list styling */
+    }    /* Track list styling - Modern compact design */
     .tracks-section {
         background-color: var(--ytm-bg-secondary);
-        padding: 1.5rem;
-        border-radius: 8px;
+        padding: 1.25rem;
+        border-radius: 12px;
         border: 1px solid var(--ytm-border-color);
+        margin-top: 1.5rem;
     }
 
     .tracks-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
         border-bottom: 1px solid var(--ytm-border-color);
     }
 
     .tracks-header h3 {
         color: var(--ytm-text-primary);
         margin-bottom: 0;
-        font-weight: 500;
+        font-weight: 600;
+        font-size: 1.1rem;
     }
 
     .track-list {
@@ -127,58 +157,103 @@
     .track-item {
         display: flex;
         align-items: center;
-        padding: 0.75rem 0;
-        border-bottom: 1px solid var(--ytm-border-color);
+        padding: 0.5rem 0;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+        cursor: pointer;
     }
 
-    .track-item:last-child {
-        border-bottom: none;
+    .track-item:hover {
+        background-color: var(--ytm-bg-tertiary);
     }
 
     .track-number {
-        flex: 0 0 40px;
+        flex: 0 0 30px;
         color: var(--ytm-text-secondary);
         text-align: center;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .track-cover {
+        flex: 0 0 40px;
+        margin-right: 0.75rem;
+    }
+
+    .track-cover img {
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        object-fit: cover;
+        background-color: var(--ytm-bg-tertiary);
     }
 
     .track-info {
         flex: 1;
+        min-width: 0;
     }
 
     .track-title {
         color: var(--ytm-text-primary);
         font-weight: 500;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.125rem;
+        font-size: 0.95rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .track-artist {
         color: var(--ytm-text-secondary);
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .track-duration {
-        flex: 0 0 60px;
+        flex: 0 0 50px;
         color: var(--ytm-text-secondary);
         text-align: right;
+        font-size: 0.85rem;
+        margin-right: 0.75rem;
     }
 
     .track-actions {
-        flex: 0 0 100px;
+        flex: 0 0 80px;
         display: flex;
         justify-content: flex-end;
-        gap: 0.5rem;
+        gap: 0.25rem;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .track-item:hover .track-actions {
+        opacity: 1;
     }
 
     .track-actions .btn {
         color: var(--ytm-text-secondary);
         background: none;
         border: none;
-        font-size: 1.1rem;
-        padding: 0.25rem;
+        font-size: 1rem;
+        padding: 0.375rem;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
     }
 
     .track-actions .btn:hover {
         color: var(--ytm-text-primary);
+        background-color: var(--ytm-bg-primary);
+    }
+
+    .track-actions .play-btn:hover {
+        color: var(--ytm-accent-red);
     }
 
     /* Styles for YTM-like Modal (copied from Songs/Details.cshtml) */
@@ -248,31 +323,112 @@
         color: var(--ytm-text-secondary, #aaa); padding: 0.5rem 1.2rem; 
         border-radius: 6px; cursor: pointer; 
     }
-    .ytm-btn-cancel:hover { background: var(--ytm-bg-tertiary, #333); color: var(--ytm-text-primary, #fff); }
+    .ytm-btn-cancel:hover { background: var(--ytm-bg-tertiary, #333); color: var(--ytm-text-primary, #fff); }    /* Responsive adjustments */
+    @@media (max-width: 1200px) {
+        .album-details-container {
+            max-width: 900px;
+            padding: 1.5rem;
+        }
+    }
 
-    /* Responsive adjustments */
     @@media (max-width: 768px) {
+        .album-details-container {
+            max-width: 100%;
+            padding: 1rem;
+        }
+
         .album-header {
             flex-direction: column;
+            padding: 1rem;
+            gap: 1rem;
         }
 
         .album-cover {
-            width: 100%;
-            height: auto;
-            max-height: 300px;
+            width: 150px;
+            height: 150px;
             flex: none;
+            align-self: center;
         }
 
         .album-info {
-            padding: 1.5rem;
+            text-align: center;
         }
 
         .album-title {
-            font-size: 2rem;
+            font-size: 1.5rem;
+        }
+
+        .album-meta {
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .album-actions {
+            justify-content: center;
+        }
+
+        .track-item {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .track-cover {
+            flex: 0 0 35px;
+        }
+
+        .track-cover img {
+            width: 35px;
+            height: 35px;
+        }
+
+        .track-duration {
+            flex: 0 0 45px;
+            margin-right: 0.5rem;
+        }
+
+        .track-actions {
+            flex: 0 0 70px;
+        }
+    }    @@media (max-width: 480px) {
+        .album-details-container {
+            padding: 0.75rem;
+        }
+
+        .album-cover {
+            width: 120px;
+            height: 120px;
+        }
+
+        .album-title {
+            font-size: 1.3rem;
+        }
+
+        .track-number {
+            flex: 0 0 25px;
+        }
+
+        .track-cover {
+            flex: 0 0 30px;
+            margin-right: 0.5rem;
+        }
+
+        .track-cover img {
+            width: 30px;
+            height: 30px;
+        }
+
+        .track-actions {
+            flex: 0 0 60px;
+        }
+
+        .track-actions .btn {
+            width: 28px;
+            height: 28px;
+            font-size: 0.9rem;
         }
     }
 </style>
 
+<div class="album-details-container">
 <div class="album-header">
     <img src="@Model.CoverImageUrl" alt="@Model.Title cover" class="album-cover">
     <div class="album-info">
@@ -344,13 +500,17 @@
     </div>
     
     @if (Model.Songs != null && Model.Songs.Any())
-    {
-        <ul class="track-list">
+    {        <ul class="track-list">
             @for (int i = 0; i < Model.Songs.Count; i++)
             {
                 var song = Model.Songs[i];
                 <li class="track-item">
                     <div class="track-number">@(i+1)</div>
+                    <div class="track-cover">
+                        <img src="@(song.CoverImageUrl ?? "/images/default-song.jpg")" 
+                             alt="@song.Title" 
+                             onerror="this.src='/images/default-song.jpg';" />
+                    </div>
                     <div class="track-info">
                         <div class="track-title">@song.Title</div>
                         <div class="track-artist">@song.ArtistName</div>
@@ -390,9 +550,9 @@
         </ul>
     }
     else
-    {
-        <p class="text-center" style="color: var(--ytm-text-secondary);">No songs available for this album.</p>
+    {        <p class="text-center" style="color: var(--ytm-text-secondary);">No songs available for this album.</p>
     }
+</div>
 </div>
 
 @section Scripts {
