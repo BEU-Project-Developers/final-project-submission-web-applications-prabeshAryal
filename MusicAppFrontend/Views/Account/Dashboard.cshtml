@@ -3,407 +3,178 @@
     ViewData["Title"] = "Profile";
 }
 
-<div class="container mx-auto p-4 max-w-4xl">
-    <!-- Profile Header -->
-    <div class="sleek-card mb-8 flex flex-col sm:flex-row items-center space-y-6 sm:space-y-0 sm:space-x-8">
-        <img src="@(string.IsNullOrEmpty(Model.ProfileImageUrl) ? "/assets/default-profile.png" : Model.ProfileImageUrl)"
-            alt="Profile Picture"
-            class="profile-avatar w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-ytm-accent-red object-cover shadow-md flex-shrink-0"
-            onerror="this.onerror=null; this.src='/assets/default-profile.png';">
-        <div class="text-center sm:text-left">
-            <h1 class="text-3xl lg:text-4xl font-bold text-ytm-text-primary">@Model.FullName</h1>
-            <p class="text-lg text-ytm-accent-red font-medium mt-1">@@@Model.Username</p>
-            <div class="mt-3 flex items-center justify-center sm:justify-start text-ytm-text-secondary">
-                <i class="bi bi-envelope me-2"></i>
-                <span>@Model.Email</span>
-            </div>
-            <div class="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
-                @if (User.IsInRole("Admin"))
-                {
-                    <span class="badge bg-danger">Admin</span>
-                }
-                else
-                {
-                    <span class="badge bg-primary">Member</span>
-                }
-                <span class="badge bg-secondary">Joined @Model.User?.CreatedAt.ToString("MMM yyyy")</span>
-            </div>
-            @if (!string.IsNullOrWhiteSpace(Model.Bio))
-            {
-                <div class="mt-4 text-ytm-text-secondary italic text-base max-w-xl">@Model.Bio</div>
-            }            <div class="mt-4">
-                <button id="editProfileBtn" class="button-primary py-2 px-5 rounded-lg font-semibold">
-                    <i class="bi bi-gear me-1"></i> Edit Profile / Settings
-                </button>
-            </div>
-        </div>
-    </div>
+<div class="min-h-screen flex items-center justify-center py-3 sm:py-4" style="background-color: var(--ytm-bg-primary);">
+    <div class="bg-ytm-bg-secondary rounded-2xl w-full max-w-lg overflow-hidden transition-colors duration-300 ease-in-out flex flex-col max-h-[90vh] sm:max-h-[92vh]"
+         style="background-color: var(--ytm-bg-secondary); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);">
 
-    <!-- Statistics Row -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-        <div class="sleek-card text-center">
-            <div class="text-ytm-text-secondary mb-1">Total Listening Time</div>
-            <div class="text-2xl font-bold">@Model.TotalListeningTime</div>
+        <div class="relative flex-shrink-0">
+            <div class="h-36 md:h-40" style="background: linear-gradient(135deg, var(--ytm-bg-tertiary) 0%, var(--ytm-accent-red) 100%);"></div>
+            <div class="absolute -bottom-14 md:-bottom-16 left-1/2 transform -translate-x-1/2">
+                <img id="mainPageProfileImage" src="@(string.IsNullOrEmpty(Model.ProfileImageUrl) ? "/assets/default-profile.png" : Model.ProfileImageUrl)"
+                     alt="Profile Picture"
+                     class="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 shadow-xl object-cover transition-all duration-300 ease-in-out"
+                     style="border-color: var(--ytm-bg-primary);"
+                     onerror="this.onerror=null; this.src='/assets/default-profile.png';">
+            </div>
+            <button id="editProfileBtn"
+                    aria-label="Edit Profile"
+                    class="absolute top-3 right-3 md:top-4 md:right-4 backdrop-blur-sm p-2.5 md:p-3 rounded-full transition-all duration-200 ease-in-out hover:scale-105 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+                    style="background-color: rgba(255, 255, 255, 0.2); color: var(--ytm-text-primary); focus:ring-color: var(--ytm-accent-red);">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:h-6" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                    <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" />
+                </svg>
+            </button>
         </div>
-        <div class="sleek-card text-center">
-            <div class="text-ytm-text-secondary mb-1">Top Genre</div>
-            <div class="text-2xl font-bold">@Model.TopGenre</div>
-        </div>
-        <div class="sleek-card text-center">
-            <div class="text-ytm-text-secondary mb-1">Favorite Artist</div>
-            <div class="text-2xl font-bold">@Model.FavoriteArtist</div>
-        </div>
-    </div>
 
-    <!-- Recently Played -->
-    <div class="sleek-card mb-8">
-        <h2 class="text-xl font-semibold mb-4 flex items-center">
-            <i class="bi bi-clock-history me-2 text-accent"></i> Recently Played
-        </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">            @foreach (var track in Model.RecentlyPlayedTracks.Take(6))
-            {
-                <div class="flex items-center gap-4 bg-ytm-bg-tertiary rounded-lg p-3">
-                    <img src="@(string.IsNullOrEmpty(track.AlbumCoverUrl) ? "/assets/default-cover.png" : track.AlbumCoverUrl)"
-                        width="56" height="56" class="rounded shadow" alt="Song Cover"
-                        onerror="this.src='/assets/default-cover.png';">
-                    <div>
-                        <div class="font-semibold">@track.SongTitle</div>
-                        <div class="text-ytm-text-secondary text-sm">@track.ArtistName</div>
-                        <div class="text-ytm-text-secondary text-xs">@track.Duration</div>
+        <div class="profile-info-content pt-16 md:pt-18 pb-4 md:pb-6 px-5 sm:px-6 md:px-8 text-center flex-grow overflow-y-auto bio-scrollbar">
+            <h1 id="mainPageFullName" class="text-2xl md:text-3xl font-bold mb-1 md:mb-2 transition-colors duration-300 ease-in-out" style="color: var(--ytm-text-primary);">@Model.FullName</h1>
+            <p id="mainPageUsername" class="text-md md:text-lg mb-4 md:mb-5 transition-colors duration-300 ease-in-out" style="color: var(--ytm-text-secondary);">@@@Model.Username</p>
+
+            <div class="mb-4 md:mb-5">
+                @if (User.IsInRole("Admin")) {
+                    <span class="inline-block text-xs md:text-sm font-semibold px-3 py-1.5 rounded-full" style="background-color: rgba(255, 0, 0, 0.15); color: var(--ytm-accent-red);"><i class="bi bi-shield-check me-1"></i>Admin</span>
+                } else {
+                    <span class="inline-block text-xs md:text-sm font-semibold px-3 py-1.5 rounded-full" style="background-color: rgba(100, 149, 237, 0.15); color: #6495ED;"><i class="bi bi-person me-1"></i>Member</span>
+                }
+            </div>
+
+            <div class="mb-4 md:mb-5 space-y-2">
+                <p class="text-xs md:text-sm flex items-center justify-center transition-colors duration-300 ease-in-out" style="color: var(--ytm-text-secondary);"><i class="bi bi-envelope me-2 md:me-3 text-sm md:text-lg"></i><span id="mainPageEmail">@Model.Email</span></p>
+                <p class="text-xs md:text-sm flex items-center justify-center transition-colors duration-300 ease-in-out" style="color: var(--ytm-text-secondary);">
+                    <i class="bi bi-calendar3 me-2 md:me-3 text-sm md:text-lg"></i>
+                    @{ string joinedDate = (Model.User?.CreatedAt.Year > 1) ? $"Joined {Model.User.CreatedAt.ToString("MMMM yyyy")}" : "Date not available"; }
+                    <span>@joinedDate</span>
+                </p>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Bio)) {
+                <div id="mainPageBioSection" class="mb-4 md:mb-6 text-center">
+                    <h3 class="text-md md:text-lg font-semibold mb-2 transition-colors duration-300 ease-in-out" style="color: var(--ytm-text-primary);">About</h3>
+                    <div class="max-h-24 md:max-h-28 overflow-y-auto bio-scrollbar px-3 py-2 rounded-lg text-left inline-block" style="background-color: rgba(255, 255, 255, 0.05); min-width: 80%;">
+                        <p id="mainPageBioText" class="text-xs md:text-sm leading-relaxed transition-colors duration-300 ease-in-out" style="color: var(--ytm-text-secondary);">@Model.Bio</p>
+                    </div>
+                </div>
+            } else { // Provide an empty div for JS to potentially populate if bio is added later
+                 <div id="mainPageBioSection" class="mb-4 md:mb-6 text-center" style="display: none;">
+                    <h3 class="text-md md:text-lg font-semibold mb-2 transition-colors duration-300 ease-in-out" style="color: var(--ytm-text-primary);">About</h3>
+                    <div class="max-h-24 md:max-h-28 overflow-y-auto bio-scrollbar px-3 py-2 rounded-lg text-left inline-block" style="background-color: rgba(255, 255, 255, 0.05); min-width: 80%;">
+                        <p id="mainPageBioText" class="text-xs md:text-sm leading-relaxed transition-colors duration-300 ease-in-out" style="color: var(--ytm-text-secondary);"></p>
                     </div>
                 </div>
             }
         </div>
-    </div>
 
-    <!-- Top Artists -->
-    <div class="sleek-card mb-8">
-        <h2 class="text-xl font-semibold mb-4 flex items-center">
-            <i class="bi bi-stars me-2 text-accent"></i> Top Artists
-        </h2>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            @foreach (var artist in Model.TopArtists.Take(4))
-            {
-                <div class="text-center">
-                    <img src="@(string.IsNullOrEmpty(artist.ArtistImageUrl) ? "/assets/default-artist.png" : artist.ArtistImageUrl)"
-                        width="64" height="64" class="rounded-full mx-auto mb-2 shadow" alt="Artist"
-                        onerror="this.src='/assets/default-artist.png';">
-                    <div class="font-semibold">@artist.ArtistName</div>
-                    <div class="text-ytm-text-secondary text-sm">@artist.PlayCount plays</div>
-                </div>
-            }
-        </div>
-    </div>
-
-    <!-- Activity Feed -->
-    <div class="sleek-card mb-8">
-        <h2 class="text-xl font-semibold mb-4 flex items-center">
-            <i class="bi bi-activity me-2 text-accent"></i> Recent Activity
-        </h2>
-        <div class="divide-y divide-ytm-border">
-            @foreach (var activity in Model.ActivityFeedItems.Take(6))
-            {
-                <div class="py-3 flex items-center gap-3">
-                    <span class="badge rounded-circle p-2 bg-secondary">
-                        <i class="@(activity.IconClass)"></i>
-                    </span>
-                    <div>
-                        <div>@Html.Raw(activity.Description)</div>
-                        <div class="text-ytm-text-secondary text-xs">@activity.TimeAgo</div>
-                    </div>
-                </div>
-            }
-        </div>
-    </div>
-
-    <!-- Playlists Preview -->
-    <div class="sleek-card mb-8">
-        <h2 class="text-xl font-semibold mb-4 flex items-center">
-            <i class="bi bi-music-note-list me-2 text-accent"></i> My Playlists
-        </h2>
-        <div class="playlist-grid">
-            @foreach (var playlist in Model.User?.Playlists?.OrderByDescending(p => p.CreatedAt).Take(3) ??
-                        Enumerable.Empty<MusicApp.Models.Playlist>())
-            {
-                <div class="playlist-card group" data-playlist-id="@playlist.Id">
-                    <a href="@Url.Action("Details", "Playlists", new { id = playlist.Id })" class="playlist-link">
-                        <div class="playlist-cover-container">
-                            <img src="@(string.IsNullOrEmpty(playlist.CoverImageUrl) ? "/assets/default-cover.png" : playlist.CoverImageUrl)"
-                                class="playlist-cover" alt="@playlist.Name" onerror="this.src='/assets/default-cover.png';">
-                            <div class="playlist-overlay">
-                                <div class="overlay-actions">
-                                    <button class="play-button primary"
-                                        onclick="event.preventDefault(); playPlaylist(@playlist.Id)"><i
-                                            class="bi bi-play-fill"></i></button>
-                                    <button class="shuffle-button"
-                                        onclick="event.preventDefault(); shufflePlaylist(@playlist.Id)" title="Shuffle"><i
-                                            class="bi bi-shuffle"></i></button>
-                                </div>
-                            </div>
-                            <div class="playlist-shadow"></div>
-                        </div>
-                        <div class="playlist-info">
-                            <h3 class="playlist-title">@playlist.Name</h3>
-                            @if (!string.IsNullOrEmpty(playlist.Description))
-                            {
-                                <p class="playlist-description">@playlist.Description</p>
-                            }
-                            <div class="playlist-meta">
-                                <div class="flex items-center space-x-4 text-sm">
-                                    <span class="flex items-center space-x-1">
-                                        <i class="bi bi-music-note-list text-xs"></i>
-                                        <span>@(playlist.Songs?.Count ?? 0) songs</span>
-                                    </span>
-                                    <span class="flex items-center space-x-1">
-                                        <i class="bi bi-person text-xs"></i>
-                                        <span>@playlist.User?.Username</span>
-                                    </span>
-                                </div>
-                                <div class="flex items-center justify-between mt-2">
-                                    <span class="playlist-date">@playlist.CreatedAt.ToString("MMM d, yyyy")</span>
-                                    <span class="playlist-privacy-badge @(playlist.IsPublic ? "public" : "private")">
-                                        <i class="bi bi-@(playlist.IsPublic ? "globe" : "lock")"></i>
-                                        @(playlist.IsPublic ? "Public" : "Private")
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            }
-        </div>
-        <div class="mt-6 text-center">
-            <a href="@Url.Action("Index", "Playlists")"
-                class="button-primary font-semibold py-2 px-6 rounded-lg transition-colors duration-300 flex items-center justify-center mx-auto hover:bg-opacity-90">
-                View All Playlists <i class="bi bi-arrow-right ms-2"></i>
-            </a>
+        <div class="px-5 sm:px-6 md:px-8 py-3 md:py-4 border-t flex flex-col sm:flex-row sm:items-stretch justify-center space-y-2 sm:space-y-0 sm:space-x-3 flex-shrink-0" style="border-color: var(--ytm-border-color);">
+            <a href="@Url.Action("Index", "Playlists")" class="flex-1 inline-flex items-center justify-center text-center text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-md transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-opacity-50 hover:-translate-y-0.5" style="background-color: var(--ytm-accent-red); color: white; focus:ring-color: var(--ytm-accent-red);"><i class="bi bi-music-note-list me-2"></i>Playlists</a>
+            <button id="historyBtn" class="flex-1 inline-flex items-center justify-center text-center text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-md transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-opacity-50 hover:-translate-y-0.5" style="background-color: var(--ytm-bg-tertiary); color: var(--ytm-text-primary); focus:ring-color: var(--ytm-bg-tertiary);"><i class="bi bi-collection me-2"></i>Albums</button>
         </div>
     </div>
 </div>
 
 <style>
-    .sleek-card {
+    /* Ensure root variables are available or define them here if specific to this view */
+    :root {
+      /* Example: --ytm-accent-red: #DC3545; */
+      /* --ytm-accent-red-rgb: 220, 53, 69; (Derived from --ytm-accent-red by JS if not set) */
+    }
+
+    .bio-scrollbar::-webkit-scrollbar { width: 5px; }
+    .bio-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .bio-scrollbar::-webkit-scrollbar-thumb { background-color: var(--ytm-bg-tertiary); border-radius: 3px; }
+    .bio-scrollbar::-webkit-scrollbar-thumb:hover { background-color: var(--ytm-text-secondary); }
+
+    #editProfileBtn:hover { background-color: rgba(255, 255, 255, 0.3) !important; /* transform is in classlist */ }
+
+    a[href*="Playlists"]:hover { box-shadow: 0 3px 10px rgba(var(--ytm-accent-red-rgb, 255,0,0), 0.35); } /* Fallback for RGB */
+    #historyBtn:hover { background-color: var(--ytm-border-color) !important; box-shadow: 0 3px 10px rgba(0,0,0,0.2); }
+
+    .form-control-ytm {
+        display: block;
+        width: 100%;
+        padding: 0.65rem 0.9rem;
+        font-size: 0.9rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--ytm-text-primary);
         background-color: var(--ytm-bg-secondary);
-        border-radius: 0.75rem;
-        box-shadow: 0 0 0 1px var(--ytm-border-color), 0px 5px 15px rgba(0, 0, 0, 0.2);
-        padding: 1.5rem;
-        margin-bottom: 2rem;
+        background-clip: padding-box;
+        border: 1px solid var(--ytm-border-color);
+        appearance: none;
+        border-radius: 0.375rem; /* rounded-md */
+        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
     }
-
-    .profile-avatar {
-        min-width: 8rem;
-        min-height: 8rem;
-    }
-
-    .button-primary {
-        background-color: var(--ytm-accent-red);
+    .form-control-ytm::placeholder { color: var(--ytm-text-secondary); opacity: 0.7; }
+    .form-control-ytm:focus {
         color: var(--ytm-text-primary);
-        border: none;
+        background-color: var(--ytm-bg-secondary);
+        border-color: var(--ytm-accent-red);
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(var(--ytm-accent-red-rgb, 255,0,0), 0.25); /* Fallback for RGB */
     }
-
-    .button-primary:hover {
-        background-color: #D60000;
-    }
-
-    .playlist-card-image {
-        aspect-ratio: 1 / 1;
-        object-fit: cover;
-    }
-
-    .text-accent {
-        color: var(--ytm-accent-red);
-    }
-
-    .playlist-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 1rem;
-    }
-
-    .playlist-card {
-        position: relative;
-        background-color: var(--ytm-bg-tertiary);
-        border-radius: 0.5rem;
-        overflow: hidden;
-        transition: transform 0.3s, box-shadow 0.3s;
-    }
-
-    .playlist-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-
-    .playlist-cover-container {
-        position: relative;
-        width: 100%;
-        padding-top: 100%;
-        /* 1:1 Aspect Ratio */
-    }
-
-    .playlist-cover {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .playlist-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.3s;
-    }
-
-    .playlist-card:hover .playlist-overlay {
-        opacity: 1;
-    }
-
-    .overlay-actions {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .play-button,
-    .shuffle-button {
-        background: var(--ytm-accent-red);
-        color: white;
-        border: none;
-        padding: 0.5rem;
-        border-radius: 0.25rem;
-        cursor: pointer;
-        transition: background 0.3s;
-    }
-
-    .play-button:hover,
-    .shuffle-button:hover {
-        background: #D60000;
-    }
-
-    .playlist-info {
-        padding: 1rem;
-    }
-
-    .playlist-title {
-        font-size: 1.125rem;
-        font-weight: 500;
+    .form-label-ytm {
         margin-bottom: 0.5rem;
-        color: var(--ytm-text-primary);
-    }
-
-    .playlist-description {
-        font-size: 0.875rem;
+        font-size: 0.875rem; /* text-sm */
         color: var(--ytm-text-secondary);
-        margin-bottom: 0.5rem;
-    }
-
-    .playlist-meta {
-        font-size: 0.875rem;
-        color: var(--ytm-text-secondary);
-    }
-
-    .playlist-date {
-        white-space: nowrap;
-    }
-
-    .playlist-privacy-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.125rem 0.5rem;
-        border-radius: 1rem;
-        font-size: 0.75rem;
-        margin-left: auto;
-    }
-
-    .playlist-privacy-badge.public {
-        background: rgba(0, 128, 0, 0.1);
-        color: green;
-    }    .playlist-privacy-badge.private {
-        background: rgba(255, 0, 0, 0.1);
-        color: red;
+        display: inline-block;
     }
 </style>
 
-<!-- Profile Edit Modal -->
 <div id="profileEditModal" class="modal fade" tabindex="-1" aria-labelledby="profileEditModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content" style="background: var(--ytm-bg-primary); border: 1px solid var(--ytm-border-color);">
-            <div class="modal-header" style="border-bottom: 1px solid var(--ytm-border-color);">
-                <h5 class="modal-title" id="profileEditModalLabel" style="color: var(--ytm-text-primary);">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="background: var(--ytm-bg-primary); border: 1px solid var(--ytm-border-color); border-radius: 0.75rem; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <div class="modal-header" style="border-bottom: 1px solid var(--ytm-border-color); padding: 1rem 1.5rem;">
+                <h5 class="modal-title text-lg font-semibold" id="profileEditModalLabel" style="color: var(--ytm-text-primary);">
                     <i class="bi bi-person-gear me-2"></i>Edit Profile
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="padding: 1.5rem;">
                 <form id="profileEditForm" enctype="multipart/form-data">
                     @Html.AntiForgeryToken()
-                    
-                    <!-- Profile Image Section -->
-                    <div class="row mb-4">
-                        <div class="col-md-4 text-center">
-                            <div class="profile-image-section">
-                                <img id="currentProfileImage" 
-                                     src="@(string.IsNullOrEmpty(Model.ProfileImageUrl) ? "/assets/default-profile.png" : Model.ProfileImageUrl)" 
-                                     alt="Profile Picture" 
-                                     class="rounded-circle mb-3" 
-                                     style="width: 120px; height: 120px; object-fit: cover; border: 3px solid var(--ytm-accent-red);"
-                                     onerror="this.onerror=null; this.src='/assets/default-profile.png';">
-                                
-                                <div>
-                                    <label for="profileImageInput" class="btn btn-outline-primary btn-sm">
-                                        <i class="bi bi-camera me-1"></i>Change Photo
-                                    </label>
-                                    <input type="file" id="profileImageInput" name="ProfileImage" accept="image/*" style="display: none;">
-                                </div>
+                    <div class="row align-items-center mb-4">
+                        <div class="col-md-4 text-center mb-4 mb-md-0">
+                            <img id="currentProfileImage"
+                                 src="@(string.IsNullOrEmpty(Model.ProfileImageUrl) ? "/assets/default-profile.png" : Model.ProfileImageUrl)"
+                                 alt="Profile Picture"
+                                 class="rounded-full mb-3 mx-auto shadow-md transition-all duration-300 ease-in-out"
+                                 style="width: 120px; height: 120px; object-fit: cover; border: 3px solid var(--ytm-accent-red);"
+                                 onerror="this.onerror=null; this.src='/assets/default-profile.png';">
+                            <div>
+                                <label for="profileImageInput" class="btn btn-sm inline-flex items-center justify-center px-3 py-1.5 rounded-md text-xs transition-all duration-200 ease-in-out hover:opacity-90" style="background-color: var(--ytm-accent-red); color: white; border:0;">
+                                    <i class="bi bi-camera me-1.5"></i>Change Photo
+                                </label>
+                                <input type="file" id="profileImageInput" name="ProfileImage" accept="image/*" class="d-none">
                             </div>
                         </div>
-                        
                         <div class="col-md-8">
-                            <!-- Full Name -->
                             <div class="mb-3">
-                                <label for="fullName" class="form-label" style="color: var(--ytm-text-primary);">Full Name</label>
-                                <input type="text" class="form-control" id="fullName" name="FullName" value="@Model.FullName" 
-                                       style="background: var(--ytm-bg-secondary); border: 1px solid var(--ytm-border-color); color: var(--ytm-text-primary);">
+                                <label for="fullName" class="form-label-ytm">Full Name</label>
+                                <input type="text" class="form-control-ytm" id="fullName" name="FullName" value="@Model.FullName">
                             </div>
-                            
-                            <!-- Username -->
                             <div class="mb-3">
-                                <label for="username" class="form-label" style="color: var(--ytm-text-primary);">Username</label>
-                                <input type="text" class="form-control" id="username" name="Username" value="@Model.Username" 
-                                       style="background: var(--ytm-bg-secondary); border: 1px solid var(--ytm-border-color); color: var(--ytm-text-primary);">
-                            </div>
-                            
-                            <!-- Email (Read-only) -->
-                            <div class="mb-3">
-                                <label for="email" class="form-label" style="color: var(--ytm-text-primary);">Email</label>
-                                <input type="email" class="form-control" id="email" value="@Model.Email" readonly 
-                                       style="background: var(--ytm-bg-tertiary); border: 1px solid var(--ytm-border-color); color: var(--ytm-text-secondary);">
-                                <small class="form-text" style="color: var(--ytm-text-secondary);">Email cannot be changed</small>
+                                <label for="username" class="form-label-ytm">Username</label>
+                                <input type="text" class="form-control-ytm" id="username" name="Username" value="@Model.Username">
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Bio Section -->
-                    <div class="mb-3">
-                        <label for="bio" class="form-label" style="color: var(--ytm-text-primary);">Bio</label>
-                        <textarea class="form-control" id="bio" name="Bio" rows="3" placeholder="Tell us about yourself..." 
-                                  style="background: var(--ytm-bg-secondary); border: 1px solid var(--ytm-border-color); color: var(--ytm-text-primary);">@Model.Bio</textarea>
-                        <small class="form-text" style="color: var(--ytm-text-secondary);">Maximum 1000 characters</small>
+                     <div class="mb-3">
+                        <label for="emailModal" class="form-label-ytm">Email</label>
+                        <input type="email" class="form-control-ytm" id="emailModal" value="@Model.Email" readonly
+                               style="background: var(--ytm-bg-tertiary); color: var(--ytm-text-secondary); cursor: not-allowed;">
+                        <small class="form-text mt-1 d-block" style="color: var(--ytm-text-secondary); font-size: 0.8rem;">Email cannot be changed.</small>
+                    </div>
+                    <div class="mb-0">
+                        <label for="bio" class="form-label-ytm">Bio</label>
+                        <textarea class="form-control-ytm" id="bio" name="Bio" rows="3" placeholder="Tell us a bit about yourself...">@Model.Bio</textarea>
+                        <small class="form-text mt-1 d-block" style="color: var(--ytm-text-secondary); font-size: 0.8rem;">Maximum 1000 characters.</small>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer" style="border-top: 1px solid var(--ytm-border-color);">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" id="saveProfileBtn" class="btn btn-primary">
-                    <i class="bi bi-check2 me-1"></i>Save Changes
+            <div class="modal-footer" style="border-top: 1px solid var(--ytm-border-color); padding: 1rem 1.5rem;">
+                <button type="button" class="btn btn-sm px-4 py-2 rounded-md text-xs font-medium transition-all duration-200 ease-in-out hover:opacity-80" style="background-color: var(--ytm-bg-tertiary); color: var(--ytm-text-primary); border: 1px solid var(--ytm-border-color);" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="saveProfileBtn" class="btn btn-sm px-4 py-2 rounded-md text-xs font-medium inline-flex items-center transition-all duration-200 ease-in-out hover:opacity-90" style="background-color: var(--ytm-accent-red); color: white; border:0;">
+                    <i class="bi bi-check2 me-1.5"></i>Save Changes
                 </button>
             </div>
         </div>
@@ -412,99 +183,211 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const editProfileBtn = document.getElementById('editProfileBtn');
-    const profileEditModal = new bootstrap.Modal(document.getElementById('profileEditModal'));
-    const profileImageInput = document.getElementById('profileImageInput');
-    const currentProfileImage = document.getElementById('currentProfileImage');
-    const saveProfileBtn = document.getElementById('saveProfileBtn');
-    
-    // Open modal when edit button is clicked
-    editProfileBtn.addEventListener('click', function() {
-        profileEditModal.show();
-    });
-    
-    // Handle profile image preview
-    profileImageInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                currentProfileImage.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
+    // Function to derive RGB from hex/rgb color string and set CSS variable
+    function setAccentRgbVariable() {
+        const accentRedColor = getComputedStyle(document.documentElement).getPropertyValue('--ytm-accent-red').trim();
+        let r = 255, g = 0, b = 0; // Default to red if parsing fails
+
+        if (accentRedColor.startsWith('#')) {
+            const bigint = parseInt(accentRedColor.substring(1), 16);
+            r = (bigint >> 16) & 255;
+            g = (bigint >> 8) & 255;
+            b = bigint & 255;
+        } else if (accentRedColor.startsWith('rgb')) {
+            const parts = accentRedColor.match(/[\d.]+/g);
+            if (parts && parts.length >= 3) {
+                r = parseInt(parts[0]);
+                g = parseInt(parts[1]);
+                b = parseInt(parts[2]);
+            }
         }
-    });
-    
-    // Handle form submission
-    saveProfileBtn.addEventListener('click', function() {
-        const form = document.getElementById('profileEditForm');
-        const formData = new FormData(form);
-        
-        // Show loading state
-        saveProfileBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Saving...';
-        saveProfileBtn.disabled = true;
-        
-        // Send AJAX request to update profile
-        fetch('@Url.Action("UpdateProfile", "Account")', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+        document.documentElement.style.setProperty('--ytm-accent-red-rgb', `${r},${g},${b}`);
+    }
+    setAccentRgbVariable(); // Call it once on load
+
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const profileEditModalEl = document.getElementById('profileEditModal');
+    const profileEditModal = new bootstrap.Modal(profileEditModalEl);
+
+    // Modal form fields
+    const modalFullNameInput = document.getElementById('fullName');
+    const modalUsernameInput = document.getElementById('username');
+    const modalBioTextarea = document.getElementById('bio');
+    const modalProfileImage = document.getElementById('currentProfileImage'); // Image inside modal
+    const profileImageUploadInput = document.getElementById('profileImageInput'); // File input
+
+    // Main page elements to get data from / update
+    const mainPageProfileImage = document.getElementById('mainPageProfileImage');
+    const mainPageFullName = document.getElementById('mainPageFullName');
+    const mainPageUsername = document.getElementById('mainPageUsername');
+    const mainPageBioText = document.getElementById('mainPageBioText'); // The <p> tag holding bio
+    const mainPageBioSection = document.getElementById('mainPageBioSection'); // The whole "About" section div
+
+    const saveProfileBtn = document.getElementById('saveProfileBtn');
+    const historyBtn = document.getElementById('historyBtn');
+
+    if (editProfileBtn) {
+        editProfileBtn.addEventListener('click', function() {
+            // Populate modal with current data from the main page
+            if (mainPageFullName) modalFullNameInput.value = mainPageFullName.textContent.trim();
+            if (mainPageUsername) {
+                const usernameWithAt = mainPageUsername.textContent.trim();
+                modalUsernameInput.value = usernameWithAt.startsWith('@@') ? usernameWithAt.substring(1) : usernameWithAt;
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update the dashboard display
-                document.querySelector('.profile-avatar').src = data.profileImageUrl || currentProfileImage.src;
-                document.querySelector('h1').textContent = data.fullName || document.getElementById('fullName').value;
-                document.querySelector('.text-ytm-accent-red').textContent = '@@' + (data.username || document.getElementById('username').value);
-                
-                // Update bio if it exists
-                const bioElement = document.querySelector('.mt-4.text-ytm-text-secondary.italic');
-                const newBio = document.getElementById('bio').value;
-                if (newBio.trim()) {
-                    if (bioElement) {
-                        bioElement.textContent = newBio;
-                    } else {
-                        // Create bio element if it doesn't exist
-                        const bioDiv = document.createElement('div');
-                        bioDiv.className = 'mt-4 text-ytm-text-secondary italic text-base max-w-xl';
-                        bioDiv.textContent = newBio;
-                        document.querySelector('.mt-4').parentNode.insertBefore(bioDiv, document.querySelector('.mt-4'));
-                    }
-                } else if (bioElement) {
-                    bioElement.remove();
-                }
-                
-                profileEditModal.hide();
-                
-                // Show success message
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
-                alertDiv.innerHTML = `
-                    <i class="bi bi-check-circle me-2"></i>Profile updated successfully!
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                document.querySelector('.container').prepend(alertDiv);
-                
-                // Auto-dismiss after 5 seconds
-                setTimeout(() => {
-                    alertDiv.remove();
-                }, 5000);
+            // For Bio: Check if the bio text element on the main page exists and has content
+            if (mainPageBioText && mainPageBioSection && mainPageBioSection.style.display !== 'none') {
+                modalBioTextarea.value = mainPageBioText.textContent.trim();
             } else {
-                alert('Error updating profile: ' + (data.message || 'Unknown error'));
+                modalBioTextarea.value = ""; // If no bio displayed on page, modal bio is empty
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while updating your profile. Please try again.');
-        })
-        .finally(() => {
-            // Reset button state
-            saveProfileBtn.innerHTML = '<i class="bi bi-check2 me-1"></i>Save Changes';
-            saveProfileBtn.disabled = false;
+            if (mainPageProfileImage) modalProfileImage.src = mainPageProfileImage.src;
+
+            profileEditModal.show();
         });
-    });
+    }
+
+    if (historyBtn) {
+        historyBtn.addEventListener('click', function() {
+            window.location.href = '@Url.Action("Index", "Albums")';
+        });
+    }
+
+    if (profileImageUploadInput && modalProfileImage) {
+        profileImageUploadInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    modalProfileImage.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    if (saveProfileBtn) {
+        saveProfileBtn.addEventListener('click', function() {
+            const form = document.getElementById('profileEditForm');
+            const formData = new FormData(form);
+
+            saveProfileBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1.5" role="status" aria-hidden="true"></span>Saving...';
+            saveProfileBtn.disabled = true;
+
+            fetch('@Url.Action("UpdateProfile", "Account")', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => {
+                if (response.status === 401 || response.status === 403) {
+                    // Custom alert or redirect logic for session expiry
+                    showCustomAlert('Your session has expired. Please log in again.', 'warning', () => {
+                        window.location.href = '@Url.Action("Login", "Account")';
+                    });
+                    throw new Error('Authentication expired');
+                }
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; }); // Try to parse error from backend
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Update main page elements
+                    if (mainPageProfileImage) mainPageProfileImage.src = data.profileImageUrl || modalProfileImage.src;
+                    if (mainPageFullName) mainPageFullName.textContent = data.fullName || modalFullNameInput.value;
+                    if (mainPageUsername) mainPageUsername.textContent = '@@' + (data.username || modalUsernameInput.value);
+
+                    const newBioFromModal = modalBioTextarea.value.trim();
+                    if (mainPageBioText && mainPageBioSection) {
+                        if (newBioFromModal) {
+                            mainPageBioText.textContent = newBioFromModal;
+                            mainPageBioSection.style.display = ''; // Show section
+                        } else {
+                            mainPageBioText.textContent = '';
+                            mainPageBioSection.style.display = 'none'; // Hide section if bio is empty
+                        }
+                    }
+
+                    if (data.token) localStorage.setItem('jwt_token', data.token);
+                    
+                    profileEditModal.hide();
+                    showCustomAlert('Profile updated successfully!', 'success');
+                } else {
+                    showCustomAlert(data.message || 'Error updating profile.', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const errorMessage = error.message || (error.errors ? JSON.stringify(error.errors) : 'An unknown error occurred.');
+                showCustomAlert(`An error occurred: ${errorMessage}`, 'danger');
+            })
+            .finally(() => {
+                saveProfileBtn.innerHTML = '<i class="bi bi-check2 me-1.5"></i>Save Changes';
+                saveProfileBtn.disabled = false;
+            });
+        });
+    }
+
+    // Custom Alert Function (Bootstrap-like, but self-contained)
+    function showCustomAlert(message, type = 'info', callback) {
+        const existingAlert = document.getElementById('customProfileAlert');
+        if(existingAlert) existingAlert.remove();
+
+        const alertDiv = document.createElement('div');
+        alertDiv.id = 'customProfileAlert';
+        alertDiv.className = `fixed top-5 right-5 z-[1060] p-4 mb-4 text-sm rounded-lg shadow-lg`;
+        let bgColor, textColor, iconClass;
+
+        switch(type) {
+            case 'success':
+                bgColor = 'bg-green-100 dark:bg-green-800'; // Tailwind classes for example
+                textColor = 'text-green-700 dark:text-green-300';
+                iconClass = 'bi-check-circle-fill';
+                alertDiv.style.cssText = 'background-color: var(--ytm-accent-green, #198754); color: white;'; // Override with theme if available
+                break;
+            case 'danger':
+                bgColor = 'bg-red-100 dark:bg-red-800';
+                textColor = 'text-red-700 dark:text-red-300';
+                iconClass = 'bi-exclamation-triangle-fill';
+                alertDiv.style.cssText = 'background-color: var(--ytm-accent-red, #DC3545); color: white;';
+                break;
+            case 'warning':
+                bgColor = 'bg-yellow-100 dark:bg-yellow-800';
+                textColor = 'text-yellow-700 dark:text-yellow-300';
+                iconClass = 'bi-exclamation-triangle-fill';
+                 alertDiv.style.cssText = 'background-color: var(--ytm-accent-yellow, #ffc107); color: black;';
+                break;
+            default: // info
+                bgColor = 'bg-blue-100 dark:bg-blue-800';
+                textColor = 'text-blue-700 dark:text-blue-300';
+                iconClass = 'bi-info-circle-fill';
+                alertDiv.style.cssText = 'background-color: var(--ytm-bg-tertiary, #0dcaf0); color: white;';
+        }
+        // alertDiv.classList.add(...bgColor.split(' '), ...textColor.split(' ')); // If using Tailwind for alert colors
+
+        alertDiv.innerHTML = `
+            <div class="flex items-center">
+                <i class="bi ${iconClass} me-2"></i>
+                <span class="font-medium">${message}</span>
+            </div>
+            <button type="button" class="absolute top-1 right-1 p-1.5 text-lg leading-none" aria-label="Close">
+              <span aria-hidden="true" style="color: inherit;">&times;</span>
+            </button>
+        `;
+        document.body.appendChild(alertDiv);
+
+        const closeButton = alertDiv.querySelector('button');
+        closeButton.onclick = () => {
+            alertDiv.remove();
+            if (callback && typeof callback === 'function') callback();
+        };
+
+        setTimeout(() => {
+            if (alertDiv.parentElement) {
+                alertDiv.remove();
+                if (callback && typeof callback === 'function') callback();
+            }
+        }, type === 'danger' || type === 'warning' ? 7000 : 4000); // Longer for errors/warnings
+    }
 });
 </script>

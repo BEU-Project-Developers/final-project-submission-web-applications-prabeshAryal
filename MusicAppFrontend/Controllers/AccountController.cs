@@ -211,119 +211,158 @@ namespace MusicApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateProfile(ProfileViewModel model)
         {
-            var authUserDto = await _authService.GetCurrentUserAsync();
-            if (authUserDto == null)
+            try
             {
-                return Json(new { success = false, message = "User not authenticated" });
-            }
+                // Check authentication first
+                if (!User.Identity.IsAuthenticated)
+                {
+                    _logger.LogWarning("UpdateProfile: User not authenticated");
+                    return Json(new { success = false, message = "User not authenticated", requiresLogin = true });
+                }
 
-            string? newProfileImageUrl = authUserDto.ProfileImageUrl;
+                var authUserDto = await _authService.GetCurrentUserAsync();
+                if (authUserDto == null)
+                {
+                    _logger.LogWarning("UpdateProfile: GetCurrentUserAsync returned null for authenticated user");
+                    return Json(new { success = false, message = "User session expired", requiresLogin = true });
+                }
 
-            // Handle profile image upload
-            if (model.ProfileImage != null && model.ProfileImage.Length > 0)
-            {
+                string? newProfileImageUrl = authUserDto.ProfileImageUrl;
+
+                // Handle profile image upload
+                if (model.ProfileImage != null && model.ProfileImage.Length > 0)
+                {
+                    try
+                    {
+                        string? uploadedFilePathOrError = await _fileUploadService.UploadProfileImageAsync(model.ProfileImage);
+
+                        if (!string.IsNullOrEmpty(uploadedFilePathOrError) && 
+                            !uploadedFilePathOrError.StartsWith("Error:", StringComparison.OrdinalIgnoreCase) && 
+                            !uploadedFilePathOrError.StartsWith("Failed:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            newProfileImageUrl = uploadedFilePathOrError;
+                        }
+                        else
+                        {
+                            return Json(new { success = false, message = "Image upload failed. Please try another image." });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Profile image upload failed for user {Username}", authUserDto.Username);
+                        return Json(new { success = false, message = "Image upload failed. Please try again." });
+                    }
+                }
+
+                // Parse full name
+                string firstName = authUserDto.FirstName ?? "";
+                string lastName = authUserDto.LastName ?? "";
+
+                if (!string.IsNullOrWhiteSpace(model.FullName))
+                {
+                    var nameParts = model.FullName.Trim().Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                    firstName = nameParts.Length > 0 ? nameParts[0] : "";
+                    lastName = nameParts.Length > 1 ? nameParts[1] : "";
+                }
+
+                var updateUserPayload = new
+                {
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Username = model.Username,
+                    Bio = model.Bio,
+                    ProfileImageUrl = newProfileImageUrl
+                };
+
                 try
                 {
-                    string? uploadedFilePathOrError = await _fileUploadService.UploadProfileImageAsync(model.ProfileImage);
+                    var apiResponse = await _apiService.PutAsync<ApiResponse<UserDto>>($"api/Users/{authUserDto.Id}", updateUserPayload);
 
-                    if (!string.IsNullOrEmpty(uploadedFilePathOrError) && 
-                        !uploadedFilePathOrError.StartsWith("Error:", StringComparison.OrdinalIgnoreCase) && 
-                        !uploadedFilePathOrError.StartsWith("Failed:", StringComparison.OrdinalIgnoreCase))
+                    // Handle successful update - either 204 No Content (apiResponse is null) or 200 OK with response data
+                    if (apiResponse == null || (apiResponse.Success && apiResponse.Data != null))
                     {
-                        newProfileImageUrl = uploadedFilePathOrError;
+                        // If we have response data, update claims with the returned data
+                        if (apiResponse?.Data != null)
+                        {
+                            var authUserForClaims = new MusicApp.Services.AuthUserDto
+                            {
+                                Id = apiResponse.Data.Id,
+                                Username = apiResponse.Data.Username ?? string.Empty,
+                                Email = apiResponse.Data.Email ?? string.Empty,
+                                FirstName = apiResponse.Data.FirstName ?? string.Empty,
+                                LastName = apiResponse.Data.LastName ?? string.Empty,
+                                ProfileImageUrl = apiResponse.Data.ProfileImageUrl ?? string.Empty,
+                                Bio = apiResponse.Data.Bio,
+                                Roles = apiResponse.Data.Roles ?? new List<string>(),
+                                CreatedAt = apiResponse.Data.CreatedAt
+                            };
+
+                            try
+                            {
+                                await _authService.UpdateUserClaimsAsync(authUserForClaims);
+                            }
+                            catch (Exception claimsEx)
+                            {
+                                _logger.LogError(claimsEx, "Failed to update user claims after profile update for user {Username}", authUserDto.Username);
+                                // Continue with response as the API update was successful
+                            }
+                        }
+                        else
+                        {
+                            // For 204 No Content, update claims with the submitted data
+                            var authUserForClaims = new MusicApp.Services.AuthUserDto
+                            {
+                                Id = authUserDto.Id,
+                                Username = model.Username ?? authUserDto.Username,
+                                Email = authUserDto.Email,
+                                FirstName = firstName,
+                                LastName = lastName,
+                                ProfileImageUrl = newProfileImageUrl ?? authUserDto.ProfileImageUrl,
+                                Bio = model.Bio ?? authUserDto.Bio,
+                                Roles = authUserDto.Roles,
+                                CreatedAt = authUserDto.CreatedAt
+                            };
+
+                            try
+                            {
+                                await _authService.UpdateUserClaimsAsync(authUserForClaims);
+                            }
+                            catch (Exception claimsEx)
+                            {
+                                _logger.LogError(claimsEx, "Failed to update user claims after profile update for user {Username}", authUserDto.Username);
+                                // Continue with response as the API update was successful
+                            }
+                        }
+
+                        // --- JWT Token Sync: Generate and return new JWT token ---
+                        // Removed frontend-side JWT generation. Token will be returned by backend API if needed.
+                        // --- End JWT Token Sync ---
+
+                        // Fallback: If token generation fails, return without token
+                        return Json(new
+                        {
+                            success = true,
+                            fullName = $"{firstName} {lastName}".Trim(),
+                            username = model.Username,
+                            bio = model.Bio,
+                            profileImageUrl = newProfileImageUrl
+                        });
                     }
                     else
                     {
-                        return Json(new { success = false, message = "Image upload failed. Please try another image." });
+                        return Json(new { success = false, message = apiResponse?.Message ?? "Failed to update profile" });
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Profile image upload failed for user {Username}", authUserDto.Username);
-                    return Json(new { success = false, message = "Image upload failed. Please try again." });
-                }
-            }
-
-            // Parse full name
-            string firstName = authUserDto.FirstName ?? "";
-            string lastName = authUserDto.LastName ?? "";
-
-            if (!string.IsNullOrWhiteSpace(model.FullName))
-            {
-                var nameParts = model.FullName.Trim().Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
-                firstName = nameParts.Length > 0 ? nameParts[0] : "";
-                lastName = nameParts.Length > 1 ? nameParts[1] : "";
-            }
-
-            var updateUserPayload = new
-            {
-                FirstName = firstName,
-                LastName = lastName,
-                Username = model.Username,
-                Bio = model.Bio,
-                ProfileImageUrl = newProfileImageUrl
-            };            try
-            {
-                var apiResponse = await _apiService.PutAsync<ApiResponse<UserDto>>($"api/Users/{authUserDto.Id}", updateUserPayload);
-
-                // Handle successful update - either 204 No Content (apiResponse is null) or 200 OK with response data
-                if (apiResponse == null || (apiResponse.Success && apiResponse.Data != null))
-                {
-                    // If we have response data, update claims with the returned data
-                    if (apiResponse?.Data != null)
-                    {
-                        var authUserForClaims = new MusicApp.Services.AuthUserDto
-                        {
-                            Id = apiResponse.Data.Id,
-                            Username = apiResponse.Data.Username ?? string.Empty,
-                            Email = apiResponse.Data.Email ?? string.Empty,
-                            FirstName = apiResponse.Data.FirstName ?? string.Empty,
-                            LastName = apiResponse.Data.LastName ?? string.Empty,
-                            ProfileImageUrl = apiResponse.Data.ProfileImageUrl ?? string.Empty,
-                            Bio = apiResponse.Data.Bio,
-                            Roles = apiResponse.Data.Roles ?? new List<string>(),
-                            CreatedAt = apiResponse.Data.CreatedAt
-                        };
-
-                        await _authService.UpdateUserClaimsAsync(authUserForClaims);
-                    }
-                    else
-                    {
-                        // For 204 No Content, update claims with the submitted data
-                        var authUserForClaims = new MusicApp.Services.AuthUserDto
-                        {
-                            Id = authUserDto.Id,
-                            Username = model.Username ?? authUserDto.Username,
-                            Email = authUserDto.Email,
-                            FirstName = firstName,
-                            LastName = lastName,
-                            ProfileImageUrl = newProfileImageUrl ?? authUserDto.ProfileImageUrl,
-                            Bio = model.Bio ?? authUserDto.Bio,
-                            Roles = authUserDto.Roles,
-                            CreatedAt = authUserDto.CreatedAt
-                        };
-
-                        await _authService.UpdateUserClaimsAsync(authUserForClaims);
-                    }
-
-                    return Json(new
-                    {
-                        success = true,
-                        fullName = $"{firstName} {lastName}".Trim(),
-                        username = model.Username,
-                        bio = model.Bio,
-                        profileImageUrl = newProfileImageUrl
-                    });
-                }
-                else
-                {
-                    return Json(new { success = false, message = apiResponse?.Message ?? "Failed to update profile" });
+                    _logger.LogError(ex, "Profile update failed for user {Username}", authUserDto.Username);
+                    return Json(new { success = false, message = "An error occurred while updating your profile" });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Profile update failed for user {Username}", authUserDto.Username);
-                return Json(new { success = false, message = "An error occurred while updating your profile" });
+                _logger.LogError(ex, "Unexpected error in UpdateProfile for user {Username}", User.Identity?.Name);
+                return Json(new { success = false, message = "An unexpected error occurred" });
             }
         }
 
