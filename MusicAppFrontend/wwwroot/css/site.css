@@ -49,19 +49,21 @@
 }
 
 /* --- Base Styles --- */
-html, body {
+html {
     height: 100%;
     font-family: 'Roboto', sans-serif;
-    overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 body {
+    height: 100vh; /* Use viewport height */
     background-color: var(--ytm-bg-primary);
     color: var(--ytm-text-primary);
     display: flex;
     padding-top: var(--ytm-topbar-height);
     padding-left: var(--ytm-sidebar-width);
     transition: padding-left 0.3s ease;
+    overflow: hidden; /* Prevent body scrolling - only content-wrapper should scroll */
+    margin: 0; /* Remove default margin */
 }
 
     body.sidebar-collapsed {
@@ -420,11 +422,28 @@ input:checked + .slider:before {
     background-color: var(--ytm-bg-primary);
     width: 100%; /* Ensure it takes available width */
     overflow-y: auto; /* Allow content area to scroll if needed */
+    overflow-x: hidden; /* Prevent horizontal scroll */
     height: calc(100vh - var(--ytm-topbar-height)); /* Fill remaining height */
+    /* Ensure smooth scrolling */
+    scroll-behavior: smooth;
+    /* Add padding bottom for music player when visible */
+    padding-bottom: 0;
+    transition: padding-bottom 0.3s ease;
+}
+
+/* When music player is visible, add bottom padding to content */
+.content-wrapper.music-player-visible {
+    padding-bottom: 80px; /* Height of the music player */
+}
+
+/* Fallback for browsers that support :has() */
+body:has(.sticky-music-player:not(.d-none)) .content-wrapper {
+    padding-bottom: 80px; /* Height of the music player */
 }
 
 main {
     width: 100%;
+    min-height: 100%; /* Ensure main takes at least full height of content-wrapper */
     /* Padding is now applied directly to main in _Layout.cshtml */
 }
 
@@ -443,6 +462,7 @@ footer {
 @media (max-width: 992px) {
     body {
         padding-left: var(--ytm-sidebar-collapsed-width);
+        overflow: hidden; /* Ensure no body scroll on mobile */
     }
 
     .sidebar {
@@ -544,16 +564,27 @@ footer {
 
         .sidebar.active-mobile {
             transform: translateX(0);
-        }
-
-    body {
+        }    body {
         padding-left: 0;
+        overflow: hidden; /* Ensure no body scroll on mobile */
     }
 
         body.sidebar-collapsed {
             padding-left: 0;
         }
     /* Not relevant for overlay */
+
+    /* Add mobile overlay backdrop to prevent background scrolling */
+    .sidebar.active-mobile::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: -1;
+    }
 
     /* Ensure theme toggle behaves correctly in mobile overlay */
     .sidebar.active-mobile .theme-switch-wrapper {

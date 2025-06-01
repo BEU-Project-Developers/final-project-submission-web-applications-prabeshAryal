@@ -418,16 +418,21 @@ class MusicPlayer {    constructor() {
             this.isPlaying = false;
             this.updatePlayButton();
         }
-    }
-
-    showPlayer() {
+    }    showPlayer() {
         this.player?.classList.remove('d-none');
-        // Add bottom padding to content to prevent overlap
-        document.body.style.paddingBottom = '80px';
+        // Add class to content wrapper to prevent overlap
+        const contentWrapper = document.getElementById('content-wrapper') || document.querySelector('.content-wrapper');
+        if (contentWrapper) {
+            contentWrapper.classList.add('music-player-visible');
+        }
     }    hidePlayer() {
         this.pause();
         this.player?.classList.add('d-none');
-        document.body.style.paddingBottom = '';
+        // Remove class from content wrapper
+        const contentWrapper = document.getElementById('content-wrapper') || document.querySelector('.content-wrapper');
+        if (contentWrapper) {
+            contentWrapper.classList.remove('music-player-visible');
+        }
         // Reset page title
         document.title = document.title.replace(/^.+ - .+ - /, '');
         // End listening session when hiding player
