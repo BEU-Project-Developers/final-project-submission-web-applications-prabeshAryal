@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace MusicApp.Controllers
@@ -84,16 +85,14 @@ namespace MusicApp.Controllers
                         {
                             ViewBag.SearchError = "No songs found matching your search.";
                         }
-                    }
-
-                    // Map PlaylistDetailDto to PlaylistDetailsViewModel
+                    }                    // Map PlaylistDetailDto to PlaylistDetailsViewModel
                     var viewModel = new PlaylistDetailsViewModel
                     {
                         PlaylistId = playlist.Id,
                         Name = playlist.Name ?? string.Empty,
                         Description = playlist.Description ?? string.Empty,
                         CoverImageUrl = playlist.CoverImageUrl,
-                        IsOwner = User.Identity?.Name == playlist.Username, // Assuming this is how we determine ownership
+                        IsOwner = User.FindFirst(ClaimTypes.NameIdentifier)?.Value == playlist.UserId.ToString() || User.IsInRole("Admin"),
                         Songs = playlist.Songs.Select(s => new SongViewModel
                         {
                             SongId = s.SongId,

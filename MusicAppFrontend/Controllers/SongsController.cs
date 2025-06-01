@@ -14,10 +14,14 @@ namespace MusicApp.Controllers
         public SongsController(ApiService apiService, AuthService authService, ILogger<SongsController> logger)
             : base(apiService, authService, logger)
         {
-        }
-
-        public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
+        }        public async Task<IActionResult> Index(int page = 1, int pageSize = 0)
         {
+            // Set default page size based on user role if not specified
+            if (pageSize == 0)
+            {
+                pageSize = User.IsInRole("Admin") ? 20 : 21; // Admin: table view, User: 3 rows × 7 = 21
+            }
+            
             var emptyResponse = new PagedResponse<SongDto> {
                 Data = new List<SongDto>(),
                 CurrentPage = page,
@@ -34,7 +38,7 @@ namespace MusicApp.Controllers
             );
 
             return View(response);
-        }        public async Task<IActionResult> Details(int id)
+        }public async Task<IActionResult> Details(int id)
         {
             return await SafeApiAction(
                 async () =>
@@ -111,8 +115,9 @@ namespace MusicApp.Controllers
                 {
                     primaryArtistId = parsedPrimaryId;
                 }
-                
+
                 // Use the ArtistIds from the form submission
+                // SOrry for songs
                 var artistIds = ArtistIds?.ToList() ?? new List<int>();
                 
                 // Ensure primary artist is included in the list if not already present
