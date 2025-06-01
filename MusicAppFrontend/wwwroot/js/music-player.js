@@ -196,7 +196,12 @@ class MusicPlayer {    constructor() {
     playSong(song, playlist = null, startIndex = 0) {
         // End current listening session before starting new song
         this.endListeningSession();
-        
+        // Clear manual hide flag so player can show again
+        try {
+            localStorage.removeItem('playerManuallyHidden');
+        } catch (e) {
+            console.warn('Failed to clear manual hide flag:', e);
+        }
         this.currentSong = song;
         
         if (playlist) {
@@ -423,15 +428,18 @@ class MusicPlayer {    constructor() {
         this.pause();
         this.player?.classList.add('d-none');
         document.body.style.paddingBottom = '';
-        
         // Reset page title
         document.title = document.title.replace(/^.+ - .+ - /, '');
-        
         // End listening session when hiding player
         this.endListeningSession();
-        
         // Clear saved state when player is hidden
         this.clearPlayerState();
+        // Set manual hide flag so player does not restore on reload
+        try {
+            localStorage.setItem('playerManuallyHidden', 'true');
+        } catch (e) {
+            console.warn('Failed to set manual hide flag:', e);
+        }
     }
 
     showQueue() {
@@ -547,58 +555,60 @@ class MusicPlayer {    constructor() {
     }
 
     restorePlayerState() {
+        // If player was manually hidden, do not restore
+        if (localStorage.getItem('playerManuallyHidden') === 'true') {
+            this.hidePlayer();
+            return;
+        }
         try {
             const savedState = localStorage.getItem('musicPlayerState');
-            if (!savedState) return;
-            
-            const state = JSON.parse(savedState);
-            
-            // Check if state is not too old (max 24 hours)
-            const maxAge = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-            if (Date.now() - state.timestamp > maxAge) {
-                localStorage.removeItem('musicPlayerState');
+            if (!savedState) {
+                this.hidePlayer();
                 return;
             }
-            
-            // Restore state
+            const state = JSON.parse(savedState);
+            const maxAge = 24 * 60 * 60 * 1000;
+            if (Date.now() - state.timestamp > maxAge) {
+                localStorage.removeItem('musicPlayerState');
+                this.hidePlayer();
+                return;
+            }
             this.currentSong = state.currentSong;
             this.playlist = state.playlist || [];
             this.currentIndex = state.currentIndex || 0;
             this.volume = state.volume || 0.7;
             this.isRepeat = state.isRepeat || false;
             this.isShuffle = state.isShuffle || false;
-            
             if (this.currentSong) {
                 this.loadCurrentSong();
+                // Always show player if a song is loaded, regardless of play/pause state
                 this.showPlayer();
-                
-                // Set the saved time position
                 if (state.currentTime > 0) {
                     this.audio.addEventListener('loadedmetadata', () => {
                         this.audio.currentTime = state.currentTime;
                         this.updateProgress();
                     }, { once: true });
                 }
-                
-                // Restore volume and UI states
                 this.setVolume(this.volume);
                 this.elements.repeatBtn?.classList.toggle('active', this.isRepeat);
                 this.elements.shuffleBtn?.classList.toggle('active', this.isShuffle);
-                
-                // If was playing, resume playback after a short delay
+                this.showRestoreIndicator();
+                // Only auto-play if was playing before
                 if (state.isPlaying) {
-                    // Show a brief visual indicator that playback was restored
-                    this.showRestoreIndicator();
-                    
-                    // Add a small delay to ensure audio is ready
                     setTimeout(() => {
                         this.play();
                     }, 500);
+                } else {
+                    this.isPlaying = false;
+                    this.updatePlayButton();
                 }
+            } else {
+                this.hidePlayer();
             }
         } catch (e) {
             console.warn('Failed to restore player state:', e);
             localStorage.removeItem('musicPlayerState');
+            this.hidePlayer();
         }
     }
 
@@ -874,6 +884,11 @@ class MusicPlayer {    constructor() {
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize global music player instance
     window.musicPlayer = new MusicPlayer();
+    
+    // Hide player only if there is no current song on load
+    if (!window.musicPlayer.currentSong) {
+        window.musicPlayer.hidePlayer();
+    }
     
     // Save state before page unloads (for manual navigation)
     window.addEventListener('beforeunload', function() {
