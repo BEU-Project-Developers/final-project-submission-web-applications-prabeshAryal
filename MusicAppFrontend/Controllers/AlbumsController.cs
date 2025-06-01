@@ -14,8 +14,8 @@ namespace MusicApp.Controllers
 {
     public class AlbumsController : BaseAppController
     {
-        public AlbumsController(ApiService apiService, ILogger<AlbumsController> logger)
-            : base(apiService, logger)
+        public AlbumsController(ApiService apiService, AuthService authService, ILogger<AlbumsController> logger)
+            : base(apiService, authService, logger)
         {
         }
 

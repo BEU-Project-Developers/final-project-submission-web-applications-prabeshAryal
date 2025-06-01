@@ -11,13 +11,12 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace MusicApp.Controllers
-{
-    public class PlaylistsController : BaseAppController
+{    public class PlaylistsController : BaseAppController
     {
         private readonly FileUploadService _fileUploadService;
 
-        public PlaylistsController(ApiService apiService, FileUploadService fileUploadService, ILogger<PlaylistsController> logger)
-            : base(apiService, logger)
+        public PlaylistsController(ApiService apiService, AuthService authService, FileUploadService fileUploadService, ILogger<PlaylistsController> logger)
+            : base(apiService, authService, logger)
         {
             _fileUploadService = fileUploadService;
         }

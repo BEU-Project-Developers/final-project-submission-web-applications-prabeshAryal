@@ -13,8 +13,8 @@ namespace MusicApp.Controllers
 {
     public class HomeController : BaseAppController
     {
-        public HomeController(ApiService apiService, ILogger<HomeController> logger)
-            : base(apiService, logger)
+        public HomeController(ApiService apiService, AuthService authService, ILogger<HomeController> logger)
+            : base(apiService, authService, logger)
         {
         }
 

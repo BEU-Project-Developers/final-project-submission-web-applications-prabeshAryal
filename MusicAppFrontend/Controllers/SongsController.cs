@@ -11,8 +11,8 @@ using System.Threading.Tasks;
 namespace MusicApp.Controllers
 {    public class SongsController : BaseAppController
     {
-        public SongsController(ApiService apiService, ILogger<SongsController> logger)
-            : base(apiService, logger)
+        public SongsController(ApiService apiService, AuthService authService, ILogger<SongsController> logger)
+            : base(apiService, authService, logger)
         {
         }
 

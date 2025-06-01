@@ -67,9 +67,7 @@ namespace MusicAppBackend.Services
             var token = await GenerateJwtTokenAsync(user);
             var refreshToken = await GenerateRefreshTokenAsync(user.Id);
 
-            var roles = user.UserRoles.Select(ur => ur.Role.Name).ToList();
-
-            var userDto = new UserDTO
+            var roles = user.UserRoles.Select(ur => ur.Role.Name).ToList();            var userDto = new UserDTO
             {
                 Id = user.Id,
                 Username = user.Username,
@@ -77,6 +75,7 @@ namespace MusicAppBackend.Services
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 ProfileImageUrl = user.ProfileImageUrl,
+                Bio = user.Bio,
                 Roles = roles
             };
 
@@ -93,16 +92,17 @@ namespace MusicAppBackend.Services
             if (await _context.Users.AnyAsync(u => u.Username == register.Username))
             {
                 return (false, "Username already exists", null);
-            }
-
-            var user = new User
+            }            var user = new User
             {
                 Email = register.Email,
                 Username = register.Username,
                 FirstName = register.FirstName,
                 LastName = register.LastName,
                 PasswordHash = HashPassword(register.Password),
+                Bio = string.Empty, // Provide default empty string for Bio
+                ProfileImageUrl = "/assets/default-profile.png", // Provide default profile image
                 CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
                 LastLoginAt = DateTime.UtcNow
             };
 
@@ -125,9 +125,7 @@ namespace MusicAppBackend.Services
                 RoleId = userRole.Id
             });
 
-            await _context.SaveChangesAsync();
-
-            var userDto = new UserDTO
+            await _context.SaveChangesAsync();            var userDto = new UserDTO
             {
                 Id = user.Id,
                 Username = user.Username,
@@ -135,6 +133,7 @@ namespace MusicAppBackend.Services
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 ProfileImageUrl = user.ProfileImageUrl,
+                Bio = user.Bio,
                 Roles = new List<string> { "User" }
             };
 

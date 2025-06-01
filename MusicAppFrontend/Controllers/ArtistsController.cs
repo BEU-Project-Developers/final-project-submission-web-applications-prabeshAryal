@@ -12,10 +12,10 @@ namespace MusicApp.Controllers
 {
     public class ArtistsController : BaseAppController
     {
-        public ArtistsController(ApiService apiService, ILogger<ArtistsController> logger)
-            : base(apiService, logger)
+        public ArtistsController(ApiService apiService, AuthService authService, ILogger<ArtistsController> logger)
+            : base(apiService, authService, logger)
         {
-        }        public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
+        }public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
         {
             var emptyResponse = new PagedResponse<ArtistDto> {
                 Data = new List<ArtistDto>(),

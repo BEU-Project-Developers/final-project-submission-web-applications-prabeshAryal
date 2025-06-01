@@ -34,8 +34,7 @@ namespace MusicAppBackend.Controllers
         {
             var users = await _context.Users
                 .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
-                .Select(u => new UserDTO
+                .ThenInclude(ur => ur.Role)                .Select(u => new UserDTO
                 {
                     Id = u.Id,
                     Username = u.Username,
@@ -43,6 +42,7 @@ namespace MusicAppBackend.Controllers
                     FirstName = u.FirstName,
                     LastName = u.LastName,
                     ProfileImageUrl = u.ProfileImageUrl,
+                    Bio = u.Bio,
                     Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList()
                 })
                 .ToListAsync();
@@ -205,9 +205,7 @@ namespace MusicAppBackend.Controllers
                 TotalPages = (int)Math.Ceiling((double)totalCount / pageSize),
                 TotalCount = totalCount
             });
-        }
-
-        // GET: api/Users/profile
+        }        // GET: api/Users/profile
         [HttpGet("profile")]
         public async Task<ActionResult<UserDTO>> GetCurrentUser()
         {
@@ -229,6 +227,7 @@ namespace MusicAppBackend.Controllers
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 ProfileImageUrl = user.ProfileImageUrl,
+                Bio = user.Bio,
                 Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
             };
         }
@@ -251,9 +250,7 @@ namespace MusicAppBackend.Controllers
             if (user.Id != currentUserId && !User.IsInRole("Admin"))
             {
                 return Forbid();
-            }
-
-            return new UserDTO
+            }            return new UserDTO
             {
                 Id = user.Id,
                 Username = user.Username,
@@ -261,6 +258,7 @@ namespace MusicAppBackend.Controllers
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 ProfileImageUrl = user.ProfileImageUrl,
+                Bio = user.Bio,
                 Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
             };
         }
@@ -279,10 +277,11 @@ namespace MusicAppBackend.Controllers
             if (user == null)
             {
                 return NotFound();
-            }
-
-            user.FirstName = updateUserDto.FirstName ?? user.FirstName;
+            }            user.FirstName = updateUserDto.FirstName ?? user.FirstName;
             user.LastName = updateUserDto.LastName ?? user.LastName;
+            user.Username = updateUserDto.Username ?? user.Username;
+            user.Bio = updateUserDto.Bio ?? user.Bio;
+            user.ProfileImageUrl = updateUserDto.ProfileImageUrl ?? user.ProfileImageUrl;
             user.UpdatedAt = DateTime.UtcNow;
 
             try
@@ -325,16 +324,14 @@ namespace MusicAppBackend.Controllers
             if (!string.IsNullOrEmpty(user.ProfileImageUrl))
             {
                 await _fileStorage.DeleteFileAsync(user.ProfileImageUrl);
-            }
-
-            // Save new image
+            }            // Save new image
             var filePath = await _fileStorage.SaveFileAsync(file, "profiles");
             user.ProfileImageUrl = filePath;
             user.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
-            return Ok(new { profileImageUrl = _fileStorage.GetFileUrl(filePath) });
+            return Ok(new { filePath = _fileStorage.GetFileUrl(filePath) });
         }
 
         // GET: api/Users/{id}/followers
@@ -345,8 +342,7 @@ namespace MusicAppBackend.Controllers
                 .Where(uf => uf.UserId == id)
                 .Include(uf => uf.Follower)
                 .ThenInclude(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
-                .Select(uf => new UserDTO
+                .ThenInclude(ur => ur.Role)                .Select(uf => new UserDTO
                 {
                     Id = uf.Follower.Id,
                     Username = uf.Follower.Username,
@@ -354,6 +350,7 @@ namespace MusicAppBackend.Controllers
                     FirstName = uf.Follower.FirstName,
                     LastName = uf.Follower.LastName,
                     ProfileImageUrl = uf.Follower.ProfileImageUrl,
+                    Bio = uf.Follower.Bio,
                     Roles = uf.Follower.UserRoles.Select(ur => ur.Role.Name).ToList()
                 })
                 .ToListAsync();
@@ -369,8 +366,7 @@ namespace MusicAppBackend.Controllers
                 .Where(uf => uf.FollowerId == id)
                 .Include(uf => uf.User)
                 .ThenInclude(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
-                .Select(uf => new UserDTO
+                .ThenInclude(ur => ur.Role)                .Select(uf => new UserDTO
                 {
                     Id = uf.User.Id,
                     Username = uf.User.Username,
@@ -378,6 +374,7 @@ namespace MusicAppBackend.Controllers
                     FirstName = uf.User.FirstName,
                     LastName = uf.User.LastName,
                     ProfileImageUrl = uf.User.ProfileImageUrl,
+                    Bio = uf.User.Bio,
                     Roles = uf.User.UserRoles.Select(ur => ur.Role.Name).ToList()
                 })
                 .ToListAsync();
@@ -478,11 +475,12 @@ namespace MusicAppBackend.Controllers
         {
             return await _context.Users.AnyAsync(u => u.Id == id);
         }
-    }
-
-    public class UpdateUserDTO
+    }    public class UpdateUserDTO
     {
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
+        public string? Username { get; set; }
+        public string? Bio { get; set; }
+        public string? ProfileImageUrl { get; set; }
     }
 }

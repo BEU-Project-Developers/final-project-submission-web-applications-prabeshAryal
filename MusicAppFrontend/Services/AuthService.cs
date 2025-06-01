@@ -86,14 +86,17 @@ namespace MusicApp.Services
                     await SetLocalStorageAsync("jwt_token", response.Token);
                     await SetLocalStorageAsync("refresh_token", response.RefreshToken);
                     await SetLocalStorageAsync("user_info", JsonSerializer.Serialize(response.User));
-                    
-                    // Also set up cookie authentication for server-side validation
+                      // Also set up cookie authentication for server-side validation
                     var user = response.User;
                     var claims = new List<Claim>
                     {
                         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                         new Claim(ClaimTypes.Name, user.Username),
                         new Claim(ClaimTypes.Email, user.Email),
+                        new Claim("FirstName", user.FirstName ?? string.Empty),
+                        new Claim("LastName", user.LastName ?? string.Empty),
+                        new Claim("ProfileImageUrl", user.ProfileImageUrl ?? string.Empty),
+                        new Claim("Bio", user.Bio ?? string.Empty),
                         new Claim("jwt_token", response.Token)  // Store JWT token in claims
                     };
                     
@@ -173,14 +176,17 @@ namespace MusicApp.Services
                     await SetLocalStorageAsync("jwt_token", response.Token);
                     await SetLocalStorageAsync("refresh_token", response.RefreshToken);
                     await SetLocalStorageAsync("user_info", JsonSerializer.Serialize(response.User));
-                    
-                    // Set up cookie authentication for server-side validation
+                      // Set up cookie authentication for server-side validation
                     var user = response.User;
                     var claims = new List<Claim>
                     {
                         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                         new Claim(ClaimTypes.Name, user.Username),
                         new Claim(ClaimTypes.Email, user.Email),
+                        new Claim("FirstName", user.FirstName ?? string.Empty),
+                        new Claim("LastName", user.LastName ?? string.Empty),
+                        new Claim("ProfileImageUrl", user.ProfileImageUrl ?? string.Empty),
+                        new Claim("Bio", user.Bio ?? string.Empty),
                         new Claim("jwt_token", response.Token)  // Store JWT token in claims
                     };
                     
@@ -326,15 +332,23 @@ namespace MusicApp.Services
                             {
                                 return userProfile;
                             }
-                        }
-                        catch
+                        }                        catch
                         {
                             // If API call fails, return basic user info from claims
+                            var firstNameClaim = user.FindFirst("FirstName")?.Value ?? string.Empty;
+                            var lastNameClaim = user.FindFirst("LastName")?.Value ?? string.Empty;
+                            var profileImageClaim = user.FindFirst("ProfileImageUrl")?.Value ?? string.Empty;
+                            var bioClaim = user.FindFirst("Bio")?.Value ?? string.Empty;
+                            
                             return new AuthUserDto
                             {
                                 Id = int.Parse(id),
                                 Username = username,
                                 Email = email,
+                                FirstName = firstNameClaim,
+                                LastName = lastNameClaim,
+                                ProfileImageUrl = profileImageClaim,
+                                Bio = bioClaim,
                                 Roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList()
                             };
                         }

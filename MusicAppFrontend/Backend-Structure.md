@@ -405,7 +405,7 @@ This data structure enables:
 ### POST /api/Users/profile-image
 ```json
 {
-  "profileImageUrl": "/uploads/profiles/a1b2c3d4-user-profile.jpg"
+  "filePath": "/uploads/profiles/a1b2c3d4-user-profile.jpg"
 }
 ```
 

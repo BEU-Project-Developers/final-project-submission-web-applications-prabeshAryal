@@ -343,10 +343,8 @@
                         <img src="@(string.IsNullOrEmpty(ViewData["UserProfileImage"] as string) ? "/assets/default-profile.png" : ViewData["UserProfileImage"] as string)" 
                              class="rounded-circle profile-image" width="32" height="32" alt="Profile"
                              onerror="this.onerror=null; this.src='/assets/default-profile.png';">
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                    </a>                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
                         <li><a class="dropdown-item" href="@Url.Action("Dashboard", "Account")">Dashboard</a></li>
-                        <li><a class="dropdown-item" href="@Url.Action("Profile", "Account")">Edit Profile</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form class="form-inline" asp-area="" asp-controller="Account" asp-action="Logout" method="post">

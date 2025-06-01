@@ -25,8 +25,10 @@ namespace MusicAppBackend.Models
         
         [Required]
         public string PasswordHash { get; set; } = string.Empty;
-        
         public string? ProfileImageUrl { get; set; }
+        
+        [StringLength(1000)]
+        public string? Bio { get; set; }
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         

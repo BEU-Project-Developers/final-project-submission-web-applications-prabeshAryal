@@ -10,10 +10,10 @@ namespace MusicApp.Controllers
     [Authorize(Roles = "Admin")]
     public class UsersController : BaseAppController
     {
-        public UsersController(ApiService apiService, ILogger<UsersController> logger)
-            : base(apiService, logger)
+        public UsersController(ApiService apiService, AuthService authService, ILogger<UsersController> logger)
+            : base(apiService, authService, logger)
         {
-        }        // GET: Users
+        }// GET: Users
         public async Task<IActionResult> Index()
         {
             var users = await SafeApiCall(
