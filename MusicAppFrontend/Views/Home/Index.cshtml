@@ -10,6 +10,8 @@
 
 @model HomeViewModel
 
+@Html.AntiForgeryToken()
+
 @* Add specific styles for this page *@
 <style>
     /* Section Header */
@@ -89,6 +91,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
+            color: var(--ytm-text-primary);
+
     }
 
     .featured-artist-banner img {
@@ -115,7 +119,8 @@
     .featured-artist-banner h5 {
         font-size: 1.3rem;
         font-weight: 500;
-        color: var(--ytm-text-primary);
+        color: #ffffff;
+
         margin-bottom: 0.25rem;
         text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
     }
@@ -124,6 +129,8 @@
         font-size: 0.9rem;
         color: rgba(255, 255, 255, 0.8);
         text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+            color: #ffffff;
+
         margin-bottom: 0;
     }
 
@@ -382,6 +389,256 @@
         margin-bottom: 1.5rem;
         border: 1px solid #ef9a9a;
     }
+
+    /* Recently Added Songs Table */
+    .recently-added-table {
+        width: 100%;
+        margin-bottom: 1rem;
+        color: var(--ytm-text-primary);
+        background-color: var(--ytm-bg-secondary); /* Match other section backgrounds */
+        border-radius: 8px; /* Rounded corners for the table */
+        overflow: hidden; /* To ensure border-radius clips content */
+        border-collapse: separate; /* Important for border-radius on table */
+        border-spacing: 0;
+    }
+
+    .recently-added-table th,
+    .recently-added-table td {
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+        border-top: 1px solid var(--ytm-border-color, #303030);
+    }
+
+    .recently-added-table thead th {
+        border-top: none; /* No top border for header */
+        border-bottom: 2px solid var(--ytm-border-color, #303030); /* Separator for header */
+        font-weight: 600;
+        text-align: left;
+        background-color: var(--ytm-bg-elevated-secondary, #2c2c2c); /* Slightly different bg for header */
+    }
+    
+    .recently-added-table tbody tr:first-child td {
+        border-top: none; /* No top border for the first row in tbody if header is present */
+    }
+
+    .recently-added-table tbody tr:hover {
+        background-color: var(--ytm-bg-tertiary, #333);
+    }
+
+    .recently-added-table .song-title-cell {
+        font-weight: 500;
+    }
+
+    .recently-added-table .song-duration-cell {
+        text-align: right;
+        min-width: 70px; /* Ensure duration column has some space */
+    }
+
+    .recently-added-table .actions-cell {
+        text-align: right;
+        min-width: 50px;
+    }
+
+    .recently-added-table .actions-cell .btn-icon {
+        background-color: transparent;
+        color: var(--ytm-text-secondary);
+        border: none;
+        padding: 0.3rem 0.5rem;
+        border-radius: 50%; /* Make it circular */
+    }
+
+    .recently-added-table .actions-cell .btn-icon:hover {
+        color: var(--ytm-text-primary);
+        background-color: var(--ytm-base-background, #404040); /* Subtle hover for button */
+    }
+    
+    /* Play button in table */
+    .recently-added-table .play-btn {
+        color: var(--ytm-text-secondary);
+        background: transparent;
+        border: none;
+        font-size: 1.1rem;
+        padding: 0.3rem 0.5rem;
+        opacity: 0;
+        transition: opacity 0.2s ease, color 0.2s ease;
+    }
+    
+    .recently-added-table tr:hover .play-btn {
+        opacity: 1;
+    }
+    
+    .recently-added-table .play-btn:hover {
+        color: var(--ytm-accent-red);
+    }
+
+    /* Styles for YTM-like Modal (copied from Albums/Details.cshtml) */
+    .ytm-toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: var(--ytm-bg-elevated, #282828);
+        color: var(--ytm-text-primary, #fff);
+        padding: 12px 20px;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1060; /* Higher than modal backdrop */
+        border-left: 4px solid var(--ytm-accent-red, #ff0000);
+        opacity: 0;
+        transition: opacity 0.3s ease, bottom 0.3s ease;
+        font-size: 0.95rem;
+    }
+    .ytm-toast.show {
+        opacity: 1;
+        bottom: 30px;
+    }
+    [data-bs-theme="light"] .ytm-toast {
+        background-color: #fff;
+        color: #212529;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-color: #0d6efd; /* Example for light theme */
+    }
+    .toast-success { border-color: #16a34a; } /* Green for success */
+    .toast-error { border-color: #dc2626; }   /* Red for error */
+    .toast-info { border-color: var(--ytm-border-color, #444); } /* Default/Info */
+
+    .ytm-modal {
+        display: none; /* Hidden by default */
+        position: fixed;
+        z-index: 1050;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.7); /* Dimmer background */
+    }
+    [data-bs-theme="light"] .ytm-modal {
+        background-color: rgba(0,0,0,0.4);
+    }
+    .ytm-modal-content {
+        background-color: var(--ytm-bg-elevated, #282828);
+        color: var(--ytm-text-primary, #fff);
+        margin: 10% auto;
+        padding: 25px;
+        border: 1px solid var(--ytm-border-color, #444);
+        width: 90%;
+        max-width: 500px;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    [data-bs-theme="light"] .ytm-modal-content {
+        background-color: #fff;
+        color: #212529;
+        border-color: #dee2e6;
+    }
+    .ytm-modal-content h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem; }
+    .ytm-modal-content p { color: var(--ytm-text-secondary, #aaa); margin-bottom: 1.5rem; }
+    #playlistListHome, .playlistListHome { /* Unique ID for home page playlist list */
+        max-height: 300px;
+        overflow-y: auto;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--ytm-border-color, #444);
+        border-radius: 8px;
+    }
+    .ytm-playlist-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        border-bottom: 1px solid var(--ytm-border-color, #444);
+        transition: background-color 0.2s ease;
+    }
+    .ytm-playlist-item:last-child { border-bottom: none; }
+    .ytm-playlist-item:hover { background: var(--ytm-bg-tertiary, #333); }
+    .ytm-playlist-item img, .ytm-playlist-placeholder { width: 40px; height: 40px; border-radius: 6px; margin-right: 0.75rem; object-fit: cover; display: flex; align-items: center; justify-content: center; background: var(--ytm-bg-tertiary, #333); }
+    .ytm-playlist-placeholder { color: var(--ytm-text-secondary, #aaa); font-size: 1.5rem; justify-content: center; align-items: center; }
+    .ytm-playlist-name { color: var(--ytm-text-primary, #fff); font-weight: 500; }
+    .ytm-playlist-count { color: var(--ytm-text-secondary, #aaa); font-size: 0.9rem; }
+    .ytm-modal-actions { display: flex; gap: 1rem; justify-content: flex-end; }
+    .ytm-btn-cancel { background: transparent; border: 1px solid var(--ytm-border-color, #444); color: var(--ytm-text-secondary, #aaa); padding: 0.5rem 1.2rem; border-radius: 6px; cursor: pointer; }
+    .ytm-btn-cancel:hover { background: var(--ytm-bg-tertiary, #333); color: var(--ytm-text-primary, #fff); }
+
+    /* Song Disk Item for Recently Added */
+    .song-disk-item {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        position: relative;
+        transition: transform 0.2s ease, background-color 0.2s ease;
+        border-radius: 8px;
+    }
+    
+    .song-disk-item:hover {
+        background-color: var(--ytm-bg-secondary);
+        transform: translateY(-3px);
+    }
+    
+    .song-disk-cover {
+        width: 160px;
+        height: 160px;
+        margin: 0 auto 0.75rem;
+        position: relative;
+        overflow: hidden;
+        border-radius: 50%; /* Make it circular */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        background-color: var(--ytm-bg-tertiary);
+    }
+    
+    .song-disk-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .song-disk-item:hover .song-disk-cover img {
+        transform: scale(1.05);
+    }
+    
+    .song-disk-play-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: 2;
+    }
+    
+    .song-disk-item:hover .song-disk-play-overlay {
+        opacity: 1;
+    }
+    
+    .song-disk-play-icon {
+        color: white;
+        font-size: 2.5rem;
+    }
+    
+    .song-disk-info {
+        padding: 0 0.5rem;
+    }
+    
+    .song-disk-title {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--ytm-text-primary);
+        margin-bottom: 0.2rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+      .song-disk-duration {
+        font-size: 0.8rem;
+        color: var(--ytm-text-secondary);
+        margin-bottom: 0.5rem;
+    }
 </style>
 
 <div class="container-fluid">
@@ -401,7 +658,7 @@
                 <p>Discover new music, create playlists, and share your favorite tracks with friends.</p>
                 <div class="d-flex gap-2">
                     <a href="/Songs" class="btn btn-browse">Browse Music</a>
-                    @if (!User.Identity.IsAuthenticated)
+                    @if (User.Identity != null && !User.Identity.IsAuthenticated)
                     {
                         <a href="/Account/Register" class="btn btn-account">Create Account</a>
                     }
@@ -474,98 +731,117 @@
                 </div>
             </div>
         }
-    </div>
-
-    <!-- Recently Added Songs -->
+    </div>    <!-- Recently Added Songs -->
     <h3 class="section-header">Recently Added</h3>
-    <div class="song-list">
-        @foreach (var song in Model.RecentSongs)
-        {
-            <div class="song-item">
-                <button class="play-btn" 
-                        data-play-song='@Html.Raw(Json.Serialize(new { 
-                            id = song.Id, 
-                            title = song.Title, 
-                            artistName = song.ArtistName, 
-                            audioUrl = song.AudioUrl, 
-                            coverImageUrl = song.CoverImageUrl 
-                        }))'
-                        data-playlist='@Html.Raw(Json.Serialize(Model.RecentSongs.Select(s => new { 
-                            id = s.Id, 
-                            title = s.Title, 
-                            artistName = s.ArtistName, 
-                            audioUrl = s.AudioUrl, 
-                            coverImageUrl = s.CoverImageUrl 
-                        })))'
-                        data-index="@Model.RecentSongs.ToList().IndexOf(song)"
-                        title="Play song">
-                    <i class="bi bi-play-fill"></i>
-                </button>
-                <img src="@(song.CoverImageUrl ?? GetRandomImageUrl(300, 300))" class="song-image" 
-                     alt="@song.Title"
-                     onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Song';">
-                <div class="song-info">
-                    <div class="song-title">@song.Title</div>
-                    <div class="song-artist">@song.ArtistName</div>
+    @if (Model.RecentSongs != null && Model.RecentSongs.Any())
+    {
+        <div class="row">
+            @foreach (var song in Model.RecentSongs)
+            {
+                <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+                    <div class="song-disk-item">
+                        <div class="song-disk-cover">
+                            <img src="@(song.CoverImageUrl ?? GetRandomImageUrl(300, 300))" 
+                                 alt="@song.Title" 
+                                 onerror="this.src='https://placehold.co/300x300/212121/AAAAAA?text=Song';">
+                            <div class="song-disk-play-overlay">
+                                <button class="song-disk-play-icon bg-transparent border-0 p-0" 
+                                        data-play-song='@(
+                                            System.Text.Json.JsonSerializer.Serialize(new { 
+                                                id = song.Id, 
+                                                title = song.Title, 
+                                                artistName = song.ArtistName, 
+                                                audioUrl = song.AudioUrl, 
+                                                coverImageUrl = song.CoverImageUrl 
+                                            })
+                                        )'>
+                                    <i class="bi bi-play-circle-fill"></i>
+                                </button>
+                            </div>
+                        </div>                        <div class="song-disk-info">
+                            <div class="song-disk-title">@song.Title</div>
+                            <div class="song-disk-duration">@($"{song.Duration.Minutes}:{song.Duration.Seconds:D2}")</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="song-duration">@song.Duration</div>
-                <button class="btn btn-action like-btn" data-song-id="@song.Id" title="Like"><i class="bi bi-heart"></i></button>
-                <button class="btn btn-action add-to-playlist-btn" data-song-id="@song.Id" title="Add to Playlist"><i class="bi bi-plus"></i></button>
-            </div>
-        }
-    </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-3">
+            <i class="bi bi-music-note-list" style="font-size: 3rem; color: var(--ytm-text-secondary);"></i>
+            <p class="mt-2" style="color: var(--ytm-text-secondary);">No songs added recently.</p>
+        </div>    }
 </div>
+
+<!-- Toast container will be created dynamically -->
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('.like-btn').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    const songId = this.dataset.songId;
-                    fetch(`/api/Songs/${songId}/like`, {
-                        method: 'POST',
-                        headers: { 'RequestVerificationToken': getAntiForgeryToken() }
-                    })
-                    .then(response => {
-                        if (response.ok) {
-                            alert('Song liked!');
-                            this.innerHTML = '<i class="bi bi-heart-fill"></i>';
-                            this.classList.add('liked');
-                        } else {
-                            response.text().then(text => alert('Failed to like song: ' + text));
-                        }
-                    })
-                    .catch(error => alert('Error liking song: ' + error));
-                });
-            });
-            document.querySelectorAll('.add-to-playlist-btn').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    const songId = this.dataset.songId;
-                    const playlistId = prompt('Enter Playlist ID to add this song to:');
-                    if (playlistId) {
-                        fetch(`/api/Playlists/${playlistId}/songs`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'RequestVerificationToken': getAntiForgeryToken()
-                            },
-                            body: JSON.stringify({ songId: parseInt(songId) })
-                        })
-                        .then(response => {
-                            if (response.ok) {
-                                alert('Song added to playlist!');
-                            } else {
-                                response.text().then(text => alert('Failed to add song to playlist: ' + text));
-                            }
-                        })
-                        .catch(error => alert('Error adding to playlist: ' + error));
-                    }
-                });
-            });
-        });
+        // Function to get anti-forgery token for AJAX requests
         function getAntiForgeryToken() {
             const tokenField = document.querySelector('input[name="__RequestVerificationToken"]');
             return tokenField ? tokenField.value : '';
         }
+
+        // Function to show toast messages
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `ytm-toast toast-${type}`;
+            toast.textContent = message;
+            toast.style.opacity = '0';
+            document.body.appendChild(toast);
+            
+            // Force reflow to ensure transition works
+            void toast.offsetWidth;
+            
+            toast.classList.add('show');
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Event listeners for the modal        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize music player if not already done
+            if (!window.musicPlayer && typeof MusicPlayer === 'function') {
+                console.log('Initializing music player for home page');
+                window.musicPlayer = new MusicPlayer();
+            }
+            
+            // Set up play button functionality for circular disk items
+            document.querySelectorAll('.song-disk-play-icon').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const songData = JSON.parse(this.getAttribute('data-play-song'));
+                    console.log('Play button clicked for song:', songData);
+                    
+                    if (window.musicPlayer) {
+                        window.musicPlayer.playSong(songData);
+                    } else if (window.playSong) {
+                        window.playSong(songData);
+                    } else {
+                        console.error('Music player not initialized and global playSong function not available.');
+                        showToast('Unable to play song. Music player not available.', 'error');
+                    }
+                });
+            });
+        });        });
+
+        // Function to initialize tooltips
+        function initializeTooltips() {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize tooltips
+            initializeTooltips();
+        });
     </script>
 }

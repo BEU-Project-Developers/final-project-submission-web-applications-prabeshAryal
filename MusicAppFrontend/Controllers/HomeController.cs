@@ -30,11 +30,16 @@ namespace MusicApp.Controllers
                     new PaginatedResponse<ArtistViewModel> { Data = new List<ArtistViewModel>() },
                     "Unable to load featured artists at this time",
                     "HomeController.Index - Loading artists"
-                );
-
-                if (artistsResponse?.Data != null && artistsResponse.Data.Any())
+                );                if (artistsResponse?.Data != null && artistsResponse.Data.Any())
                 {
-                    viewModel.FeaturedArtist = artistsResponse.Data.OrderByDescending(a => a.MonthlyListeners).First();
+                    // Get top 5 artists by monthly listeners and randomly select one to feature
+                    var top5Artists = artistsResponse.Data.OrderByDescending(a => a.MonthlyListeners).Take(10).ToList();
+                    if (top5Artists.Any())
+                    {
+                        var random = new Random();
+                        var randomIndex = random.Next(0, top5Artists.Count);
+                        viewModel.FeaturedArtist = top5Artists[randomIndex];
+                    }
                 }
 
                 // Get latest albums

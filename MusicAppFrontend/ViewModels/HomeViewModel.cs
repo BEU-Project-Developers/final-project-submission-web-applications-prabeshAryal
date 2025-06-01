@@ -39,7 +39,7 @@ namespace MusicApp.ViewModels
         public string Title { get; set; } = string.Empty;
         public string ArtistName { get; set; } = string.Empty;
         public string CoverImageUrl { get; set; } = string.Empty;
-        public string Duration { get; set; } = string.Empty;
+        public TimeSpan Duration { get; set; } // Changed from string to TimeSpan
         public string? AudioUrl { get; set; }
     }
-} 
+}

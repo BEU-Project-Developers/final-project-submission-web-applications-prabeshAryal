@@ -181,6 +181,75 @@
         color: var(--ytm-text-primary);
     }
 
+    /* Styles for YTM-like Modal (copied from Songs/Details.cshtml) */
+    .ytm-toast {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        z-index: 9999;
+        min-width: 200px;
+        max-width: 80vw;
+        padding: 0.8rem 1.5rem;
+        border-radius: 0.75rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        box-shadow: 0 4px 20px 0 rgba(0,0,0,0.3);
+        opacity: 1;
+        background: var(--ytm-bg-secondary, #222);
+        color: var(--ytm-text-primary, #fff);
+        border: 2px solid var(--ytm-accent-red, #ff0000);
+        transition: opacity 0.4s, top 0.3s;
+        pointer-events: none;
+        text-align: center;
+    }
+    [data-bs-theme="light"] .ytm-toast {
+        box-shadow: 0 6px 32px 0 rgba(0,0,0,0.15);
+    }
+    .toast-success { border-color: #16a34a; }
+    .toast-error { border-color: #dc2626; }
+    .toast-info { border-color: var(--ytm-border-color, #444); }
+
+    .ytm-modal {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.55); z-index: 10000; display: flex; align-items: center; justify-content: center;
+    }
+    [data-bs-theme="light"] .ytm-modal {
+        background: rgba(0,0,0,0.35); /* Lighter overlay for light theme */
+    }
+    .ytm-modal-content {
+        background: var(--ytm-bg-primary, #181818); color: var(--ytm-text-primary, #fff);
+        border-radius: 1rem; padding: 2.5rem 2rem; max-width: 400px; width: 95vw; box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25);
+    }
+    .ytm-modal-content h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem; }
+    .ytm-modal-content p { color: var(--ytm-text-secondary, #aaa); margin-bottom: 1.5rem; }
+    /* Ensure #playlistList styling is available if used by ID, or use class */
+    .ytm-modal-content #playlistList, .ytm-modal-content .playlistList { /* Targeting both ID and potential class */
+        max-height: 300px; overflow-y: auto; margin-bottom: 1.5rem; 
+    }
+    .ytm-playlist-item {
+        display: flex; align-items: center; padding: 0.75rem; margin-bottom: 0.5rem;
+        border: 1px solid var(--ytm-border-color, #444); border-radius: 8px; cursor: pointer;
+        background: var(--ytm-bg-secondary, #232323); transition: background 0.2s;
+    }
+    .ytm-playlist-item:hover { background: var(--ytm-bg-tertiary, #333); }
+    .ytm-playlist-item img, .ytm-playlist-placeholder { 
+        width: 40px; height: 40px; border-radius: 6px; margin-right: 0.75rem; 
+        object-fit: cover; display: flex; align-items: center; justify-content: center; 
+        background: var(--ytm-bg-tertiary, #333); 
+    }
+    .ytm-playlist-placeholder { 
+        color: var(--ytm-text-secondary, #aaa); font-size: 1.5rem; 
+    }
+    .ytm-playlist-name { color: var(--ytm-text-primary, #fff); font-weight: 500; }
+    .ytm-playlist-count { color: var(--ytm-text-secondary, #aaa); font-size: 0.9rem; }
+    .ytm-modal-actions { display: flex; gap: 1rem; justify-content: flex-end; }
+    .ytm-btn-cancel { 
+        background: transparent; border: 1px solid var(--ytm-border-color, #444); 
+        color: var(--ytm-text-secondary, #aaa); padding: 0.5rem 1.2rem; 
+        border-radius: 6px; cursor: pointer; 
+    }
+    .ytm-btn-cancel:hover { background: var(--ytm-bg-tertiary, #333); color: var(--ytm-text-primary, #fff); }
+
     /* Responsive adjustments */
     @@media (max-width: 768px) {
         .album-header {
@@ -309,10 +378,10 @@
                                 title="Play">
                             <i class="bi bi-play-fill"></i>
                         </button>
-                        <button class="btn" title="Like">
-                            <i class="bi bi-heart"></i>
-                        </button>
-                        <button class="btn" title="Add to playlist">
+                        <button class="btn add-to-playlist-btn" 
+                                data-song-id="@song.Id" 
+                                data-song-title="@song.Title" 
+                                title="Add to playlist">
                             <i class="bi bi-plus"></i>
                         </button>
                     </div>
@@ -383,6 +452,15 @@
                     showPlaylistModal(albumId);
                 });
             }        
+
+            document.querySelectorAll('.add-to-playlist-btn').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const songId = this.getAttribute('data-song-id');
+                    const songTitle = this.getAttribute('data-song-title');
+                    showAddToPlaylistModal(songId, songTitle);
+                });
+            });
         });
         
         // Function to update like button UI based on like status
@@ -517,6 +595,90 @@
                 console.error('Error adding album to playlist:', error);
                 alert('Error adding album to playlist: ' + error);
             });
+        }
+
+        function showAddToPlaylistModal(songId, songTitle) {
+            fetch('/Playlists/GetUserPlaylists', {
+                method: 'GET',
+                headers: {
+                    'RequestVerificationToken': getAntiForgeryToken()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const playlists = data.data || [];
+                if (playlists.length === 0) {
+                    alert('You don\'t have any playlists yet. Create a playlist first!');
+                    return;
+                }
+                const modalHtml = `
+                    <div id="playlistModal" class="ytm-modal">
+                        <div class="ytm-modal-content">
+                            <h3>Add to Playlist</h3>
+                            <p>Select a playlist to add <b>${songTitle}</b>:</p>
+                            <div id="playlistList">
+                                ${playlists.map(playlist => `
+                                    <div class="ytm-playlist-item" data-playlist-id="${playlist.id}">
+                                        ${playlist.coverImageUrl ? `<img src="${playlist.coverImageUrl}" alt="${playlist.name}">` : '<div class="ytm-playlist-placeholder"><i class="bi bi-music-note-list"></i></div>'}
+                                        <div>
+                                            <div class="ytm-playlist-name">${playlist.name}</div>
+                                            <div class="ytm-playlist-count">${playlist.songCount} songs</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="ytm-modal-actions">
+                                <button id="cancelPlaylistModal" class="ytm-btn-cancel">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                document.getElementById('cancelPlaylistModal').addEventListener('click', closePlaylistModal);
+                document.querySelectorAll('.ytm-playlist-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const playlistId = this.getAttribute('data-playlist-id');
+                        addSongToPlaylist(songId, playlistId, songTitle);
+                    });
+                });
+                document.getElementById('playlistModal').addEventListener('click', function(e) {
+                    if (e.target === this) closePlaylistModal();
+                });
+            })
+            .catch(error => {
+                alert('Error loading playlists. Please try again.');
+            });
+        }
+
+        function addSongToPlaylist(songId, playlistId, songTitle) {
+            fetch('/Playlists/AddSongToPlaylistAjax', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getAntiForgeryToken()
+                },
+                body: JSON.stringify({ playlistId: playlistId, songId: songId })
+            })
+            .then(response => {
+                if (response.ok) {
+                    closePlaylistModal();
+                    showToast(`Added '${songTitle}' to playlist!`, 'success');
+                } else {
+                    response.text().then(text => showToast('Failed to add song: ' + text, 'error'));
+                }
+            })
+            .catch(error => {
+                showToast('Error adding song to playlist: ' + error, 'error');
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            let toast = document.createElement('div');
+            toast.className = `ytm-toast toast-${type}`;
+            toast.innerText = message;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; }, 2200);
+            setTimeout(() => { toast.remove(); }, 2600);
         }
     </script>
 }
