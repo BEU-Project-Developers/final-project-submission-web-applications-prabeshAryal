@@ -87,6 +87,41 @@ window.MusicAppUtils.handleApiResponse = async function(response, operation = 'o
 };
 
 /**
+ * Check for updated JWT token in response headers and update localStorage
+ * @param {Response} response - The fetch response object
+ */
+window.MusicAppUtils.handleTokenUpdate = function(response) {
+    if (!response || !response.headers) {
+        return;
+    }
+    
+    const updatedToken = response.headers.get('X-Updated-Token');
+    if (updatedToken) {
+        console.log('Received updated token from server, updating localStorage');
+        try {
+            localStorage.setItem('jwt_token', updatedToken);
+            console.log('Successfully updated token in localStorage');
+        } catch (error) {
+            console.error('Failed to update token in localStorage:', error);
+        }
+    }
+};
+
+/**
+ * Enhanced API response handling with token update support
+ * @param {Response} response - The fetch response object
+ * @param {string} operation - The operation being performed (for error messages)
+ * @returns {Promise<Object>} - The parsed response data with success flag
+ */
+window.MusicAppUtils.handleApiResponseWithToken = async function(response, operation = 'operation') {
+    // First check for token updates
+    this.handleTokenUpdate(response);
+    
+    // Then handle the response normally
+    return await this.handleApiResponse(response, operation);
+};
+
+/**
  * Enhanced alert display with better error message handling
  * @param {Element} alertElement - The alert element to show message in
  * @param {string|Object} message - The message to display

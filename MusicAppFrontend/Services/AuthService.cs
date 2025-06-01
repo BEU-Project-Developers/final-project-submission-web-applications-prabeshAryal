@@ -408,9 +408,7 @@ namespace MusicApp.Services
         {
             var userId = await GetLocalStorageAsync("userId");
             return userId ?? null;
-        }
-
-        public async Task UpdateUserClaimsAsync(AuthUserDto user)
+        }        public async Task UpdateUserClaimsAsync(AuthUserDto user)
         {
             if (_httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true)
             {
@@ -424,6 +422,21 @@ namespace MusicApp.Services
                     new Claim("ProfileImageUrl", user.ProfileImageUrl ?? string.Empty),
                     new Claim("Bio", user.Bio ?? string.Empty)
                 };
+
+                // Preserve JWT token from existing claims or use updated token from HttpContext.Items
+                var existingToken = _httpContextAccessor.HttpContext.User.FindFirst("jwt_token")?.Value;
+                var updatedToken = _httpContextAccessor.HttpContext.Items["UpdatedJwtToken"] as string;
+                var tokenToUse = !string.IsNullOrEmpty(updatedToken) ? updatedToken : existingToken;
+                
+                if (!string.IsNullOrEmpty(tokenToUse))
+                {
+                    claims.Add(new Claim("jwt_token", tokenToUse));
+                    _logger.LogInformation("UpdateUserClaimsAsync: Preserving JWT token in claims (length: {TokenLength})", tokenToUse.Length);
+                }
+                else
+                {
+                    _logger.LogWarning("UpdateUserClaimsAsync: No JWT token found to preserve in claims");
+                }
 
                 if (user.Roles != null)
                 {

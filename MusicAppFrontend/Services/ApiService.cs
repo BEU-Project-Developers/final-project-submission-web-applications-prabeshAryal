@@ -29,10 +29,10 @@ namespace MusicApp.Services
             _baseUrl = _configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5117";
             
             // Check if we're in a server-side rendering context
-            _isServerSideRendering = jsRuntime is IJSInProcessRuntime == false;}
-
-        private async Task<string?> GetTokenAsync()
+            _isServerSideRendering = jsRuntime is IJSInProcessRuntime == false;}        private async Task<string?> GetTokenAsync()
         {
+            _logger?.LogInformation("GetTokenAsync called - checking for available tokens");
+            
             // First try to get from localStorage (primary method for JWT)
             if (!_isServerSideRendering)
             {
@@ -41,8 +41,13 @@ namespace MusicApp.Services
                     var token = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "jwt_token");
                     if (!string.IsNullOrEmpty(token))
                     {
-                        _logger?.LogInformation("Using token from localStorage");
+                        _logger?.LogInformation("Using token from localStorage (first 10 chars): {TokenPrefix}...", 
+                            token.Length > 10 ? token.Substring(0, 10) : token);
                         return token;
+                    }
+                    else
+                    {
+                        _logger?.LogInformation("No token found in localStorage");
                     }
                 }
                 catch (Exception ex)
@@ -50,22 +55,52 @@ namespace MusicApp.Services
                     _logger?.LogError(ex, "Error getting token from localStorage: {ErrorMessage}", ex.Message);
                 }
             }
+            else
+            {
+                _logger?.LogInformation("Server-side rendering detected, skipping localStorage");
+            }
             
-            // Fallback: check if we're authenticated via cookies and can get the token from HttpContext
+            // Check if we're authenticated via cookies and can get the token from HttpContext
             if (_httpContextAccessor?.HttpContext?.User?.Identity?.IsAuthenticated == true)
             {
+                _logger?.LogInformation("User is authenticated, checking HttpContext for tokens");
+                
+                // First check HttpContext.Items for updated token
+                if (_httpContextAccessor.HttpContext.Items.TryGetValue("jwt_token", out var contextToken) && contextToken is string tokenFromContext)
+                {
+                    if (!string.IsNullOrEmpty(tokenFromContext))
+                    {
+                        _logger?.LogInformation("Using token from HttpContext.Items (first 10 chars): {TokenPrefix}...", 
+                            tokenFromContext.Length > 10 ? tokenFromContext.Substring(0, 10) : tokenFromContext);
+                        return tokenFromContext;
+                    }
+                }
+                else
+                {
+                    _logger?.LogInformation("No token found in HttpContext.Items");
+                }
+                
+                // Fallback to user claims
                 var tokenClaim = _httpContextAccessor.HttpContext.User.FindFirst("jwt_token");
                 if (tokenClaim != null && !string.IsNullOrEmpty(tokenClaim.Value))
                 {
-                    _logger?.LogInformation("Using token from HttpContext claims");
+                    _logger?.LogInformation("Using token from HttpContext claims (first 10 chars): {TokenPrefix}...", 
+                        tokenClaim.Value.Length > 10 ? tokenClaim.Value.Substring(0, 10) : tokenClaim.Value);
                     return tokenClaim.Value;
                 }
+                else
+                {
+                    _logger?.LogInformation("No token found in HttpContext claims");
+                }
+            }
+            else
+            {
+                _logger?.LogInformation("User not authenticated via HttpContext");
             }
             
+            _logger?.LogWarning("No token found from any source");
             return null;
-        }
-
-        public async Task<HttpClient> GetHttpClientAsync()
+        }public async Task<HttpClient> GetHttpClientAsync()
         {
             var client = _httpClientFactory.CreateClient("MusicApi");
             client.BaseAddress = new Uri(_baseUrl);
@@ -77,11 +112,17 @@ namespace MusicApp.Services
             var token = await GetTokenAsync();
             if (!string.IsNullOrEmpty(token))
             {
+                _logger?.LogInformation("Setting Authorization header with token (first 10 chars): {TokenPrefix}...", 
+                    token.Length > 10 ? token.Substring(0, 10) : token);
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+            else
+            {
+                _logger?.LogWarning("No token available for Authorization header");
             }
 
             return client;
-        }        public async Task<T> GetAsync<T>(string endpoint)
+        }public async Task<T> GetAsync<T>(string endpoint)
         {
             try
             {
@@ -245,8 +286,7 @@ namespace MusicApp.Services
                         PropertyNameCaseInsensitive = true,
                         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                     });
-                    
-                    // Handle false success status in response objects that have Success property
+                      // Handle false success status in response objects that have Success property
                     if (result != null && HasSuccessProperty(result) && !GetSuccessValue(result))
                     {
                         _logger?.LogWarning("POST API returned success=false for {Endpoint}", endpoint);
@@ -257,6 +297,9 @@ namespace MusicApp.Services
                         }
                         throw new InvalidOperationException("API operation returned success=false without specific message");
                     }
+                    
+                    // Check if the response contains a token and update localStorage if needed
+                    await HandleTokenInResponse(result);
                     
                     return result;
                 }
@@ -339,8 +382,7 @@ namespace MusicApp.Services
                     _logger?.LogWarning("Empty response received from PUT to {Endpoint}", endpoint);
                     return default;
                 }
-                
-                try
+                  try
                 {
                     var result = JsonSerializer.Deserialize<T>(responseContent, new JsonSerializerOptions 
                     { 
@@ -359,6 +401,9 @@ namespace MusicApp.Services
                         }
                         throw new InvalidOperationException("API operation returned success=false without specific message");
                     }
+                    
+                    // Check if the response contains a token and update localStorage if needed
+                    await HandleTokenInResponse(result);
                     
                     return result;
                 }
@@ -715,9 +760,7 @@ namespace MusicApp.Services
                 }
             }
             return true; // Default to true if no Success property
-        }
-
-        private string? GetMessageValue<T>(T obj)
+        }        private string? GetMessageValue<T>(T obj)
         {
             if (obj == null) return null;
             var type = obj.GetType();
@@ -727,6 +770,99 @@ namespace MusicApp.Services
                 return property.GetValue(obj) as string;
             }
             return null;
+        }        private async Task HandleTokenInResponse<T>(T obj)
+        {
+            _logger?.LogInformation("HandleTokenInResponse called with obj: {ObjType}, _isServerSideRendering: {IsSSR}", 
+                obj?.GetType().Name ?? "null", _isServerSideRendering);
+                
+            if (obj == null) return;
+            
+            try
+            {
+                _logger?.LogInformation("HandleTokenInResponse called for type: {TypeName}", obj.GetType().Name);
+                var type = obj.GetType();
+                var tokenProperty = type.GetProperty("Token");
+                
+                _logger?.LogInformation("Looking for Token property on type {TypeName}, found: {Found}", 
+                    type.Name, tokenProperty != null);
+                
+                if (tokenProperty != null)
+                {
+                    _logger?.LogInformation("Token property type: {PropertyType}", tokenProperty.PropertyType.Name);
+                    var tokenValue = tokenProperty.GetValue(obj);
+                    _logger?.LogInformation("Token value: {TokenValue}", 
+                        tokenValue != null ? $"<{tokenValue.ToString()?.Length} chars>" : "null");
+                }
+                
+                if (tokenProperty != null && tokenProperty.PropertyType == typeof(string))
+                {
+                    var token = tokenProperty.GetValue(obj) as string;
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        _logger?.LogInformation("Updating JWT token from API response");
+                        
+                        // Always try to update localStorage first - this is the primary storage for JWTs
+                        try
+                        {
+                            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "jwt_token", token);
+                            _logger?.LogInformation("Successfully updated token in localStorage");
+                        }
+                        catch (InvalidOperationException ex) when (ex.Message.Contains("JavaScript interop") || ex.Message.Contains("prerendering"))
+                        {
+                            _logger?.LogWarning("Cannot update localStorage during server-side rendering: {ErrorMessage}", ex.Message);
+                            
+                            // For server-side scenarios, we need to handle this differently
+                            // Since HttpContext.Items only persists for the current request, 
+                            // we need to ensure the token gets to the client-side for subsequent requests
+                            
+                            if (_httpContextAccessor?.HttpContext != null)
+                            {
+                                try
+                                {
+                                    _logger?.LogInformation("Storing token in HttpContext.Items as fallback for current request");
+                                    _httpContextAccessor.HttpContext.Items["jwt_token"] = token;
+                                    
+                                    // Also try to update the current user's claims with the new token
+                                    if (_httpContextAccessor.HttpContext.User.Identity is System.Security.Claims.ClaimsIdentity identity)
+                                    {
+                                        // Remove old token claim if it exists
+                                        var oldTokenClaim = identity.FindFirst("jwt_token");
+                                        if (oldTokenClaim != null)
+                                        {
+                                            identity.RemoveClaim(oldTokenClaim);
+                                        }
+                                        
+                                        // Add new token claim
+                                        identity.AddClaim(new System.Security.Claims.Claim("jwt_token", token));
+                                        _logger?.LogInformation("Updated JWT token in user claims");
+                                    }
+                                    
+                                    // IMPORTANT: For server-side scenarios, we need to pass the token to the client
+                                    // Add a custom header that the client can read and store in localStorage
+                                    _httpContextAccessor.HttpContext.Response.Headers.Add("X-Updated-Token", token);
+                                    _logger?.LogInformation("Added X-Updated-Token header for client-side update");
+                                }
+                                catch (Exception httpEx)
+                                {
+                                    _logger?.LogError(httpEx, "Failed to store token in HttpContext: {ErrorMessage}", httpEx.Message);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger?.LogError(ex, "Failed to update token in localStorage: {ErrorMessage}", ex.Message);
+                        }
+                    }
+                    else
+                    {
+                        _logger?.LogInformation("Token property found but value is null or empty");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error updating token from response: {ErrorMessage}", ex.Message);
+            }
         }
     }
     

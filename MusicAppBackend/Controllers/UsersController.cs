@@ -13,18 +13,19 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace MusicAppBackend.Controllers
-{
-    [Route("api/[controller]")]
+{    [Route("api/[controller]")]
     [ApiController]
     [Authorize]
     public class UsersController : BaseController
     {
         private readonly IFileStorageService _fileStorage;
+        private readonly IAuthService _authService;
 
-        public UsersController(MusicDbContext context, IFileStorageService fileStorage, ILogger<UsersController> logger)
+        public UsersController(MusicDbContext context, IFileStorageService fileStorage, IAuthService authService, ILogger<UsersController> logger)
             : base(context, logger)
         {
             _fileStorage = fileStorage;
+            _authService = authService;
         }
 
         // GET: api/Users
@@ -261,9 +262,7 @@ namespace MusicAppBackend.Controllers
                 Bio = user.Bio,
                 Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
             };
-        }
-
-        // PUT: api/Users/5
+        }        // PUT: api/Users/5
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDTO updateUserDto)
         {
@@ -277,16 +276,51 @@ namespace MusicAppBackend.Controllers
             if (user == null)
             {
                 return NotFound();
-            }            user.FirstName = updateUserDto.FirstName ?? user.FirstName;
+            }
+
+            user.FirstName = updateUserDto.FirstName ?? user.FirstName;
             user.LastName = updateUserDto.LastName ?? user.LastName;
             user.Username = updateUserDto.Username ?? user.Username;
             user.Bio = updateUserDto.Bio ?? user.Bio;
             user.ProfileImageUrl = updateUserDto.ProfileImageUrl ?? user.ProfileImageUrl;
-            user.UpdatedAt = DateTime.UtcNow;
-
-            try
+            user.UpdatedAt = DateTime.UtcNow;            try
             {
                 await _context.SaveChangesAsync();
+                
+                // Reload user with roles for the response
+                var updatedUser = await _context.Users
+                    .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                    .FirstOrDefaultAsync(u => u.Id == id);
+                
+                if (updatedUser == null)
+                {
+                    return NotFound();
+                }
+                
+                // Generate a new JWT token with updated user information
+                var newToken = await _authService.GenerateJwtTokenAsync(updatedUser);
+                
+                // Create the UserDTO for the response
+                var userDto = new UserDTO
+                {
+                    Id = updatedUser.Id,
+                    Username = updatedUser.Username,
+                    Email = updatedUser.Email,
+                    FirstName = updatedUser.FirstName,
+                    LastName = updatedUser.LastName,
+                    ProfileImageUrl = updatedUser.ProfileImageUrl,
+                    Bio = updatedUser.Bio,
+                    Roles = updatedUser.UserRoles.Select(ur => ur.Role.Name).ToList()
+                };
+                  // Return in ApiResponse format with token in the response object
+                return Ok(new ApiResponse<UserDTO>
+                { 
+                    Success = true,
+                    Message = "Profile updated successfully",
+                    Data = userDto,
+                    Token = newToken
+                });
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -299,8 +333,6 @@ namespace MusicAppBackend.Controllers
                     throw;
                 }
             }
-
-            return NoContent();
         }
 
         // POST: api/Users/profile-image

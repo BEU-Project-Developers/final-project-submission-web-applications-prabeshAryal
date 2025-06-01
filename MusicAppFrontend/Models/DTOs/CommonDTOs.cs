@@ -11,12 +11,12 @@ namespace MusicApp.Models.DTOs
         public int CurrentPage { get; set; }
         public int PageSize { get; set; }
     }
-    
-    public class ApiResponse<T>
+      public class ApiResponse<T>
     {
         public bool Success { get; set; }
         public string? Message { get; set; }
         public T? Data { get; set; }
+        public string? Token { get; set; }  // Add Token property for responses that include updated tokens
     }
       public class ArtistDto
     {
