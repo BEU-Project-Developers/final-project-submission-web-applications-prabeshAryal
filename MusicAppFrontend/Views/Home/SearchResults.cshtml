@@ -3,117 +3,551 @@
     ViewData["Title"] = "Search Results";
 }
 
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-12">
-            <h2 class="mb-4">Search Results</h2>
-            @if (!string.IsNullOrEmpty(ViewBag.SearchQuery))
-            {
-                <div class="alert alert-info">
-                    <p class="mb-0">You searched for: <strong>@ViewBag.SearchQuery</strong></p>
-                </div>
+<style>
+    /* Main container for focused search results */
+    .search-results-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        min-height: 100vh;
+    }
 
-                @if ((Model?.Songs?.Count ?? 0) == 0 && (Model?.Albums?.Count ?? 0) == 0 && (Model?.Artists?.Count ?? 0) == 0 && (Model?.Playlists?.Count ?? 0) == 0)
-                {
-                    <div class="mt-5 text-center py-5">
-                        <i class="bi bi-search" style="font-size: 4rem; color: var(--ytm-text-secondary);"></i>
-                        <h4 class="mt-3">No results found</h4>
-                        <p class="text-muted">We couldn't find any matches for your search</p>
-                    </div>
-                }
-                else
-                {
-                    <div class="row">
-                        @if (Model.Songs != null && Model.Songs.Count > 0)
-                        {
-                            <div class="col-12 mb-4">
-                                <h4>Songs</h4>
-                                <ul class="list-group">
-                                    @foreach (var song in Model.Songs)
-                                    {
-                                        <li class="list-group-item d-flex align-items-center">
-                                            <img src="@(song.CoverImageUrl ?? "/images/default-cover.png")" alt="cover" style="width:40px;height:40px;object-fit:cover;margin-right:1rem;">
-                                            <div class="flex-grow-1">
-                                                <strong>@song.Title</strong> <span class="text-muted">by @song.ArtistName</span>
-                                            </div>
-                                            @if (song.AlbumId != null)
-                                            {
-                                                <a href="/Albums/Details/@song.AlbumId" class="btn btn-sm btn-outline-secondary ms-2">Album</a>
-                                            }
-                                            <a href="/Songs/Details/@song.Id" class="btn btn-sm btn-primary ms-2">View</a>
-                                        </li>
-                                    }
-                                </ul>
-                            </div>
-                        }
-                        @if (Model.Albums != null && Model.Albums.Count > 0)
-                        {
-                            <div class="col-12 mb-4">
-                                <h4>Albums</h4>
-                                <ul class="list-group">
-                                    @foreach (var album in Model.Albums)
-                                    {
-                                        <li class="list-group-item d-flex align-items-center">
-                                            <img src="@(album.CoverImageUrl ?? "/images/default-cover.png")" alt="cover" style="width:40px;height:40px;object-fit:cover;margin-right:1rem;">
-                                            <div class="flex-grow-1">
-                                                <strong>@album.Title</strong> <span class="text-muted">by @album.ArtistName</span>
-                                            </div>
-                                            <a href="/Albums/Details/@album.Id" class="btn btn-sm btn-primary ms-2">View</a>
-                                        </li>
-                                    }
-                                </ul>
-                            </div>
-                        }
-                        @if (Model.Artists != null && Model.Artists.Count > 0)
-                        {
-                            <div class="col-12 mb-4">
-                                <h4>Artists</h4>
-                                <ul class="list-group">
-                                    @foreach (var artist in Model.Artists)
-                                    {
-                                        <li class="list-group-item d-flex align-items-center">
-                                            <img src="@(artist.ImageUrl ?? "/images/default-artist.png")" alt="artist" style="width:40px;height:40px;object-fit:cover;margin-right:1rem;">
-                                            <div class="flex-grow-1">
-                                                <strong>@artist.Name</strong>
-                                            </div>
-                                            <a href="/Artists/Details/@artist.Id" class="btn btn-sm btn-primary ms-2">View</a>
-                                        </li>
-                                    }
-                                </ul>
-                            </div>
-                        }
-                        @if (Model.Playlists != null && Model.Playlists.Count > 0)
-                        {
-                            <div class="col-12 mb-4">
-                                <h4>Playlists</h4>
-                                <ul class="list-group">
-                                    @foreach (var playlist in Model.Playlists)
-                                    {
-                                        <li class="list-group-item d-flex align-items-center">
-                                            <img src="@(playlist.CoverImageUrl ?? "/images/default-playlist.png")" alt="playlist" style="width:40px;height:40px;object-fit:cover;margin-right:1rem;">
-                                            <div class="flex-grow-1">
-                                                <strong>@playlist.Name</strong> <span class="text-muted">by @playlist.Username</span>
-                                            </div>
-                                            <a href="/Playlists/Details/@playlist.Id" class="btn btn-sm btn-primary ms-2">View</a>
-                                        </li>
-                                    }
-                                </ul>
-                            </div>
-                        }
-                    </div>
-                }
-            }
-            else
+    /* Search header styling */
+    .search-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, var(--ytm-bg-secondary), var(--ytm-bg-tertiary));
+        border-radius: 16px;
+        border: 1px solid var(--ytm-border-color);
+    }
+
+    .search-title {
+        color: var(--ytm-text-primary);
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .search-query-display {
+        background: var(--ytm-bg-primary);
+        color: var(--ytm-text-primary);
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        display: inline-block;
+        border: 1px solid var(--ytm-border-color);
+        font-weight: 500;
+    }
+
+    /* Category sections */
+    .category-section {
+        margin-bottom: 2.5rem;
+    }
+
+    .category-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid var(--ytm-border-color);
+    }
+
+    .category-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        font-size: 1.2rem;
+        color: white;
+    }
+
+    .category-icon.songs { background: linear-gradient(135deg, #ff6b35, #f7931e); }
+    .category-icon.albums { background: linear-gradient(135deg, #4ecdc4, #44a08d); }
+    .category-icon.artists { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .category-icon.playlists { background: linear-gradient(135deg, #f093fb, #f5576c); }
+
+    .category-title {
+        color: var(--ytm-text-primary);
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    /* Grid layouts for different categories */
+    .results-grid {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .songs-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+
+    .albums-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+
+    .artists-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+
+    .playlists-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+
+    /* Song cards - rectangular with rounded corners */
+    .song-card {
+        background: var(--ytm-bg-secondary);
+        border: 1px solid var(--ytm-border-color);
+        border-radius: 12px;
+        padding: 1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .song-card:hover {
+        background: var(--ytm-bg-tertiary);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+
+    .song-cover {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+        object-fit: cover;
+        margin-right: 1rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    /* Album cards - square shape */
+    .album-card {
+        background: var(--ytm-bg-secondary);
+        border: 1px solid var(--ytm-border-color);
+        border-radius: 16px;
+        padding: 1.25rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-align: center;
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .album-card:hover {
+        background: var(--ytm-bg-tertiary);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+    }
+
+    .album-cover {
+        width: 100px;
+        height: 100px;
+        border-radius: 12px;
+        object-fit: cover;
+        margin: 0 auto 1rem;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    /* Artist cards - circular shape */
+    .artist-card {
+        background: var(--ytm-bg-secondary);
+        border: 1px solid var(--ytm-border-color);
+        border-radius: 20px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-align: center;
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .artist-card:hover {
+        background: var(--ytm-bg-tertiary);
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+    }
+
+    .artist-image {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin: 0 auto 1rem;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        border: 3px solid var(--ytm-border-color);
+    }
+
+    /* Playlist cards - rounded rectangle */
+    .playlist-card {
+        background: var(--ytm-bg-secondary);
+        border: 1px solid var(--ytm-border-color);
+        border-radius: 20px;
+        padding: 1.25rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .playlist-card:hover {
+        background: var(--ytm-bg-tertiary);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 28px rgba(0,0,0,0.2);
+    }
+
+    .playlist-cover {
+        width: 70px;
+        height: 70px;
+        border-radius: 16px;
+        object-fit: cover;
+        margin-right: 1rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+
+    /* Text styling */
+    .item-title {
+        color: var(--ytm-text-primary);
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+        line-height: 1.2;
+    }
+
+    .item-subtitle {
+        color: var(--ytm-text-secondary);
+        font-size: 0.875rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .item-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+        margin-top: auto;
+    }
+
+    .song-item-actions {
+        justify-content: flex-end;
+        margin-top: 0;
+    }
+
+    /* Action buttons */
+    .action-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        border: 1px solid var(--ytm-border-color);
+        background: var(--ytm-bg-primary);
+        color: var(--ytm-text-primary);
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .action-btn:hover {
+        background: var(--ytm-accent-red);
+        color: white;
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+
+    .action-btn.secondary {
+        background: transparent;
+        color: var(--ytm-text-secondary);
+    }
+
+    .action-btn.secondary:hover {
+        background: var(--ytm-bg-tertiary);
+        color: var(--ytm-text-primary);
+    }
+
+    /* No results state */
+    .no-results {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: var(--ytm-bg-secondary);
+        border-radius: 20px;
+        border: 1px solid var(--ytm-border-color);
+    }
+
+    .no-results-icon {
+        font-size: 4rem;
+        color: var(--ytm-text-secondary);
+        margin-bottom: 1.5rem;
+    }
+
+    .no-results-title {
+        color: var(--ytm-text-primary);
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+
+    .no-results-text {
+        color: var(--ytm-text-secondary);
+        font-size: 1rem;
+    }
+
+    /* Back button */
+    .back-button {
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .back-btn {
+        background: var(--ytm-bg-secondary);
+        color: var(--ytm-text-primary);
+        border: 1px solid var(--ytm-border-color);
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .back-btn:hover {
+        background: var(--ytm-bg-tertiary);
+        color: var(--ytm-text-primary);
+        text-decoration: none;
+        transform: translateY(-1px);
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .search-results-container {
+            padding: 1rem;
+        }
+
+        .songs-grid,
+        .albums-grid,
+        .artists-grid,
+        .playlists-grid {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+
+        .category-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .search-title {
+            font-size: 1.5rem;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .songs-grid,
+        .playlists-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .albums-grid,
+        .artists-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        }
+
+        .album-cover,
+        .artist-image {
+            width: 60px;
+            height: 60px;
+        }
+
+        .song-cover,
+        .playlist-cover {
+            width: 50px;
+            height: 50px;
+        }
+    }
+</style>
+
+<div class="search-results-container">    <div class="search-header">
+        <h1 class="search-title">Search Results</h1>
+        @if (!string.IsNullOrEmpty(ViewBag.SearchQuery))
+        {
+            <div class="search-query-display">
+                <i class="bi bi-search"></i> "@ViewBag.SearchQuery"
+            </div>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(ViewBag.SearchQuery))
+    {
+        @if ((Model?.Songs?.Count ?? 0) == 0 && (Model?.Albums?.Count ?? 0) == 0 && (Model?.Artists?.Count ?? 0) == 0 && (Model?.Playlists?.Count ?? 0) == 0)
+        {
+            <div class="no-results">
+                <div class="no-results-icon">
+                    <i class="bi bi-search"></i>
+                </div>
+                <h3 class="no-results-title">No results found</h3>
+                <p class="no-results-text">We couldn't find any matches for "@ViewBag.SearchQuery". Try different keywords or check your spelling.</p>
+            </div>
+        }
+        else
+        {
+            @if (Model.Songs != null && Model.Songs.Count > 0)
             {
-                <div class="alert alert-warning">
-                    <p class="mb-0">Please enter a search query</p>
+                <div class="category-section">
+                    <div class="category-header">
+                        <div class="category-icon songs">
+                            <i class="bi bi-music-note"></i>
+                        </div>
+                        <h3 class="category-title">Songs (@Model.Songs.Count)</h3>
+                    </div>
+                    <div class="results-grid songs-grid">
+                        @foreach (var song in Model.Songs)
+                        {
+                            <div class="song-card">
+                                <div style="display: flex; align-items: center;">
+                                    <img src="@(song.CoverImageUrl ?? "/images/default-song.jpg")" 
+                                         alt="@song.Title" 
+                                         class="song-cover"
+                                         onerror="this.src='/images/default-song.jpg';">
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div class="item-title">@song.Title</div>
+                                        <div class="item-subtitle">by @song.ArtistName</div>
+                                    </div>
+                                    <div class="item-actions song-item-actions">
+                                        @if (song.AlbumId != null)
+                                        {
+                                            <a href="/Albums/Details/@song.AlbumId" class="action-btn secondary">
+                                                <i class="bi bi-disc"></i> Album
+                                            </a>
+                                        }
+                                        <a href="/Songs/Details/@song.Id" class="action-btn">
+                                            <i class="bi bi-play-fill"></i> Play
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
                 </div>
             }
-            <div class="mt-4">
-                <a href="/" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Back to Home
-                </a>
+
+            @if (Model.Albums != null && Model.Albums.Count > 0)
+            {
+                <div class="category-section">
+                    <div class="category-header">
+                        <div class="category-icon albums">
+                            <i class="bi bi-disc"></i>
+                        </div>
+                        <h3 class="category-title">Albums (@Model.Albums.Count)</h3>
+                    </div>
+                    <div class="results-grid albums-grid">
+                        @foreach (var album in Model.Albums)
+                        {
+                            <div class="album-card" onclick="location.href='/Albums/Details/@album.Id'">
+                                <img src="@(album.CoverImageUrl ?? "/images/default-album.jpg")" 
+                                     alt="@album.Title" 
+                                     class="album-cover"
+                                     onerror="this.src='/images/default-album.jpg';">
+                                <div class="item-title">@album.Title</div>
+                                <div class="item-subtitle">by @album.ArtistName</div>
+                                <div class="item-actions">
+                                    <a href="/Albums/Details/@album.Id" class="action-btn">
+                                        <i class="bi bi-collection"></i> View Album
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (Model.Artists != null && Model.Artists.Count > 0)
+            {
+                <div class="category-section">
+                    <div class="category-header">
+                        <div class="category-icon artists">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <h3 class="category-title">Artists (@Model.Artists.Count)</h3>
+                    </div>
+                    <div class="results-grid artists-grid">
+                        @foreach (var artist in Model.Artists)
+                        {
+                            <div class="artist-card" onclick="location.href='/Artists/Details/@artist.Id'">
+                                <img src="@(artist.ImageUrl ?? "/images/default-artist.jpg")" 
+                                     alt="@artist.Name" 
+                                     class="artist-image"
+                                     onerror="this.src='/images/default-artist.jpg';">
+                                <div class="item-title">@artist.Name</div>
+                                <div class="item-actions">
+                                    <a href="/Artists/Details/@artist.Id" class="action-btn">
+                                        <i class="bi bi-person"></i> View Artist
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (Model.Playlists != null && Model.Playlists.Count > 0)
+            {
+                <div class="category-section">
+                    <div class="category-header">
+                        <div class="category-icon playlists">
+                            <i class="bi bi-music-note-list"></i>
+                        </div>
+                        <h3 class="category-title">Playlists (@Model.Playlists.Count)</h3>
+                    </div>
+                    <div class="results-grid playlists-grid">
+                        @foreach (var playlist in Model.Playlists)
+                        {
+                            <div class="playlist-card" onclick="location.href='/Playlists/Details/@playlist.Id'">
+                                <div style="display: flex; align-items: center;">
+                                    <img src="@(playlist.CoverImageUrl ?? "/images/default-playlist.jpg")" 
+                                         alt="@playlist.Name" 
+                                         class="playlist-cover"
+                                         onerror="this.src='/images/default-playlist.jpg';">
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div class="item-title">@playlist.Name</div>
+                                        <div class="item-subtitle">by @playlist.Username</div>
+                                        <div class="item-actions">
+                                            <a href="/Playlists/Details/@playlist.Id" class="action-btn">
+                                                <i class="bi bi-list"></i> View Playlist
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    }
+    else
+    {
+        <div class="no-results">
+            <div class="no-results-icon">
+                <i class="bi bi-exclamation-triangle"></i>
             </div>
+            <h3 class="no-results-title">No Search Query</h3>
+            <p class="no-results-text">Please enter a search query to find songs, albums, artists, and playlists.</p>
         </div>
+    }
+
+    <div class="back-button">
+        <a href="/" class="back-btn">
+            <i class="bi bi-arrow-left"></i> Back to Home
+        </a>
     </div>
 </div>

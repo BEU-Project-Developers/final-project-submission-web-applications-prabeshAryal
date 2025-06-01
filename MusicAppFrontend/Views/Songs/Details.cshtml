@@ -10,128 +10,163 @@
     }
 }
 
-<style>    .song-container {
-        background-color: var(--ytm-bg-secondary, #1f1f1f);
-        border-radius: 12px;
+<style>    /* Main container for focused content layout */
+    .song-details-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        min-height: 100vh;
+    }
+
+    .song-container {
+        background-color: var(--ytm-bg-secondary);
+        border-radius: 16px;
         overflow: hidden;
         margin-bottom: 2rem;
+        border: 1px solid var(--ytm-border-color);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
     }
 
     .song-header {
         display: flex;
         padding: 2rem;
+        gap: 2rem;
     }
 
     .song-cover {
-        width: 300px;
-        height: 300px;
+        width: 200px;
+        height: 200px;
         object-fit: cover;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        margin-right: 2rem;
-    }
-
-    .song-info {
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        flex-shrink: 0;
+    }    .song-info {
         flex: 1;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        min-width: 0;
     }
 
     .song-title-section {
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
     }
 
     .song-title {
-        font-size: 2.5rem;
+        font-size: 2rem;
         font-weight: 700;
-        color: var(--ytm-text-primary, #ffffff);
+        color: var(--ytm-text-primary);
         margin-bottom: 0.5rem;
+        line-height: 1.2;
     }
 
     .song-artist {
-        font-size: 1.3rem;
-        color: var(--ytm-text-secondary, #aaaaaa);
+        font-size: 1.1rem;
         margin-bottom: 1rem;
+    }
+
+    .song-artist a {
+        color: var(--ytm-text-secondary);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .song-artist a:hover {
+        color: var(--ytm-text-primary);
     }
 
     .song-meta {
         display: flex;
         flex-wrap: wrap;
-        gap: 1.5rem;
+        gap: 1rem;
         margin-bottom: 1.5rem;
     }
 
     .meta-item {
-        color: var(--ytm-text-secondary, #aaaaaa);
-        font-size: 0.9rem;
+        color: var(--ytm-text-secondary);
+        font-size: 0.85rem;
         display: flex;
         align-items: center;
+        gap: 0.25rem;
     }
 
     .meta-item i {
-        margin-right: 0.5rem;
+        font-size: 0.8rem;
     }
 
-    .song-actions {
+    .meta-item a {
+        color: var(--ytm-text-secondary);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .meta-item a:hover {
+        color: var(--ytm-text-primary);
+    }    .song-actions {
         display: flex;
-        gap: 1rem;
+        gap: 0.75rem;
+        flex-wrap: wrap;
         margin-top: auto;
     }    .btn-play {
-        background-color: var(--ytm-accent-red, #ff0000);
-        color: var(--ytm-text-primary, #ffffff);
+        background-color: var(--ytm-accent-red);
+        color: var(--ytm-text-primary);
         border: none;
-        border-radius: 20px;
-        padding: 0.5rem 1.5rem;
-        font-weight: 500;
+        border-radius: 25px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
         display: flex;
         align-items: center;
-    }
-
-    .btn-play i {
-        margin-right: 0.5rem;
-        font-size: 1.1rem;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
     }
 
     .btn-play:hover {
         background-color: #cc0000;
-        color: var(--ytm-text-primary, #ffffff);    }
+        color: var(--ytm-text-primary);
+        transform: translateY(-1px);
+    }
 
     .btn-action {
-        color: var(--ytm-text-secondary, #aaaaaa);
-        border: 1px solid var(--ytm-border-color, #444444);
+        color: var(--ytm-text-secondary);
+        border: 1px solid var(--ytm-border-color);
         background: transparent;
-        border-radius: 20px;
-        padding: 0.5rem 1.5rem;
+        border-radius: 25px;
+        padding: 0.75rem 1.5rem;
         display: flex;
         align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        font-weight: 500;
     }
     
     .btn-liked {
-        background-color: var(--ytm-accent-red, #ff0000);
-        color: var(--ytm-text-primary, #ffffff);
-        border: none;
-    }
-
-    .btn-action i {
-        margin-right: 0.5rem;
+        background-color: var(--ytm-accent-red);
+        color: var(--ytm-text-primary);
+        border: 1px solid var(--ytm-accent-red);
     }
 
     .btn-action:hover {
-        background-color: var(--ytm-bg-tertiary, #333333);
-        color: var(--ytm-text-primary, #ffffff);
+        background-color: var(--ytm-bg-tertiary);
+        color: var(--ytm-text-primary);
+        transform: translateY(-1px);
     }
 
-    .song-player {
-        padding: 1rem 2rem;
-        border-top: 1px solid var(--ytm-border-color, #444444);
+    .btn-liked:hover {
+        background-color: #cc0000;
+    }    .song-player {
+        padding: 1.5rem 2rem;
+        border-top: 1px solid var(--ytm-border-color);
+        background: var(--ytm-bg-primary);
     }
 
     .player-container {
         width: 100%;
-        background-color: var(--ytm-bg-tertiary, #333333);
+        background-color: var(--ytm-bg-tertiary);
         padding: 1rem;
         border-radius: 8px;
+        border: 1px solid var(--ytm-border-color);
     }
 
     .audio-player {
@@ -141,24 +176,28 @@
     }
 
     .section-title {
-        color: var(--ytm-text-primary, #ffffff);
+        color: var(--ytm-text-primary);
         margin-bottom: 1.5rem;
-        font-weight: 500;
+        font-weight: 600;
+        font-size: 1.4rem;
     }
 
     .related-tracks {
-        background-color: var(--ytm-bg-secondary, #1f1f1f);
-        border-radius: 8px;
+        background-color: var(--ytm-bg-secondary);
+        border-radius: 12px;
         overflow: hidden;
-        border: 1px solid var(--ytm-border-color, #444444);
+        border: 1px solid var(--ytm-border-color);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
     }
 
     .track-item {
         display: flex;
         align-items: center;
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid var(--ytm-border-color, #444444);
-        transition: background-color 0.2s ease;
+        padding: 1rem;
+        border-bottom: 1px solid var(--ytm-border-color);
+        transition: all 0.2s ease;
+        cursor: pointer;
+        text-decoration: none;
     }
 
     .track-item:last-child {
@@ -166,52 +205,121 @@
     }
 
     .track-item:hover {
-        background-color: var(--ytm-bg-tertiary, #333333);
-    }
-
-    .track-cover {
-        width: 40px;
-        height: 40px;
-        border-radius: 4px;
+        background-color: var(--ytm-bg-tertiary);
+        text-decoration: none;
+    }    .track-cover {
+        width: 50px;
+        height: 50px;
+        border-radius: 8px;
         margin-right: 1rem;
         object-fit: cover;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
 
     .track-info {
         flex: 1;
+        min-width: 0;
     }
 
     .track-title {
-        color: var(--ytm-text-primary, #ffffff);
-        font-weight: 500;
+        color: var(--ytm-text-primary);
+        font-weight: 600;
         margin-bottom: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .track-artist {
-        color: var(--ytm-text-secondary, #aaaaaa);
-        font-size: 0.85rem;
+        color: var(--ytm-text-secondary);
+        font-size: 0.875rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .track-duration {
-        color: var(--ytm-text-secondary, #aaaaaa);
+        color: var(--ytm-text-secondary);
         margin-left: 1rem;
-        font-size: 0.9rem;
+        font-size: 0.875rem;
+        flex-shrink: 0;
     }
 
-    /* Responsive adjustments */
+    /* Back button styling */
+    .back-section {
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .back-btn {
+        background: var(--ytm-bg-secondary);
+        color: var(--ytm-text-primary);
+        border: 1px solid var(--ytm-border-color);
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .back-btn:hover {
+        background: var(--ytm-bg-tertiary);
+        color: var(--ytm-text-primary);
+        text-decoration: none;
+        transform: translateY(-1px);
+    }    /* Responsive adjustments */
     @@media (max-width: 768px) {
+        .song-details-container {
+            padding: 1rem;
+        }
+
         .song-header {
             flex-direction: column;
+            padding: 1.5rem;
         }
 
         .song-cover {
             margin-right: 0;
             margin-bottom: 1.5rem;
-            width: 100%;
-            max-width: 300px;
+            width: 160px;
+            height: 160px;
             align-self: center;
         }
-    }    .ytm-toast {
+
+        .song-title {
+            font-size: 1.5rem;
+        }
+
+        .song-actions {
+            justify-content: center;
+        }
+
+        .btn-play,
+        .btn-action {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .song-meta {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .track-cover {
+            width: 40px;
+            height: 40px;
+        }
+
+        .song-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }.ytm-toast {
     position: fixed;
     top: 2rem;
     right: 2rem;
@@ -267,9 +375,11 @@
 .ytm-btn-cancel:hover { background: var(--ytm-bg-tertiary, #333); color: var(--ytm-text-primary, #fff); }
 </style>
 
+<div class="song-details-container">
+
 <div class="song-container">    <div class="song-header">
-        <img src="@(Model.CoverImageUrl ?? GetRandomImageUrl(300, 300))" alt="@Model.Title cover" class="song-cover"
-            onerror="this.src='https://placehold.co/300x300/var(--ytm-bg-secondary)/var(--ytm-text-secondary)?text=Song';">
+        <img src="@(Model.CoverImageUrl ?? GetRandomImageUrl(200, 200))" alt="@Model.Title cover" class="song-cover"
+            onerror="this.src='https://placehold.co/200x200/var(--ytm-bg-secondary)/var(--ytm-text-secondary)?text=Song';">
         
         <div class="song-info">            <div class="song-title-section">
                 <div class="song-title">@Model.Title</div>
@@ -279,14 +389,14 @@
                         @for (int i = 0; i < Model.Artists.Count; i++)
                         {
                             var artist = Model.Artists[i];
-                            <a asp-controller="Artists" asp-action="Details" asp-route-id="@artist.Id" class="hover:text-white">
+                            <a asp-controller="Artists" asp-action="Details" asp-route-id="@artist.Id">
                                 @artist.Name
                             </a>@(i < Model.Artists.Count - 1 ? ", " : "")
                         }
                     }
                     else if (!string.IsNullOrEmpty(Model.ArtistName))
                     {
-                        <a asp-controller="Artists" asp-action="Details" asp-route-id="@Model.ArtistId" class="hover:text-white">
+                        <a asp-controller="Artists" asp-action="Details" asp-route-id="@Model.ArtistId">
                             @Model.ArtistName
                         </a>
                     }
@@ -356,13 +466,12 @@
         @{
             var similarSongs = ViewBag.SimilarSongs as List<MusicApp.Models.DTOs.SongDto> ?? new List<MusicApp.Models.DTOs.SongDto>();
         }
-        
-        @if (similarSongs.Any())
+          @if (similarSongs.Any())
         {
             foreach (var song in similarSongs)
             {                <a asp-controller="Songs" asp-action="Details" asp-route-id="@song.Id" class="track-item">
-                    <img src="@(song.CoverImageUrl ?? GetRandomImageUrl(40, 40))" alt="@song.Title cover" class="track-cover"
-                         onerror="this.src='https://placehold.co/40x40/var(--ytm-bg-secondary)/var(--ytm-text-secondary)?text=Song';">                    <div class="track-info">
+                    <img src="@(song.CoverImageUrl ?? GetRandomImageUrl(50, 50))" alt="@song.Title cover" class="track-cover"
+                         onerror="this.src='https://placehold.co/50x50/var(--ytm-bg-secondary)/var(--ytm-text-secondary)?text=Song';">                    <div class="track-info">
                         <div class="track-title">@song.Title</div>
                         <div class="track-artist">
                             @if (song.Artists != null && song.Artists.Any())
@@ -381,15 +490,16 @@
         }
         else
         {
-            <p class="text-center p-3">No similar songs found.</p>
-        }
-    </div>
+            <div class="text-center p-4" style="color: var(--ytm-text-secondary);">No similar songs found.</div>
+        }    </div>
 </div>
 
-<div class="mt-4">
-    <a asp-action="Index" class="btn btn-action">
+<div class="back-section">
+    <a asp-action="Index" class="back-btn">
         <i class="bi bi-arrow-left"></i> Back to Songs
     </a>
+</div>
+
 </div>
 
 @section Scripts {
