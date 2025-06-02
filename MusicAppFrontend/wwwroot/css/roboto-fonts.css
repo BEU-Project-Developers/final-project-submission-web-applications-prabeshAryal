@@ -1,0 +1,59 @@
+/* Roboto Font Family - Local Definitions */
+/* Regular (400) */
+@font-face {
+    font-family: 'Roboto';
+    src: url('../lib/fonts/Roboto/static/Roboto-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Regular Italic (400) */
+@font-face {
+    font-family: 'Roboto';
+    src: url('../lib/fonts/Roboto/static/Roboto-Italic.ttf') format('truetype');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+/* Medium (500) */
+@font-face {
+    font-family: 'Roboto';
+    src: url('../lib/fonts/Roboto/static/Roboto-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Medium Italic (500) */
+@font-face {
+    font-family: 'Roboto';
+    src: url('../lib/fonts/Roboto/static/Roboto-MediumItalic.ttf') format('truetype');
+    font-weight: 500;
+    font-style: italic;
+    font-display: swap;
+}
+
+/* Bold (700) */
+@font-face {
+    font-family: 'Roboto';
+    src: url('../lib/fonts/Roboto/static/Roboto-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Bold Italic (700) */
+@font-face {
+    font-family: 'Roboto';
+    src: url('../lib/fonts/Roboto/static/Roboto-BoldItalic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+}
+
+/* Apply Roboto as default font family */
+body, .roboto {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
